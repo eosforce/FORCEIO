@@ -1419,11 +1419,7 @@ struct controller_impl {
             bool transaction_can_fail = receipt.status == transaction_receipt_header::hard_fail && receipt.trx.contains<transaction_id_type>();
             if( transaction_failed && !transaction_can_fail) {
                edump((*trace));
-               // the eosio 's block not contain the block which has error,
-               // so general a block 's push_transaction func called by apply_block in other pb should no exception.
-               // but in eosforce block will include error, this will make chain error,
-               // so eosforce should no throw
-               // throw *trace->except;
+               throw *trace->except;
             }
 
             EOS_ASSERT( pending->_pending_block_state->block->transactions.size() > 0,
