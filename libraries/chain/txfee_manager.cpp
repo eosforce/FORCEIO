@@ -44,29 +44,6 @@ namespace eosio { namespace chain {
       init_native_fee(config::msig_account_name, N(exec),      asset(10000));
    }
 
-   bool txfee_manager::check_transaction( const transaction& trx)const
-   {
-      for( const auto& act : trx.actions ) {
-          for (const auto & perm : act.authorization) {
-            if (perm.actor != trx.actions[0].authorization[0].actor) {
-                return false;
-            }
-          }
-      }
-      return true;
-   }
-
-   asset txfee_manager::get_required_fee( const controller& ctl, const transaction& trx)const
-   {
-      auto fee = asset(0);
-
-      for (const auto& act : trx.actions ) {
-         fee += get_required_fee(ctl, act);
-      }
-
-      return fee;
-   }
-
    asset txfee_manager::get_required_fee( const controller& ctl, const action& act)const{
       const auto &db = ctl.db();
       const auto block_num = ctl.head_block_num();

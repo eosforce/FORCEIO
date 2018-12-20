@@ -797,7 +797,7 @@ struct controller_impl {
       authorization.initialize_database();
       resource_limits.initialize_database();
 
-      authority system_auth( conf.genesis.initial_key );
+      authority system_auth(conf.genesis.initial_key);
       create_native_account( config::system_account_name, system_auth, system_auth, true );
       create_native_account( config::token_account_name, system_auth, system_auth, false );
       create_native_account( config::msig_account_name, system_auth, system_auth, false );
@@ -1038,7 +1038,7 @@ struct controller_impl {
          trx_context.init_for_deferred_trx( gtrx.published );
 
          if( is_func_has_open(self, config::func_typ::onfee_action) ) {
-            trx_context.make_fee_act();
+            trx_context.set_fee_data();
          }
 
          if( trx_context.enforce_whiteblacklist && pending->_block_status == controller::block_status::incomplete ) {
@@ -1142,7 +1142,7 @@ struct controller_impl {
    const transaction_receipt& push_receipt( const T& trx, transaction_receipt_header::status_enum status,
                                             uint64_t cpu_usage_us, uint64_t net_usage ) {
       uint64_t net_usage_words = net_usage / 8;
-      // EOS_ASSERT( net_usage_words*8 == net_usage, transaction_exception, "net_usage is not divisible by 8" );
+      EOS_ASSERT( net_usage_words*8 == net_usage, transaction_exception, "net_usage is not divisible by 8" );
       pending->_pending_block_state->block->transactions.emplace_back( trx );
       transaction_receipt& r = pending->_pending_block_state->block->transactions.back();
       r.cpu_usage_us         = cpu_usage_us;
@@ -1191,7 +1191,6 @@ struct controller_impl {
                                            bool explicit_billed_cpu_time = false )
    {
       EOS_ASSERT(deadline != fc::time_point(), transaction_exception, "deadline cannot be uninitialized");
-      EOS_ASSERT(trx->trx.context_free_actions.size()==0, transaction_exception, "context free actions size should be zero!");
       check_action(trx->trx.actions);
 
       transaction_trace_ptr trace;
@@ -1218,7 +1217,7 @@ struct controller_impl {
 
             trx_context.delay = fc::seconds(trx->trx.delay_sec);
 
-            if( !trx->implicit ) {
+            if( !self.skip_auth_check() && !trx->implicit ) {
                authorization.check_authorization(
                        trx->trx.actions,
                        trx->recover_keys( chain_id ),
@@ -1229,13 +1228,12 @@ struct controller_impl {
                                  std::placeholders::_1)*/,
                        false
                );
-
-               EOS_ASSERT(txfee.check_transaction(trx->trx) == true, transaction_exception, "transaction include actor more than one");
-
-               if( is_func_has_open(self, config::func_typ::onfee_action) ) {
-                  trx_context.make_fee_act();
-               }
             }
+			
+		      if( is_func_has_open(self, config::func_typ::onfee_action) ) {
+            	trx_context.set_fee_data();
+            }
+			   
             trx_context.exec();
             trx_context.finalize(); // Automatically rounds up network and CPU usage in trace and bills payers if successful
 
@@ -1933,10 +1931,6 @@ authorization_manager&         controller::get_mutable_authorization_manager()
 }
 
 const txfee_manager&   controller::get_txfee_manager()const
-{
-   return my->txfee;
-}
-txfee_manager&         controller::get_mutable_txfee_manager()
 {
    return my->txfee;
 }

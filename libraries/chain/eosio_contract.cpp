@@ -194,42 +194,6 @@ void apply_eosio_setfee(apply_context& context) {
    auto act = context.act.data_as<setfee>();
 
    // need force.test
-   // TODO add power Invalid block number
-   // idump((context.act.authorization));
-
-   /*
-   * About Fee
-   *
-   * fee come from three mode:
-   *  - native, set in cpp
-   *  - set by eosio
-   *  - set by user
-   *
-   * and res limit can set a value or zero,
-   * all of this will make diff mode to calc res limit,
-   * support 1.0 EOS is for `C` cpu, `N` net and `R` ram,
-   * and cost fee by `f` EOS and extfee by `F` EOS
-   *
-   * then can give:
-   *  - native and no setfee : use native fee and unlimit res use
-   *  - eosio set fee {f, (c,n,r)}
-   *      (cpu_limit, net_limit, ram_limit) == (c + F*C, n + F*N, r + F*R)
-   *  - eosio set fee {f, (0,0,0)}
-   *      (cpu_limit, net_limit, ram_limit) == ((f+F)*C, (f+F)*N, (f+F)*R)
-   *  - user set fee {f, (0,0,0)}, user cannot set fee by c>0||n>0||r>0
-   *      (cpu_limit, net_limit, ram_limit) == ((f+F)*C, (f+F)*N, (f+F)*R)
-   *
-   *  so it can be check by:
-   *  if no setfee
-   *       if no native -> err
-   *       if native -> use native and unlimit res use
-   *  else
-   *       if res limit is (0,0,0) -> limit res by ((f+F)*C, (f+F)*N, (f+F)*R)
-   *       if res limit is (c,n,r) -> (c + F*C, n + F*N, r + F*R)
-   *
-   *  at the same time, eosio can set res limit > (0,0,0) and user cannot
-   *
-   * */
 
    if(   ( act.cpu_limit == 0 )
       && ( act.net_limit == 0 )
