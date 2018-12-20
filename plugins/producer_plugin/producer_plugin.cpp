@@ -289,7 +289,6 @@ class producer_plugin_impl : public std::enable_shared_from_this<producer_plugin
 
          fc_dlog(_log, "received incoming block ${id}", ("id", id));
 
-         EOS_ASSERT( block->transactions.size() <= config::block_max_tx_num, tx_too_much, "block txs must less than config::block_max_tx_num");
          EOS_ASSERT( block->timestamp < (fc::time_point::now() + fc::seconds( 7 )), block_from_the_future,
                      "received a block from the future, ignoring it: ${id}", ("id", id) );
 
@@ -1472,7 +1471,6 @@ void producer_plugin_impl::produce_block() {
    const auto& hbs = chain.head_block_state();
    EOS_ASSERT(pbs, missing_pending_block_state, "pending_block_state does not exist but it should, another plugin may have corrupted it");
    auto signature_provider_itr = _signature_providers.find( pbs->block_signing_key );
-   EOS_ASSERT(pbs->block->transactions.size() <= config::block_max_tx_num, tx_too_much, "block txs must less than config::block_max_tx_num");
 
    EOS_ASSERT(signature_provider_itr != _signature_providers.end(), producer_priv_key_not_found, "Attempting to produce a block for which we don't have the private key");
 
