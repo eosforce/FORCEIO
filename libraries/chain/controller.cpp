@@ -801,7 +801,7 @@ struct controller_impl {
       create_native_account( config::system_account_name, system_auth, system_auth, true );
       create_native_account( config::token_account_name, system_auth, system_auth, false );
 
-      initialize_contract( config::system_account_name, conf.System_code, conf.System_abi, true );
+      initialize_contract( config::system_account_name, conf.system_code, conf.system_abi, true );
       initialize_contract( config::token_account_name, conf.token_code, conf.token_abi );
       initialize_eos_stats();
 
@@ -1299,11 +1299,6 @@ struct controller_impl {
 
    // check_func_open
    void check_func_open() {
-      // when on the specific block : load new System contract
-      if( is_func_open_in_curr_block( self, config::func_typ::use_system01, 3385100 ) ) {
-         initialize_contract(config::system_account_name, conf.System01_code, conf.System01_abi, true);
-      }
-
       // when on the specific block : load eosio.msig contract
       if( is_func_open_in_curr_block( self, config::func_typ::use_msig, 4356456 ) ) {
          initialize_contract(config::msig_account_name, conf.msig_code, conf.msig_abi, true);
