@@ -814,6 +814,7 @@ struct controller_impl {
 
       update_eosio_authority();
       set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
+      set_num_config_on_chain(db, config::func_typ::onfee_action, 1);
 
       auto empty_authority = authority(1, {}, {});
       auto active_producers_authority = authority(1, {}, {});
