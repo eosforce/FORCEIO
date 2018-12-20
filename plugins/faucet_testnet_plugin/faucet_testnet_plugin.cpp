@@ -214,9 +214,10 @@ struct faucet_testnet_plugin_impl {
          return std::make_pair(too_many_requests, fc::variant(response));
       }
 
+      chain::chain_id_type chainid;
       auto& plugin = _app.get_plugin<chain_plugin>();
+      plugin.get_chain_id(chainid);
       controller& cc = plugin.chain();
-      auto chainid = cc.get_chain_id();
 
       signed_transaction trx;
       auto memo = fc::variant(fc::time_point::now()).as_string() + " " + fc::variant(fc::time_point::now().time_since_epoch()).as_string();
