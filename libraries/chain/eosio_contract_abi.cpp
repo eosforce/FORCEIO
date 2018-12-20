@@ -66,7 +66,6 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
       "transaction", "transaction_header", {
          {"context_free_actions", "action[]"},
          {"actions", "action[]"},
-         {"fee", "asset"},
          {"transaction_extensions", "extension[]"}
       }
    });
