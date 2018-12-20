@@ -39,7 +39,7 @@ namespace eosio { namespace chain {
          void init_for_deferred_trx( fc::time_point published );
 
          // make_fee_act insert onfee act in trx
-         void make_fee_act( const asset& require_fee );
+         void make_fee_act( const asset& require_fee = asset{0} );
 
          void exec();
          void finalize();

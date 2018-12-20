@@ -1038,7 +1038,7 @@ struct controller_impl {
          trx_context.init_for_deferred_trx( gtrx.published );
 
          if( is_func_has_open(self, config::func_typ::onfee_action) ) {
-            trx_context.make_fee_act(dtrx.fee);
+            trx_context.make_fee_act();
          }
 
          if( trx_context.enforce_whiteblacklist && pending->_block_status == controller::block_status::incomplete ) {
@@ -1233,7 +1233,7 @@ struct controller_impl {
                EOS_ASSERT(txfee.check_transaction(trx->trx) == true, transaction_exception, "transaction include actor more than one");
 
                if( is_func_has_open(self, config::func_typ::onfee_action) ) {
-                  trx_context.make_fee_act( trx->trx.fee );
+                  trx_context.make_fee_act();
                }
             }
             trx_context.exec();
