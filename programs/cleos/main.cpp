@@ -298,15 +298,6 @@ fc::variant determine_required_keys(const signed_transaction& trx) {
    return required_keys["required_keys"];
 }
 
-fc::variant determine_required_fee(const signed_transaction& trx) {
-   // TODO better error checking
-   //wdump((trx));
-   auto get_arg = fc::mutable_variant_object
-           ("transaction", (transaction)trx);
-   const auto& required_fee = call(get_required_fee, get_arg);
-   return required_fee["required_fee"];
-}
-
 void sign_transaction(signed_transaction& trx, fc::variant& required_keys, const chain_id_type& chain_id) {
    fc::variants sign_args = {fc::variant(trx), required_keys, fc::variant(chain_id)};
    const auto& signed_trx = call(wallet_url, wallet_sign_trx, sign_args);
@@ -342,9 +333,6 @@ fc::variant push_transaction( signed_transaction& trx, int32_t extra_kcpu = 1000
 
    auto required_keys = determine_required_keys(trx);
    size_t num_keys = required_keys.is_array() ? required_keys.get_array().size() : 1;
-   auto txfee = determine_required_fee(trx);
-   fc::from_variant(txfee, trx.fee);
-   trx.fee += fee_ext;
 
    trx.max_cpu_usage_ms = tx_max_cpu_usage;
    trx.max_net_usage_words = (tx_max_net_usage + 7)/8;
@@ -3064,10 +3052,6 @@ int main( int argc, char** argv ) {
       trx.max_cpu_usage_ms = 0;
       trx.delay_sec = 0;
       trx.actions = { chain::action(trxperm, name(proposed_contract), name(proposed_action), proposed_trx_serialized) };
-    //   determine_required_fee(trx);
-      auto get_arg = fc::mutable_variant_object("transaction", trx);
-      const auto& required_fee = call(get_required_fee, get_arg);
-      fc::from_variant( required_fee["required_fee"], trx.fee);
 
       fc::to_variant(trx, trx_var);
 

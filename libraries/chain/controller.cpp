@@ -1230,7 +1230,6 @@ struct controller_impl {
                        false
                );
 
-               EOS_ASSERT(trx->trx.fee >= txfee.get_required_fee(self, trx->trx), transaction_exception, "set tx fee failed: no enough fee in trx");
                EOS_ASSERT(txfee.check_transaction(trx->trx) == true, transaction_exception, "transaction include actor more than one");
 
                if( is_func_has_open(self, config::func_typ::onfee_action) ) {

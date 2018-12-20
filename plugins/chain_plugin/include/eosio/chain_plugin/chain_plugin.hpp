@@ -243,16 +243,6 @@ public:
 
    get_required_keys_result get_required_keys( const get_required_keys_params& params)const;
 
-   struct get_required_fee_params {
-      fc::variant transaction;
-   };
-   struct get_required_fee_result {
-      asset required_fee;
-   };
-
-   get_required_fee_result get_required_fee( const get_required_fee_params& params)const;
-
-
    using get_transaction_id_params = transaction;
    using get_transaction_id_result = transaction_id_type;
 
@@ -762,5 +752,3 @@ FC_REFLECT( eosio::chain_apis::read_only::abi_bin_to_json_params, (code)(action)
 FC_REFLECT( eosio::chain_apis::read_only::abi_bin_to_json_result, (args) )
 FC_REFLECT( eosio::chain_apis::read_only::get_required_keys_params, (transaction)(available_keys) )
 FC_REFLECT( eosio::chain_apis::read_only::get_required_keys_result, (required_keys) )
-FC_REFLECT( eosio::chain_apis::read_only::get_required_fee_params, (transaction) )
-FC_REFLECT( eosio::chain_apis::read_only::get_required_fee_result, (required_fee) )

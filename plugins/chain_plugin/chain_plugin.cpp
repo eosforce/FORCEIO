@@ -1888,15 +1888,6 @@ read_only::get_required_keys_result read_only::get_required_keys( const get_requ
    return result;
 }
 
-read_only::get_required_fee_result read_only::get_required_fee( const get_required_fee_params& params )const {
-   transaction pretty_input;
-   from_variant(params.transaction, pretty_input);
-   auto required_fee = db.get_txfee_manager().get_required_fee(db, pretty_input);
-   get_required_fee_result result;
-   result.required_fee = required_fee;
-   return result;
-}
-
 read_only::get_transaction_id_result read_only::get_transaction_id( const read_only::get_transaction_id_params& params)const {
    return params.id();
 }
