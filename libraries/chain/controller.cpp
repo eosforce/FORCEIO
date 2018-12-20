@@ -1040,10 +1040,6 @@ struct controller_impl {
          return trace;
       }
 
-      // is_onfee_act on early version eosforce we use a trx contain onfee act before do trx
-      // new version use a onfee act in the trx, when exec trx, a onfee action will do first
-      const auto is_onfee_act = is_func_has_open(self, config::func_typ::onfee_action);
-
       auto reset_in_trx_requiring_checks = fc::make_scoped_exit([old_value=in_trx_requiring_checks,this](){
          in_trx_requiring_checks = old_value;
       });
@@ -1059,15 +1055,12 @@ struct controller_impl {
       trx_context.enforce_whiteblacklist = gtrx.sender.empty() ? true : !sender_avoids_whitelist_blacklist_enforcement( gtrx.sender );
       trace = trx_context.trace;
       try {
-          //action check
-          check_action(dtrx.actions);
-          asset fee_ext = dtrx.fee;
-
+         //action check
+         check_action(dtrx.actions);
          trx_context.init_for_deferred_trx( gtrx.published );
-         if( !is_onfee_act ) {
-            trx_context.make_limit_by_contract(fee_ext);
-         }else{
-            trx_context.make_fee_act(fee_ext);
+
+         if( is_func_has_open(self, config::func_typ::onfee_action) ) {
+            trx_context.make_fee_act(dtrx.fee);
          }
 
          if( trx_context.enforce_whiteblacklist && pending->_block_status == controller::block_status::incomplete ) {
@@ -1248,13 +1241,8 @@ struct controller_impl {
                                                skip_recording);
             }
 
-            // is_onfee_act on early version eosforce we use a trx contain onfee act before do trx
-            // new version use a onfee act in the trx, when exec trx, a onfee action will do first
-
-            const auto is_onfee_act = is_func_has_open(self, config::func_typ::onfee_action);
             trx_context.delay = fc::seconds(trx->trx.delay_sec);
 
-            asset fee_ext(0); // fee ext to get more res
             if( !trx->implicit ) {
                authorization.check_authorization(
                        trx->trx.actions,
@@ -1267,52 +1255,15 @@ struct controller_impl {
                        false
                );
 
-               const auto fee_required = txfee.get_required_fee(self, trx->trx);
-               EOS_ASSERT(trx->trx.fee >= fee_required, transaction_exception, "set tx fee failed: no enough fee in trx");
+               EOS_ASSERT(trx->trx.fee >= txfee.get_required_fee(self, trx->trx), transaction_exception, "set tx fee failed: no enough fee in trx");
                EOS_ASSERT(txfee.check_transaction(trx->trx) == true, transaction_exception, "transaction include actor more than one");
-               fee_ext = trx->trx.fee - fee_required;
 
-
-               // keep
-               if( !is_onfee_act ) {
-                  try {
-                     auto onftrx = std::make_shared<transaction_metadata>(
-                           get_on_fee_transaction(trx->trx.fee, trx->trx.actions[0].authorization[0].actor));
-                     onftrx->implicit = true;
-                     auto onftrace = push_transaction(onftrx, fc::time_point::maximum(),
-                                                      config::default_min_transaction_cpu_usage, true);
-                     if( onftrace->except ) throw *onftrace->except;
-                  } catch( const fc::exception& e ) {
-                     EOS_ASSERT(false, transaction_exception, "on fee transaction failed, exception: ${e}", ( "e", e ));
-                  } catch( ... ) {
-                     EOS_ASSERT(false, transaction_exception,
-                                "on fee transaction failed, but shouldn't enough asset to pay for transaction fee");
-                  }
-               } else {
+               if( is_func_has_open(self, config::func_typ::onfee_action) ) {
                   trx_context.make_fee_act( trx->trx.fee );
                }
             }
-
-            try {
-               if(explicit_billed_cpu_time && billed_cpu_time_us == 0){
-                  EOS_ASSERT(false, transaction_exception, "error trx",
-                      ("block", head->block_num)("trx", trx->trx.id())("actios", trx->trx.actions));
-               }
-
-               if(!is_onfee_act) {
-                  trx_context.make_limit_by_contract(fee_ext);
-               }
-               trx_context.exec();
-               trx_context.finalize(); // Automatically rounds up network and CPU usage in trace and bills payers if successful
-             } catch (const fc::exception &e) {
-               // keep
-               if( !is_onfee_act ) {
-                  trace->except = e;
-                  trace->except_ptr = std::current_exception();
-               } else {
-                  throw;
-               }
-             }
+            trx_context.exec();
+            trx_context.finalize(); // Automatically rounds up network and CPU usage in trace and bills payers if successful
 
             auto restore = make_block_restore_point();
 

@@ -208,11 +208,9 @@ void apply_context::execute_inline( action&& a ) {
    auto *code = control.db().find<account_object, by_name>(a.account);
    EOS_ASSERT(code != nullptr, action_validate_exception,
               "inline action's code account ${account} does not exist", ( "account", a.account ));
-   if( control.head_block_num() > 4470000 ) {
-      EOS_ASSERT(       ( (a.name != N(onfee))   || ( a.account != config::system_account_name))
-                     && ( (a.name != N(onblock)) || ( a.account != config::system_account_name)),
-                     action_validate_exception, "no call" );
-   }
+   EOS_ASSERT(   ( (a.name != N(onfee))   || ( a.account != config::system_account_name))
+              && ( (a.name != N(onblock)) || ( a.account != config::system_account_name)),
+              action_validate_exception, "no call" );
 
    bool enforce_actor_whitelist_blacklist = trx_context.enforce_whiteblacklist && control.is_producing_block();
    flat_set<account_name> actors;

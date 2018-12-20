@@ -455,8 +455,6 @@ namespace bacc = boost::accumulators;
       if(fee_payer != name{}) {
          action_traces.emplace_back();
          const auto& fee_act = mk_fee_action(act);
-         // for lock developer 's EOSC before lock genesis user 's EOSC
-         EOS_ASSERT(get_num_config_on_chain(control.db(), name{fee_payer}, -1) != 1, transaction_exception, "locked developer EOSC account");
          add_limit_by_fee(act);
          dispatch_action(action_traces.back(), fee_act);
       }

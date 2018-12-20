@@ -22,11 +22,10 @@
 #include <eosio/chain/wasm_interface.hpp>
 #include <eosio/chain/abi_serializer.hpp>
 
-#include <eosio/chain/config_on_chain.hpp>
-
 #include <eosio/chain/authorization_manager.hpp>
 #include <eosio/chain/resource_limits.hpp>
-// #include <eosio/chain/contract_table_objects.hpp>
+
+#include <eosio/chain/config_on_chain.hpp>
 #include <eosio/chain/config.hpp>
 #include <eosio/chain/txfee_manager.hpp>
 
@@ -502,19 +501,19 @@ void apply_eosio_onfee( apply_context& context ) {
    acnts_tbl.get(data.actor, account_info_data, "account is not found in accounts table");
    eosio_contract_assert(fee <= account_info_data.available, "overdrawn available balance");
 
-   // bps_table
-   auto bps_tbl = native_multi_index<N(bps), memory_db::bp_info>{
-         context, config::system_account_name, config::system_account_name
-   };
-   memory_db::bp_info bp_info_data;
-   bps_tbl.get(data.bpname, bp_info_data, "bpname is not registered");
-
    acnts_tbl.modify(acnts_tbl.find_itr(data.actor), account_info_data, 0,
                     [fee]( memory_db::account_info& a ) {
                        a.available -= fee;
                     });
 
    if( data.bpname != name{} ) {
+      // bps_table
+      auto bps_tbl = native_multi_index<N(bps), memory_db::bp_info>{
+            context, config::system_account_name, config::system_account_name
+      };
+
+      memory_db::bp_info bp_info_data;
+      bps_tbl.get(data.bpname, bp_info_data, "bpname is not registered");
       bps_tbl.modify(bps_tbl.find_itr(data.bpname), bp_info_data, 0, [fee](memory_db::bp_info& a) {
          a.rewards_pool += fee;
       });
