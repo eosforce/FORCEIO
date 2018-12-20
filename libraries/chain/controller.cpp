@@ -708,13 +708,7 @@ struct controller_impl {
    }
 
    // initialize_account init account from genesis;
-   // inactive account freeze(lock) asset by inactive_freeze_percent;
    void initialize_account() {
-      std::set<account_name> active_acc_set;
-      for (const auto &account : conf.active_initial_account_list) {
-         active_acc_set.insert(account.name);
-      }
-
       const auto acc_name_a = N(a);
       auto db = memory_db(self);
       for (const auto &account : conf.genesis.initial_account_list) {
@@ -726,26 +720,10 @@ struct controller_impl {
             acc_name = string_to_name(format_name(name_r).c_str());
          }
 
-         // init asset
-         eosio::chain::asset amount;
-         if (active_acc_set.find(account.name) == active_acc_set.end()) {
-            //issue eoslock token to this account
-            uint64_t eoslock_amount = account.asset.get_amount() * conf.inactive_freeze_percent / 100;
-            db.insert(
-                    config::eoslock_account_name, config::eoslock_account_name, N(accounts), acc_name,
-                     memory_db::eoslock_account{acc_name, eosio::chain::asset(eoslock_amount, symbol(4, "EOSLOCK"))});
-
-            //inactive account freeze(lock) asset
-            amount = account.asset - eosio::chain::asset(eoslock_amount);
-         } else {
-            //active account
-            amount = account.asset;
-         }
-
          // initialize_account_to_table
          db.insert(
                  config::system_account_name, config::system_account_name, N(accounts), acc_name,
-                 memory_db::account_info{acc_name, amount});
+                 memory_db::account_info{acc_name, account.asset});
          const authority auth(public_key);
          create_native_account(acc_name, auth, auth, false);
       }
@@ -822,12 +800,10 @@ struct controller_impl {
       authority system_auth( conf.genesis.initial_key );
       create_native_account( config::system_account_name, system_auth, system_auth, true );
       create_native_account( config::token_account_name, system_auth, system_auth, false );
-      create_native_account( config::eoslock_account_name, system_auth, system_auth, false );
 
       initialize_contract( config::system_account_name, conf.System_code, conf.System_abi, true );
       initialize_contract( config::token_account_name, conf.token_code, conf.token_abi );
       initialize_eos_stats();
-      initialize_contract(config::eoslock_account_name, conf.lock_code, conf.lock_abi);
 
       initialize_account();
       initialize_producer();

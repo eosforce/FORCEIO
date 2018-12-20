@@ -19,7 +19,6 @@ add_subdirectory(test.inline)
 add_subdirectory(System)
 add_subdirectory(System01)
 add_subdirectory(System02)
-add_subdirectory(eosio.lock)
 
 add_subdirectory(hello)
 add_subdirectory(asserter)
