@@ -800,18 +800,20 @@ struct controller_impl {
       authority system_auth( conf.genesis.initial_key );
       create_native_account( config::system_account_name, system_auth, system_auth, true );
       create_native_account( config::token_account_name, system_auth, system_auth, false );
+      create_native_account( config::msig_account_name, system_auth, system_auth, false );
 
       initialize_contract( config::system_account_name, conf.system_code, conf.system_abi, true );
       initialize_contract( config::token_account_name, conf.token_code, conf.token_abi );
+      initialize_contract( config::msig_account_name, conf.msig_code, conf.msig_abi );
+
       initialize_eos_stats();
 
       initialize_account();
       initialize_producer();
       initialize_chain_emergency();
 
-      // vote4ram func, as the early eosforce user's ram not limit
-      // so at first we set freeram to -1 to unlimit user ram
-      set_num_config_on_chain(db, config::res_typ::free_ram_per_account, -1);
+      update_eosio_authority();
+      set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
 
       auto empty_authority = authority(1, {}, {});
       auto active_producers_authority = authority(1, {}, {});
@@ -1296,29 +1298,6 @@ struct controller_impl {
       } FC_CAPTURE_AND_RETHROW((trace))
    } /// push_transaction
 
-
-   // check_func_open
-   void check_func_open() {
-      // when on the specific block : load eosio.msig contract
-      if( is_func_open_in_curr_block( self, config::func_typ::use_msig, 4356456 ) ) {
-         initialize_contract(config::msig_account_name, conf.msig_code, conf.msig_abi, true);
-      }
-
-      // when on the specific block : update auth eosio@active to eosio.prods@active
-      if( is_func_open_in_curr_block( self, config::func_typ::use_eosio_prods) ) {
-         ilog("update auth eosio@active to eosio.prods@active");
-         update_eosio_authority();
-      }
-
-      // vote4ram func, as the early eosforce user's ram not limit
-      // so at first we set freeram to -1 to unlimit user ram
-      // when vote4ram open, change to 8kb per user
-      if( is_func_open_in_curr_block(self, config::func_typ::vote_for_ram) ) {
-         set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
-      }
-   }
-
-
    void start_block( block_timestamp_type when, uint16_t confirm_block_count, controller::block_status s,
                      const optional<block_id_type>& producer_block_id )
    {
@@ -1369,8 +1348,6 @@ struct controller_impl {
                      gp.proposed_schedule.clear();
                   });
             }
-
-         check_func_open();
 
          try {
             auto onbtrx = std::make_shared<transaction_metadata>( get_on_block_transaction() );
