@@ -1912,23 +1912,6 @@ struct controller_impl {
       trx.expiration = self.pending_block_time() + fc::microseconds(999'999); // Round up to nearest second to avoid appearing expired
       return trx;
    }
-
-   signed_transaction get_on_fee_transaction( const asset &fee, const account_name &actor)
-   {
-      action on_fee_act;
-      on_fee_act.account = config::system_account_name;
-      on_fee_act.name = N(onfee);
-      on_fee_act.authorization = vector<permission_level>{{actor, config::active_name}};
-
-      fee_paramter param(actor, fee, self.head_block_header().producer);
-      on_fee_act.data = fc::raw::pack(param);
-
-      signed_transaction trx;
-      trx.actions.emplace_back(std::move(on_fee_act));
-      trx.set_reference_block(self.head_block_id());
-      trx.expiration = self.pending_block_time() + fc::microseconds(999'999); // Round up to nearest second to avoid appearing expired
-      return trx;
-   }
 }; /// controller_impl
 
 const resource_limits_manager&   controller::get_resource_limits_manager()const

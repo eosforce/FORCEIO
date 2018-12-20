@@ -505,19 +505,6 @@ void apply_eosio_onfee( apply_context& context ) {
                     [fee]( memory_db::account_info& a ) {
                        a.available -= fee;
                     });
-
-   if( data.bpname != name{} ) {
-      // bps_table
-      auto bps_tbl = native_multi_index<N(bps), memory_db::bp_info>{
-            context, config::system_account_name, config::system_account_name
-      };
-
-      memory_db::bp_info bp_info_data;
-      bps_tbl.get(data.bpname, bp_info_data, "bpname is not registered");
-      bps_tbl.modify(bps_tbl.find_itr(data.bpname), bp_info_data, 0, [fee](memory_db::bp_info& a) {
-         a.rewards_pool += fee;
-      });
-   }
 }
 
 } } // namespace eosio::chain

@@ -150,7 +150,7 @@ namespace eosiosystem {
                     const block_id_type, const checksum256, const checksum256, const uint32_t schedule_version );
 
       // @abi action
-      void onfee( const account_name actor, const asset fee, const account_name bpname );
+      void onfee( const account_name actor, const asset fee );
 
       // @abi action
       void setemergency( const account_name bpname, const bool emergency );

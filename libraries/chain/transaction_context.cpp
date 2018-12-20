@@ -440,7 +440,7 @@ namespace bacc = boost::accumulators;
    const action transaction_context::mk_fee_action( const action& act ) {
       const auto fee = control.get_txfee_manager().get_required_fee(control, act);
       const bytes param_data = fc::raw::pack(fee_paramter{
-            fee_payer, fee, name{}
+            fee_payer, fee
       });
       return action{
             vector<permission_level>{{fee_payer, config::active_name}},

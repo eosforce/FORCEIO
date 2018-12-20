@@ -233,8 +233,7 @@
        "base": "",
        "fields": [
          {"name":"actor",  "type":"account_name"},
-         {"name":"fee",    "type":"asset"},
-         {"name":"bpname", "type":"account_name"}
+         {"name":"fee",    "type":"asset"}
        ]
      }
   ],
