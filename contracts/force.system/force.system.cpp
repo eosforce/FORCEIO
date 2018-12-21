@@ -9,10 +9,10 @@ namespace eosiosystem {
       const auto& from_act = acnts_tbl.get(from, "from account is not found in accounts table");
       const auto& to_act = acnts_tbl.get(to, "to account is not found in accounts table");
 
-      eosio_assert(quantity.symbol == SYMBOL, "only support EOS which has 4 precision");
+      eosio_assert(quantity.symbol == CORE_SYMBOL, "only support CORE SYMBOL token");
       //from_act.available is already handling fee
       eosio_assert(0 <= quantity.amount && quantity.amount <= from_act.available.amount,
-                   "need 0.0000 EOS < quantity < available balance");
+                   "need 0 < quantity < available balance");
       eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
 
       require_recipient(from);
@@ -55,9 +55,9 @@ namespace eosiosystem {
       bps_table bps_tbl(_self, _self);
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
 
-      eosio_assert(stake.symbol == SYMBOL, "only support EOS which has 4 precision");
+      eosio_assert(stake.symbol == CORE_SYMBOL, "only support CORE SYMBOL token");
       eosio_assert(0 <= stake.amount && stake.amount % 10000 == 0,
-                   "need stake quantity >= 0.0000 EOS and quantity is integer");
+                   "need stake quantity >= 0 and quantity is integer");
 
       int64_t change = 0;
       votes_table votes_tbl(_self, voter);
@@ -109,7 +109,7 @@ namespace eosiosystem {
       const auto& vts = votes_tbl.get(bpname, "voter have not add votes to the the producer yet");
 
       eosio_assert(vts.unstake_height + FROZEN_DELAY < current_block_num(), "unfreeze is not available yet");
-      eosio_assert(0 < vts.unstaking.amount, "need unstaking quantity > 0.0000 EOS");
+      eosio_assert(0 < vts.unstaking.amount, "need unstaking quantity > 0");
 
       acnts_tbl.modify(act, 0, [&]( account_info& a ) {
          a.available += vts.unstaking;
@@ -128,9 +128,9 @@ namespace eosiosystem {
       bps_table bps_tbl(_self, _self);
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
 
-      eosio_assert(stake.symbol == SYMBOL, "only support EOS which has 4 precision");
+      eosio_assert(stake.symbol == CORE_SYMBOL, "only support CORE SYMBOL token");
       eosio_assert(0 <= stake.amount && stake.amount % 10000 == 0,
-                   "need stake quantity >= 0.0000 EOS and quantity is integer");
+                   "need stake quantity >= 0 and quantity is integer");
 
       int64_t change = 0;
       votes4ram_table votes_tbl(_self, voter);
@@ -197,7 +197,7 @@ namespace eosiosystem {
       const auto& vts = votes_tbl.get(bpname, "voter have not add votes to the the producer yet");
 
       eosio_assert(vts.unstake_height + FROZEN_DELAY < current_block_num(), "unfreeze is not available yet");
-      eosio_assert(0 < vts.unstaking.amount, "need unstaking quantity > 0.0000 EOS");
+      eosio_assert(0 < vts.unstaking.amount, "need unstaking quantity > 0");
 
       acnts_tbl.modify(act, 0, [&]( account_info& a ) {
          a.available += vts.unstaking;
@@ -226,8 +226,7 @@ namespace eosiosystem {
       eosio_assert(0 < newest_total_voteage, "claim is not available yet");
 
       int128_t amount_voteage = ( int128_t ) bp.rewards_pool.amount * ( int128_t ) newest_voteage;
-      asset reward = asset(static_cast<int64_t>(( int128_t ) amount_voteage / ( int128_t ) newest_total_voteage ),
-                           SYMBOL);
+      asset reward = asset(static_cast<int64_t>(( int128_t ) amount_voteage / ( int128_t ) newest_total_voteage ));
       eosio_assert(0 <= reward.amount && reward.amount <= bp.rewards_pool.amount,
                    "need 0 <= claim reward quantity <= rewards_pool");
 
@@ -287,7 +286,7 @@ namespace eosiosystem {
          //reward block.one
          const auto& b1 = acnts_tbl.get(N(b1), "b1 is not found in accounts table");
          acnts_tbl.modify(b1, 0, [&]( account_info& a ) {
-            a.available += asset(BLOCK_REWARDS_B1 * UPDATE_CYCLE, SYMBOL);
+            a.available += asset(BLOCK_REWARDS_B1 * UPDATE_CYCLE);
          });
 
          update_elected_bps();
@@ -388,14 +387,14 @@ namespace eosiosystem {
          }
          const auto& act = acnts_tbl.get(it->name, "bpname is not found in accounts table");
          acnts_tbl.modify(act, 0, [&]( account_info& a ) {
-            a.available += asset(bp_account_reward, SYMBOL);
+            a.available += asset(bp_account_reward);
          });
 
          //reward pool
          auto bp_rewards_pool = bp_reward * 70 / 100 * ( 10000 - it->commission_rate ) / 10000;
          const auto& bp = bps_tbl.get(it->name, "bpname is not registered");
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-            b.rewards_pool += asset(bp_rewards_pool, SYMBOL);
+            b.rewards_pool += asset(bp_rewards_pool);
          });
 
          sum_bps_reward += ( bp_account_reward + bp_rewards_pool );
@@ -416,7 +415,7 @@ namespace eosiosystem {
       const auto& eosfund = acnts_tbl.get(N(devfund), "eosfund1 is not found in accounts table");
       auto total_eosfund_reward = BLOCK_REWARDS_BP - sum_bps_reward;
       acnts_tbl.modify(eosfund, 0, [&]( account_info& a ) {
-         a.available += asset(total_eosfund_reward, SYMBOL);
+         a.available += asset(total_eosfund_reward);
       });
    }
 

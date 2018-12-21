@@ -211,7 +211,7 @@ void apply_eosio_setfee(apply_context& context) {
 
    // a max will need check
    EOS_ASSERT(act.fee.get_amount() <= (200 * 10000),
-         invalid_action_args_exception, "fee can not too mush, more then 200.0000 EOS");
+         invalid_action_args_exception, "fee can not too mush, more then 200");
 
    // warning
    const auto key = boost::make_tuple(act.account, act.action);
