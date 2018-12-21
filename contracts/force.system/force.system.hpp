@@ -17,8 +17,6 @@ namespace eosiosystem {
    using eosio::block_timestamp;
    using std::string;
 
-
-   static constexpr uint64_t SYMBOL = S(4, EOS);
    static constexpr uint32_t FROZEN_DELAY = 3 * 24 * 60 * 20; //3*24*60*20*3s;
    static constexpr int NUM_OF_TOP_BPS = 23;
    static constexpr int BLOCK_REWARDS_BP = 9 * 10000; //9.0000 EOS
@@ -33,7 +31,7 @@ namespace eosiosystem {
 
       struct account_info {
          account_name name;
-         asset available = asset(0, SYMBOL);
+         asset available = asset(0);
 
          uint64_t primary_key() const { return name; }
 
@@ -42,10 +40,10 @@ namespace eosiosystem {
 
       struct vote_info {
          account_name bpname;
-         asset staked = asset(0, SYMBOL);
+         asset staked = asset(0);
          uint32_t voteage_update_height = current_block_num();
          int64_t voteage = 0; // asset.amount * block height
-         asset unstaking = asset(0, SYMBOL);
+         asset unstaking = asset(0);
          uint32_t unstake_height = current_block_num();
 
          uint64_t primary_key() const { return bpname; }
@@ -55,7 +53,7 @@ namespace eosiosystem {
 
       struct vote4ram_info {
          account_name voter;
-         asset staked = asset(0, SYMBOL);
+         asset staked = asset(0);
          uint64_t primary_key() const { return voter; }
 
          EOSLIB_SERIALIZE(vote4ram_info, (voter)(staked))
@@ -66,7 +64,7 @@ namespace eosiosystem {
          public_key block_signing_key;
          uint32_t commission_rate = 0; // 0 - 10000 for 0% - 100%
          int64_t total_staked = 0;
-         asset rewards_pool = asset(0, SYMBOL);
+         asset rewards_pool = asset(0);
          int64_t total_voteage = 0; // asset.amount * block height
          uint32_t voteage_update_height = current_block_num();
          std::string url;
