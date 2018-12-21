@@ -372,25 +372,15 @@ namespace eosio {
          const auto genesis_file = app().config_dir() / "genesis.json";
          gs = fc::json::from_file(genesis_file).as<genesis_state>();
 
-         const auto spec_acc_in_gene = N(a);
          const auto owner_pm_lv = vector<permission_level_weight>{{{1, config::owner_name}, 1}};
          const auto active_pm_lv = vector<permission_level_weight>{{{1, config::active_name}, 1}};
 
          for( const auto& account : gs.initial_account_list ) {
             const auto& public_key = account.key;
-            account_name acc_name = account.name;
-            if( acc_name == spec_acc_in_gene ) {
-               const auto pk_str = std::string(public_key);
-               const auto name_r = pk_str.substr(pk_str.size() - 12, 12);
-               acc_name = string_to_name(format_name(name_r).c_str());
-               ilog("name:${pk_str} -> ${name_r} -> ${acc}, publickey: ${pb}",
-                    ("pk_str", pk_str)("name_r", name_r)("acc", acc_name)("pb", public_key));
-            }
-
-            add(db, vector<key_weight>(1, {public_key, 1}), acc_name, config::owner_name);
-            add(db, owner_pm_lv, acc_name, config::owner_name);
-            add(db, vector<key_weight>(1, {public_key, 1}), acc_name, config::active_name);
-            add(db, active_pm_lv, acc_name, config::active_name);
+            add(db, vector<key_weight>(1, {public_key, 1}), account.name, config::owner_name);
+            add(db, owner_pm_lv, account.name, config::owner_name);
+            add(db, vector<key_weight>(1, {public_key, 1}), account.name, config::active_name);
+            add(db, active_pm_lv, account.name, config::active_name);
          }
       }
    }
