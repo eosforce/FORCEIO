@@ -49,6 +49,21 @@ def sleep(t):
     time.sleep(t)
     print('resume')
 
+def replaceFile(file, old, new):
+    try:
+        f = open(file,'r+')
+        all_lines = f.readlines()
+        f.seek(0)
+        f.truncate()
+        for line in all_lines:
+            line = line.replace(old, new)
+            f.write(line)
+        f.close()
+    except Exception,e:
+        print('bios-boot-eosforce.py: replace %s frome %s to %s err by ' % (file, old, new))
+        print(e)
+        sys.exit(1)
+
 def importKeys():
     keys = {}
     for a in datas["initAccountsKeys"]:
@@ -56,6 +71,9 @@ def importKeys():
         if not key in keys:
             keys[key] = True
             run(args.cleos + 'wallet import --private-key ' + key)
+
+def intToCurrency(i):
+    return '%d.%04d %s' % (i // 10000, i % 10000, args.symbol)
 
 def createNodeDir(nodeIndex, bpaccount, key):
     dir = args.nodes_dir + ('%02d-' % nodeIndex) + bpaccount['name'] + '/'
@@ -162,24 +180,26 @@ def stepMakeGenesis():
     run('cp ' + args.contracts_dir + '/eosio.msig/eosio.msig.wasm ' + os.path.abspath(args.config_dir))
 
     run('cp ./genesis-data/genesis.json ' + os.path.abspath(args.config_dir))
+    replaceFile(os.path.abspath(args.config_dir) + "/genesis.json", "#CORE_SYMBOL#", args.symbol)
     run('cp ./genesis-data/key.json ' + os.path.abspath(args.config_dir) + '/keys/')
     run('cp ./genesis-data/sigkey.json ' + os.path.abspath(args.config_dir) + '/keys/')
 
 def setFuncStartBlock(func_typ, num):
     run(args.cleos +
         'push action eosio setconfig ' +
-        ('\'{"typ":"%s","num":%s,"key":"","fee":"0.0000 EOS"}\' ' % (func_typ, num)) +
+        ('\'{"typ":"%s","num":%s,"key":"","fee":"%s"}\' ' % (func_typ, num, intToCurrency(0))) +
         '-p force.config' )
 
 def setFee(account, act, fee, cpu, net, ram):
     run(args.cleos +
         'set setfee ' +
         ('%s %s ' % (account, act)) +
-        ('"%s EOS" %d %d %d' % (fee, cpu, net, ram)))
+        '"' + intToCurrency(fee) + '" ' +
+        ('%d %d %d' % (cpu, net, ram)))
 
 def stepSetFuncs():
     # we need set some func start block num
-    setFee('eosio', 'setconfig', '0.0100', 100000, 1000000, 1000)
+    setFee('eosio', 'setconfig', 100, 100000, 1000000, 1000)
 
     # some config to set
 
@@ -228,6 +248,7 @@ parser.add_argument('--keosd', metavar='', help="Path to keosd binary", default=
 parser.add_argument('--log-path', metavar='', help="Path to log file", default='./output.log')
 parser.add_argument('--wallet-dir', metavar='', help="Path to wallet directory", default='./wallet/')
 parser.add_argument('--config-dir', metavar='', help="Path to config directory", default='./config')
+parser.add_argument('--symbol', metavar='', help="The core symbol", default='SYS')
 parser.add_argument('-a', '--all', action='store_true', help="Do everything marked with (*)")
 
 for (flag, command, function, inAll, help) in commands:
