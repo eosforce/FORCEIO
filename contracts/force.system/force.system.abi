@@ -1,6 +1,9 @@
 {
   "version": "eosio::abi/1.0",
   "types": [{
+      "new_type_name": "account_name",
+      "type": "name"
+   },{
       "new_type_name": "permission_name",
       "type": "name"
    },{
@@ -230,8 +233,7 @@
        "base": "",
        "fields": [
          {"name":"actor",  "type":"account_name"},
-         {"name":"fee",    "type":"asset"},
-         {"name":"bpname", "type":"account_name"}
+         {"name":"fee",    "type":"asset"}
        ]
      }
   ],

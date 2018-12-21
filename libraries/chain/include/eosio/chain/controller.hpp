@@ -75,19 +75,12 @@ namespace eosio { namespace chain {
             genesis_state            genesis;
             wasm_interface::vm_type  wasm_runtime = chain::config::default_wasm_runtime;
 
-            std::vector<account_tuple>  active_initial_account_list;
-            uint32_t                    inactive_freeze_percent = 80;
-
-            bytes                                    System_code;
-            bytes                                    System_abi;
+            bytes                                    system_code;
+            bytes                                    system_abi;
             bytes                                    token_code;
             bytes                                    token_abi;
-            bytes                                    lock_code;
-            bytes                                    lock_abi;
             bytes                                    msig_code;
             bytes                                    msig_abi;
-            bytes                                    System01_code;
-            bytes                                    System01_abi;
 
             db_read_mode             read_mode              = db_read_mode::SPECULATIVE;
             validation_mode          block_validation_mode  = validation_mode::FULL;
@@ -172,7 +165,6 @@ namespace eosio { namespace chain {
          const authorization_manager&          get_authorization_manager()const;
          authorization_manager&                get_mutable_authorization_manager();
          const txfee_manager&                  get_txfee_manager()const;
-         txfee_manager&                        get_mutable_txfee_manager();
 
          const flat_set<account_name>&   get_actor_whitelist() const;
          const flat_set<account_name>&   get_actor_blacklist() const;
@@ -334,13 +326,9 @@ FC_REFLECT( eosio::chain::controller::config,
             (contracts_console)
             (genesis)
             (wasm_runtime)
-            (active_initial_account_list)
-            (inactive_freeze_percent)
             (token_code)(token_abi)
-            (System_code)(System_abi)
-            (lock_code)(lock_abi)
+            (system_code)(system_abi)
             (msig_code)(msig_abi)
-            (System01_code)(System01_abi)
             (resource_greylist)
             (trusted_producers)
           )

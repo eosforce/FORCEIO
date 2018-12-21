@@ -193,8 +193,6 @@ namespace eosio { namespace chain {
                                     3040013, "Transaction is too big" )
       FC_DECLARE_DERIVED_EXCEPTION( unknown_transaction_compression, transaction_exception,
                                     3040014, "Unknown transaction compression" )
-      FC_DECLARE_DERIVED_EXCEPTION( tx_too_much, transaction_exception,
-                                    3040100, "block txs must less than config::block_max_tx_num" )
 
 
    FC_DECLARE_DERIVED_EXCEPTION( action_validate_exception, chain_exception,

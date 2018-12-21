@@ -25,11 +25,7 @@ namespace config{
    };
 
    namespace func_typ{
-      static const auto vote_for_ram = N(f.ram4vote);
       static const auto onfee_action = N(f.onfeeact);
-      static const auto use_system01 = N(f.system1);
-      static const auto use_msig     = N(f.msig);
-      static const auto use_eosio_prods     = N(f.prods);
    }
 };
 

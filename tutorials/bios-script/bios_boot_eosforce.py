@@ -121,7 +121,7 @@ def stepCreateWallet():
 
 def stepStartProducers():
     startProducers(datas["initProducers"], datas["initProducerSigKeys"])
-    sleep(3)
+    sleep(5)
     stepSetFuncs()
 
 def stepCreateNodeDirs():
@@ -154,30 +154,16 @@ def stepMakeGenesis():
 
     run('cp ' + args.contracts_dir + '/eosio.token/eosio.token.abi ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/eosio.token/eosio.token.wasm ' + os.path.abspath(args.config_dir))
-    run('cp ' + args.contracts_dir + '/System02/System02.abi ' + os.path.abspath(args.config_dir))
-    run('cp ' + args.contracts_dir + '/System02/System02.wasm ' + os.path.abspath(args.config_dir))
+    run('cp ' + args.contracts_dir + '/force.system/force.system.abi ' + os.path.abspath(args.config_dir))
+    run('cp ' + args.contracts_dir + '/force.system/force.system.wasm ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/eosio.bios/eosio.bios.abi ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/eosio.bios/eosio.bios.wasm ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/eosio.msig/eosio.msig.abi ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/eosio.msig/eosio.msig.wasm ' + os.path.abspath(args.config_dir))
-    run('cp ' + args.contracts_dir + '/eosio.lock/eosio.lock.abi ' + os.path.abspath(args.config_dir))
-    run('cp ' + args.contracts_dir + '/eosio.lock/eosio.lock.wasm ' + os.path.abspath(args.config_dir))
 
-    # testnet will use new System contract from start
-    run('cp ' + args.contracts_dir + '/System02/System02.abi ' + os.path.abspath(args.config_dir) + "/System01.abi")
-    run('cp ' + args.contracts_dir + '/System02/System02.wasm ' + os.path.abspath(args.config_dir) + "/System01.wasm")
-
-    # testnet will use new System contract from start
-    run('cp ' + args.contracts_dir + '/System02/System02.abi ' + os.path.abspath(args.config_dir) + "/System.abi")
-    run('cp ' + args.contracts_dir + '/System02/System02.wasm ' + os.path.abspath(args.config_dir) + "/System.wasm")
-
-    run(args.root + 'build/programs/genesis/genesis')
-    run('mv ./genesis.json ' + os.path.abspath(args.config_dir))
-
-    run('mv ./key.json ' + os.path.abspath(args.config_dir) + '/keys/')
-    run('mv ./sigkey.json ' + os.path.abspath(args.config_dir) + '/keys/')
-
-    run('echo "[]" >> ' + os.path.abspath(args.config_dir) + '/activeacc.json')
+    run('cp ./genesis-data/genesis.json ' + os.path.abspath(args.config_dir))
+    run('cp ./genesis-data/key.json ' + os.path.abspath(args.config_dir) + '/keys/')
+    run('cp ./genesis-data/sigkey.json ' + os.path.abspath(args.config_dir) + '/keys/')
 
 def setFuncStartBlock(func_typ, num):
     run(args.cleos +
@@ -194,8 +180,8 @@ def setFee(account, act, fee, cpu, net, ram):
 def stepSetFuncs():
     # we need set some func start block num
     setFee('eosio', 'setconfig', '0.0100', 100000, 1000000, 1000)
-    setFuncStartBlock('f.ram4vote', 10)
-    setFuncStartBlock('f.onfeeact', 15)
+
+    # some config to set
 
 def clearData():
     stepKillAll()

@@ -289,7 +289,6 @@ class producer_plugin_impl : public std::enable_shared_from_this<producer_plugin
 
          fc_dlog(_log, "received incoming block ${id}", ("id", id));
 
-         EOS_ASSERT( block->transactions.size() <= config::block_max_tx_num, tx_too_much, "block txs must less than config::block_max_tx_num");
          EOS_ASSERT( block->timestamp < (fc::time_point::now() + fc::seconds( 7 )), block_from_the_future,
                      "received a block from the future, ignoring it: ${id}", ("id", id) );
 
@@ -988,9 +987,9 @@ fc::time_point producer_plugin_impl::calculate_pending_block_time() const {
    fc::time_point block_time = base + fc::microseconds(min_time_to_next_block);
 
 
-  //  if((block_time - now) < fc::microseconds(config::block_interval_us/10) ) {     // we must sleep for at least 50ms
-  //     block_time += fc::microseconds(config::block_interval_us);
-  //  }
+   if((block_time - now) < fc::microseconds(config::block_interval_us/10) ) {     // we must sleep for at least 50ms
+      block_time += fc::microseconds(config::block_interval_us);
+   }
    return block_time;
 }
 
@@ -1035,16 +1034,8 @@ producer_plugin_impl::start_block_result producer_plugin_impl::start_block(bool 
       elog("Not producing block because production is explicitly paused");
       _pending_block_mode = pending_block_mode::speculating;
    } else if ( _max_irreversible_block_age_us.count() >= 0 && irreversible_block_age >= _max_irreversible_block_age_us ) {
-      const auto lib_num = chain.last_irreversible_block_num();
-      const auto lib = chain.fetch_block_by_number(lib_num);
-      if (lib) {
-        on_irreversible_block(lib);
-      }
-
-      if (_max_irreversible_block_age_us.count() >= 0 && get_irreversible_block_age() >= _max_irreversible_block_age_us) {
-        elog("Not producing block because the irreversible block is too old [age:${age}s, max:${max}s]", ("age", irreversible_block_age.count() / 1'000'000)( "max", _max_irreversible_block_age_us.count() / 1'000'000 ));
-        _pending_block_mode = pending_block_mode::speculating;
-      }
+      elog("Not producing block because the irreversible block is too old [age:${age}s, max:${max}s]", ("age", irreversible_block_age.count() / 1'000'000)( "max", _max_irreversible_block_age_us.count() / 1'000'000 ));
+      _pending_block_mode = pending_block_mode::speculating;
    }
 
    if (_pending_block_mode == pending_block_mode::producing) {
@@ -1480,7 +1471,6 @@ void producer_plugin_impl::produce_block() {
    const auto& hbs = chain.head_block_state();
    EOS_ASSERT(pbs, missing_pending_block_state, "pending_block_state does not exist but it should, another plugin may have corrupted it");
    auto signature_provider_itr = _signature_providers.find( pbs->block_signing_key );
-   EOS_ASSERT(pbs->block->transactions.size() <= config::block_max_tx_num, tx_too_much, "block txs must less than config::block_max_tx_num");
 
    EOS_ASSERT(signature_provider_itr != _signature_providers.end(), producer_priv_key_not_found, "Attempting to produce a block for which we don't have the private key");
 

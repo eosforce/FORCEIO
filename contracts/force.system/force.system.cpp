@@ -1,4 +1,4 @@
-#include "System02.hpp"
+#include "force.system.hpp"
 
 namespace eosiosystem {
 
@@ -294,21 +294,7 @@ namespace eosiosystem {
       }
    }
 
-   void system_contract::onfee( const account_name actor, const asset fee, const account_name bpname ) {
-      accounts_table acnts_tbl(_self, _self);
-      const auto& act = acnts_tbl.get(actor, "account is not found in accounts table");
-      eosio_assert(fee.amount <= act.available.amount, "overdrawn available balance");
-
-      bps_table bps_tbl(_self, _self);
-      const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
-
-      acnts_tbl.modify(act, 0, [&]( account_info& a ) {
-         a.available -= fee;
-      });
-
-      bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-         b.rewards_pool += fee;
-      });
+   void system_contract::onfee( const account_name actor, const asset fee ) {
    }
 
    void system_contract::setemergency( const account_name bpname, const bool emergency ) {

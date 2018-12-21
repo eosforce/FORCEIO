@@ -38,8 +38,8 @@ namespace eosio { namespace chain {
 
          void init_for_deferred_trx( fc::time_point published );
 
-         // make_fee_act insert onfee act in trx
-         void make_fee_act( const asset& require_fee );
+         // set_fee_data insert onfee act in trx
+         void set_fee_data( const asset& require_fee = asset{0} );
 
          void exec();
          void finalize();
@@ -68,7 +68,6 @@ namespace eosio { namespace chain {
 
          const action mk_fee_action( const action& act );
          void dispatch_fee_action( vector<action_trace>& trace, const action& act );
-         void make_limit_by_contract( const asset &fee_ext );
          void add_limit_by_fee( const action &act );
 
          void add_ram_usage( account_name account, int64_t ram_delta );

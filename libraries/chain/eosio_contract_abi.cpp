@@ -6,7 +6,7 @@ namespace eosio { namespace chain {
 vector<type_def> common_type_defs() {
    vector<type_def> types;
 
-//   types.push_back( type_def{"account_name", "name"} );
+   types.push_back( type_def{"account_name", "name"} );
    types.push_back( type_def{"permission_name", "name"} );
    types.push_back( type_def{"action_name", "name"} );
    types.push_back( type_def{"table_name", "name"} );
@@ -66,7 +66,6 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
       "transaction", "transaction_header", {
          {"context_free_actions", "action[]"},
          {"actions", "action[]"},
-         {"fee", "asset"},
          {"transaction_extensions", "extension[]"}
       }
    });
@@ -224,8 +223,7 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
    eos_abi.structs.emplace_back( struct_def {
          "onfee", "", {
                {"actor",  "account_name"},
-               {"fee",    "asset"},
-               {"bpname", "account_name"},
+               {"fee",    "asset"}
          }
    });
 

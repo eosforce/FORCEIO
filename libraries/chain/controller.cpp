@@ -708,13 +708,7 @@ struct controller_impl {
    }
 
    // initialize_account init account from genesis;
-   // inactive account freeze(lock) asset by inactive_freeze_percent;
    void initialize_account() {
-      std::set<account_name> active_acc_set;
-      for (const auto &account : conf.active_initial_account_list) {
-         active_acc_set.insert(account.name);
-      }
-
       const auto acc_name_a = N(a);
       auto db = memory_db(self);
       for (const auto &account : conf.genesis.initial_account_list) {
@@ -726,26 +720,10 @@ struct controller_impl {
             acc_name = string_to_name(format_name(name_r).c_str());
          }
 
-         // init asset
-         eosio::chain::asset amount;
-         if (active_acc_set.find(account.name) == active_acc_set.end()) {
-            //issue eoslock token to this account
-            uint64_t eoslock_amount = account.asset.get_amount() * conf.inactive_freeze_percent / 100;
-            db.insert(
-                    config::eoslock_account_name, config::eoslock_account_name, N(accounts), acc_name,
-                     memory_db::eoslock_account{acc_name, eosio::chain::asset(eoslock_amount, symbol(4, "EOSLOCK"))});
-
-            //inactive account freeze(lock) asset
-            amount = account.asset - eosio::chain::asset(eoslock_amount);
-         } else {
-            //active account
-            amount = account.asset;
-         }
-
          // initialize_account_to_table
          db.insert(
                  config::system_account_name, config::system_account_name, N(accounts), acc_name,
-                 memory_db::account_info{acc_name, amount});
+                 memory_db::account_info{acc_name, account.asset});
          const authority auth(public_key);
          create_native_account(acc_name, auth, auth, false);
       }
@@ -819,23 +797,24 @@ struct controller_impl {
       authorization.initialize_database();
       resource_limits.initialize_database();
 
-      authority system_auth( conf.genesis.initial_key );
+      authority system_auth(conf.genesis.initial_key);
       create_native_account( config::system_account_name, system_auth, system_auth, true );
       create_native_account( config::token_account_name, system_auth, system_auth, false );
-      create_native_account( config::eoslock_account_name, system_auth, system_auth, false );
+      create_native_account( config::msig_account_name, system_auth, system_auth, false );
 
-      initialize_contract( config::system_account_name, conf.System_code, conf.System_abi, true );
+      initialize_contract( config::system_account_name, conf.system_code, conf.system_abi, true );
       initialize_contract( config::token_account_name, conf.token_code, conf.token_abi );
+      initialize_contract( config::msig_account_name, conf.msig_code, conf.msig_abi );
+
       initialize_eos_stats();
-      initialize_contract(config::eoslock_account_name, conf.lock_code, conf.lock_abi);
 
       initialize_account();
       initialize_producer();
       initialize_chain_emergency();
 
-      // vote4ram func, as the early eosforce user's ram not limit
-      // so at first we set freeram to -1 to unlimit user ram
-      set_num_config_on_chain(db, config::res_typ::free_ram_per_account, -1);
+      update_eosio_authority();
+      set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
+      set_num_config_on_chain(db, config::func_typ::onfee_action, 1);
 
       auto empty_authority = authority(1, {}, {});
       auto active_producers_authority = authority(1, {}, {});
@@ -1040,10 +1019,6 @@ struct controller_impl {
          return trace;
       }
 
-      // is_onfee_act on early version eosforce we use a trx contain onfee act before do trx
-      // new version use a onfee act in the trx, when exec trx, a onfee action will do first
-      const auto is_onfee_act = is_func_has_open(self, config::func_typ::onfee_action);
-
       auto reset_in_trx_requiring_checks = fc::make_scoped_exit([old_value=in_trx_requiring_checks,this](){
          in_trx_requiring_checks = old_value;
       });
@@ -1059,15 +1034,12 @@ struct controller_impl {
       trx_context.enforce_whiteblacklist = gtrx.sender.empty() ? true : !sender_avoids_whitelist_blacklist_enforcement( gtrx.sender );
       trace = trx_context.trace;
       try {
-          //action check
-          check_action(dtrx.actions);
-          asset fee_ext = dtrx.fee;
-
+         //action check
+         check_action(dtrx.actions);
          trx_context.init_for_deferred_trx( gtrx.published );
-         if( !is_onfee_act ) {
-            trx_context.make_limit_by_contract(fee_ext);
-         }else{
-            trx_context.make_fee_act(fee_ext);
+
+         if( is_func_has_open(self, config::func_typ::onfee_action) ) {
+            trx_context.set_fee_data();
          }
 
          if( trx_context.enforce_whiteblacklist && pending->_block_status == controller::block_status::incomplete ) {
@@ -1171,7 +1143,7 @@ struct controller_impl {
    const transaction_receipt& push_receipt( const T& trx, transaction_receipt_header::status_enum status,
                                             uint64_t cpu_usage_us, uint64_t net_usage ) {
       uint64_t net_usage_words = net_usage / 8;
-      // EOS_ASSERT( net_usage_words*8 == net_usage, transaction_exception, "net_usage is not divisible by 8" );
+      EOS_ASSERT( net_usage_words*8 == net_usage, transaction_exception, "net_usage is not divisible by 8" );
       pending->_pending_block_state->block->transactions.emplace_back( trx );
       transaction_receipt& r = pending->_pending_block_state->block->transactions.back();
       r.cpu_usage_us         = cpu_usage_us;
@@ -1200,9 +1172,6 @@ struct controller_impl {
    void check_action( const vector<action>& actions ) const {
       const auto chain_status = check_chainstatus();
       for( const auto& _a : actions ) {
-         EOS_ASSERT(_a.data.size() < config::default_trx_size,
-                    invalid_action_args_exception,
-                    "must less than 100 * 1024 bytes");
          EOS_ASSERT(( !chain_status
                       || _a.name == N(setemergency)
                       || _a.name == N(onblock)
@@ -1223,7 +1192,6 @@ struct controller_impl {
                                            bool explicit_billed_cpu_time = false )
    {
       EOS_ASSERT(deadline != fc::time_point(), transaction_exception, "deadline cannot be uninitialized");
-      EOS_ASSERT(trx->trx.context_free_actions.size()==0, transaction_exception, "context free actions size should be zero!");
       check_action(trx->trx.actions);
 
       transaction_trace_ptr trace;
@@ -1248,14 +1216,9 @@ struct controller_impl {
                                                skip_recording);
             }
 
-            // is_onfee_act on early version eosforce we use a trx contain onfee act before do trx
-            // new version use a onfee act in the trx, when exec trx, a onfee action will do first
-
-            const auto is_onfee_act = is_func_has_open(self, config::func_typ::onfee_action);
             trx_context.delay = fc::seconds(trx->trx.delay_sec);
 
-            asset fee_ext(0); // fee ext to get more res
-            if( !trx->implicit ) {
+            if( !self.skip_auth_check() && !trx->implicit ) {
                authorization.check_authorization(
                        trx->trx.actions,
                        trx->recover_keys( chain_id ),
@@ -1266,53 +1229,14 @@ struct controller_impl {
                                  std::placeholders::_1)*/,
                        false
                );
-
-               const auto fee_required = txfee.get_required_fee(self, trx->trx);
-               EOS_ASSERT(trx->trx.fee >= fee_required, transaction_exception, "set tx fee failed: no enough fee in trx");
-               EOS_ASSERT(txfee.check_transaction(trx->trx) == true, transaction_exception, "transaction include actor more than one");
-               fee_ext = trx->trx.fee - fee_required;
-
-
-               // keep
-               if( !is_onfee_act ) {
-                  try {
-                     auto onftrx = std::make_shared<transaction_metadata>(
-                           get_on_fee_transaction(trx->trx.fee, trx->trx.actions[0].authorization[0].actor));
-                     onftrx->implicit = true;
-                     auto onftrace = push_transaction(onftrx, fc::time_point::maximum(),
-                                                      config::default_min_transaction_cpu_usage, true);
-                     if( onftrace->except ) throw *onftrace->except;
-                  } catch( const fc::exception& e ) {
-                     EOS_ASSERT(false, transaction_exception, "on fee transaction failed, exception: ${e}", ( "e", e ));
-                  } catch( ... ) {
-                     EOS_ASSERT(false, transaction_exception,
-                                "on fee transaction failed, but shouldn't enough asset to pay for transaction fee");
-                  }
-               } else {
-                  trx_context.make_fee_act( trx->trx.fee );
-               }
             }
-
-            try {
-               if(explicit_billed_cpu_time && billed_cpu_time_us == 0){
-                  EOS_ASSERT(false, transaction_exception, "error trx",
-                      ("block", head->block_num)("trx", trx->trx.id())("actios", trx->trx.actions));
-               }
-
-               if(!is_onfee_act) {
-                  trx_context.make_limit_by_contract(fee_ext);
-               }
-               trx_context.exec();
-               trx_context.finalize(); // Automatically rounds up network and CPU usage in trace and bills payers if successful
-             } catch (const fc::exception &e) {
-               // keep
-               if( !is_onfee_act ) {
-                  trace->except = e;
-                  trace->except_ptr = std::current_exception();
-               } else {
-                  throw;
-               }
-             }
+			
+		      if( is_func_has_open(self, config::func_typ::onfee_action) ) {
+            	trx_context.set_fee_data();
+            }
+			   
+            trx_context.exec();
+            trx_context.finalize(); // Automatically rounds up network and CPU usage in trace and bills payers if successful
 
             auto restore = make_block_restore_point();
 
@@ -1369,34 +1293,6 @@ struct controller_impl {
       } FC_CAPTURE_AND_RETHROW((trace))
    } /// push_transaction
 
-
-   // check_func_open
-   void check_func_open() {
-      // when on the specific block : load new System contract
-      if( is_func_open_in_curr_block( self, config::func_typ::use_system01, 3385100 ) ) {
-         initialize_contract(config::system_account_name, conf.System01_code, conf.System01_abi, true);
-      }
-
-      // when on the specific block : load eosio.msig contract
-      if( is_func_open_in_curr_block( self, config::func_typ::use_msig, 4356456 ) ) {
-         initialize_contract(config::msig_account_name, conf.msig_code, conf.msig_abi, true);
-      }
-
-      // when on the specific block : update auth eosio@active to eosio.prods@active
-      if( is_func_open_in_curr_block( self, config::func_typ::use_eosio_prods) ) {
-         ilog("update auth eosio@active to eosio.prods@active");
-         update_eosio_authority();
-      }
-
-      // vote4ram func, as the early eosforce user's ram not limit
-      // so at first we set freeram to -1 to unlimit user ram
-      // when vote4ram open, change to 8kb per user
-      if( is_func_open_in_curr_block(self, config::func_typ::vote_for_ram) ) {
-         set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
-      }
-   }
-
-
    void start_block( block_timestamp_type when, uint16_t confirm_block_count, controller::block_status s,
                      const optional<block_id_type>& producer_block_id )
    {
@@ -1447,8 +1343,6 @@ struct controller_impl {
                      gp.proposed_schedule.clear();
                   });
             }
-
-         check_func_open();
 
          try {
             auto onbtrx = std::make_shared<transaction_metadata>( get_on_block_transaction() );
@@ -1526,11 +1420,7 @@ struct controller_impl {
             bool transaction_can_fail = receipt.status == transaction_receipt_header::hard_fail && receipt.trx.contains<transaction_id_type>();
             if( transaction_failed && !transaction_can_fail) {
                edump((*trace));
-               // the eosio 's block not contain the block which has error,
-               // so general a block 's push_transaction func called by apply_block in other pb should no exception.
-               // but in eosforce block will include error, this will make chain error,
-               // so eosforce should no throw
-               // throw *trace->except;
+               throw *trace->except;
             }
 
             EOS_ASSERT( pending->_pending_block_state->block->transactions.size() > 0,
@@ -2017,23 +1907,6 @@ struct controller_impl {
       trx.expiration = self.pending_block_time() + fc::microseconds(999'999); // Round up to nearest second to avoid appearing expired
       return trx;
    }
-
-   signed_transaction get_on_fee_transaction( const asset &fee, const account_name &actor)
-   {
-      action on_fee_act;
-      on_fee_act.account = config::system_account_name;
-      on_fee_act.name = N(onfee);
-      on_fee_act.authorization = vector<permission_level>{{actor, config::active_name}};
-
-      fee_paramter param(actor, fee, self.head_block_header().producer);
-      on_fee_act.data = fc::raw::pack(param);
-
-      signed_transaction trx;
-      trx.actions.emplace_back(std::move(on_fee_act));
-      trx.set_reference_block(self.head_block_id());
-      trx.expiration = self.pending_block_time() + fc::microseconds(999'999); // Round up to nearest second to avoid appearing expired
-      return trx;
-   }
 }; /// controller_impl
 
 const resource_limits_manager&   controller::get_resource_limits_manager()const
@@ -2055,10 +1928,6 @@ authorization_manager&         controller::get_mutable_authorization_manager()
 }
 
 const txfee_manager&   controller::get_txfee_manager()const
-{
-   return my->txfee;
-}
-txfee_manager&         controller::get_mutable_txfee_manager()
 {
    return my->txfee;
 }

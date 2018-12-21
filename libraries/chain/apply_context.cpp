@@ -58,18 +58,16 @@ void apply_context::exec_one( action_trace& trace )
             (*native)( *this );
          }
 
-         if(!((act.account == config::system_account_name) && (act.name == N(onfee)))) {
-            if( a.code.size() > 0
-                && !( act.account == config::system_account_name && act.name == N(setcode) &&
-                      receiver == config::system_account_name )) {
-               if( trx_context.enforce_whiteblacklist && control.is_producing_block()) {
-                  control.check_contract_list(receiver);
-                  control.check_action_list(act.account, act.name);
-               }
-               try {
-                  control.get_wasm_interface().apply(a.code_version, a.code, *this);
-               } catch( const wasm_exit& ) {}
+         if( a.code.size() > 0
+             && !(act.account == config::system_account_name && act.name == N( setcode ) &&
+                  receiver == config::system_account_name) ) {
+            if( trx_context.enforce_whiteblacklist && control.is_producing_block() ) {
+               control.check_contract_list( receiver );
+               control.check_action_list( act.account, act.name );
             }
+            try {
+               control.get_wasm_interface().apply( a.code_version, a.code, *this );
+            } catch( const wasm_exit& ) {}
          }
       } FC_RETHROW_EXCEPTIONS( warn, "pending console output: ${console}", ("console", _pending_console_output.str()) )
    } catch( fc::exception& e ) {
@@ -205,14 +203,9 @@ void apply_context::require_recipient( account_name recipient ) {
  *   can better understand the security risk.
  */
 void apply_context::execute_inline( action&& a ) {
-   auto *code = control.db().find<account_object, by_name>(a.account);
-   EOS_ASSERT(code != nullptr, action_validate_exception,
-              "inline action's code account ${account} does not exist", ( "account", a.account ));
-   if( control.head_block_num() > 4470000 ) {
-      EOS_ASSERT(       ( (a.name != N(onfee))   || ( a.account != config::system_account_name))
-                     && ( (a.name != N(onblock)) || ( a.account != config::system_account_name)),
-                     action_validate_exception, "no call" );
-   }
+   auto* code = control.db().find<account_object, by_name>(a.account);
+   EOS_ASSERT( code != nullptr, action_validate_exception,
+               "inline action's code account ${account} does not exist", ("account", a.account) );
 
    bool enforce_actor_whitelist_blacklist = trx_context.enforce_whiteblacklist && control.is_producing_block();
    flat_set<account_name> actors;
@@ -352,7 +345,7 @@ void apply_context::schedule_deferred_transaction( const uint128_t& sender_id, a
       } catch( const fc::exception& e ) {
          if( disallow_send_to_self_bypass || !is_sending_only_to_self(receiver) ) {
             throw;
-         } else {
+         } else if( control.is_producing_block() ) {
             subjective_block_production_exception new_exception(FC_LOG_MESSAGE( error, "Authorization failure with sent deferred transaction consisting only of actions to self"));
             for (const auto& log: e.get_log()) {
                new_exception.append_log(log);
@@ -362,7 +355,7 @@ void apply_context::schedule_deferred_transaction( const uint128_t& sender_id, a
       } catch( ... ) {
          if( disallow_send_to_self_bypass || !is_sending_only_to_self(receiver) ) {
             throw;
-         } else {
+         } else if( control.is_producing_block() ) {
             EOS_THROW(subjective_block_production_exception, "Unexpected exception occurred validating sent deferred transaction consisting only of actions to self");
          }
       }
