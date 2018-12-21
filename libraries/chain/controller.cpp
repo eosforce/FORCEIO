@@ -1293,6 +1293,7 @@ struct controller_impl {
       } FC_CAPTURE_AND_RETHROW((trace))
    } /// push_transaction
 
+
    void start_block( block_timestamp_type when, uint16_t confirm_block_count, controller::block_status s,
                      const optional<block_id_type>& producer_block_id )
    {
@@ -1907,6 +1908,7 @@ struct controller_impl {
       trx.expiration = self.pending_block_time() + fc::microseconds(999'999); // Round up to nearest second to avoid appearing expired
       return trx;
    }
+
 }; /// controller_impl
 
 const resource_limits_manager&   controller::get_resource_limits_manager()const
