@@ -1141,19 +1141,17 @@ struct controller_impl {
       return r;
    }
 
-   bool check_chainstatus() const {
-      return false;
-   }
-
    void check_action( const vector<action>& actions ) const {
-      const auto chain_status = check_chainstatus();
-      for( const auto& _a : actions ) {
-         EOS_ASSERT(( !chain_status
-                      || _a.name == N(setemergency)
-                      || _a.name == N(onblock)
-                      || _a.name == N(onfee)),
+      const auto is_stop_chain_for_maintain = is_func_has_open(self, config::func_typ::chain_maintain_stat);
+      for( const auto& act : actions ) {
+         EOS_ASSERT(( !is_stop_chain_for_maintain
+                      || ( act.account == config::system_account_name
+                           && (   act.name == N(setconfig)
+                               || act.name == N(onblock)
+                               || act.name == N(onfee))
+                               )),
                     invalid_action_args_exception,
-                    "chain is in emergency now !");
+                    "chain is in maintain now !");
       }
    }
 

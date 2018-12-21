@@ -25,7 +25,8 @@ namespace config{
    };
 
    namespace func_typ{
-      static const auto onfee_action = N(f.onfeeact);
+      static const auto onfee_action        = N(f.onfeeact);
+      static const auto chain_maintain_stat = N(f.maintain);
    }
 };
 
