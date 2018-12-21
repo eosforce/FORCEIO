@@ -1130,7 +1130,7 @@ struct vote_producer_unfreeze_subcommand {
    string bpname_str;
 
    vote_producer_unfreeze_subcommand(CLI::App* actionRoot) {
-      auto vote_proxy = actionRoot->add_subcommand("unfreeze", localized("unfreeze the EOSC which Withdrawal of voting"));
+      auto vote_proxy = actionRoot->add_subcommand("unfreeze", localized("unfreeze which Withdrawal of voting"));
       vote_proxy->add_option("voter", voter_str, localized("The voting account"))->required();
       vote_proxy->add_option("bpname", bpname_str, localized("Receive the dividend bp name"))->required();
       add_standard_transaction_options(vote_proxy);
@@ -1172,17 +1172,15 @@ struct vote_producer_vote_subcommand {
    string voter_str;
    string bpname_str;
    string amount;
-   //string con = "eosio";
 
    vote_producer_vote_subcommand(CLI::App* actionRoot) {
       auto vote_proxy = actionRoot->add_subcommand("vote", localized("Vote your stake to a bp"));
       vote_proxy->add_option("voter", voter_str, localized("The voting account"))->required();
       vote_proxy->add_option("bpname", bpname_str, localized("The account(s) to vote for."))->required();
-      vote_proxy->add_option("amount", amount, localized("The amount of EOS to vote"))->required();
+      vote_proxy->add_option("amount", amount, localized("The amount to vote"))->required();
       add_standard_transaction_options(vote_proxy);
       
       vote_proxy->set_callback([this] {
-          amount = amount + " EOS";
          fc::variant act_payload = fc::mutable_variant_object()
                   ("voter", voter_str)
                   ("bpname", bpname_str)
@@ -1193,7 +1191,6 @@ struct vote_producer_vote_subcommand {
 };
 
 struct list_bp_subcommand {
-   string voter_str;
    uint32_t limit = 50;
    list_bp_subcommand(CLI::App* actionRoot) {
       auto list_bps = actionRoot->add_subcommand("listbps", localized("Get all of bp information"));
