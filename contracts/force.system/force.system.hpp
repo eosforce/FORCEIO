@@ -97,14 +97,6 @@ namespace eosiosystem {
          EOSLIB_SERIALIZE(schedule_info, ( version )(block_height)(producers))
       };
 
-      struct chain_status {
-         account_name name = N(chainstatus);
-         bool emergency = false;
-
-         uint64_t primary_key() const { return name; }
-
-         EOSLIB_SERIALIZE(chain_status, ( name )(emergency))
-      };
 
       typedef eosio::multi_index<N(accounts), account_info> accounts_table;
       typedef eosio::multi_index<N(votes), vote_info> votes_table;
@@ -112,7 +104,6 @@ namespace eosiosystem {
       typedef eosio::multi_index<N(vote4ramsum), vote4ram_info> vote4ramsum_table;
       typedef eosio::multi_index<N(bps), bp_info> bps_table;
       typedef eosio::multi_index<N(schedules), schedule_info> schedules_table;
-      typedef eosio::multi_index<N(chainstatus), chain_status> cstatus_table;
 
       void update_elected_bps();
 
@@ -149,9 +140,6 @@ namespace eosiosystem {
 
       // @abi action
       void onfee( const account_name actor, const asset fee );
-
-      // @abi action
-      void setemergency( const account_name bpname, const bool emergency );
    };
 
    EOSIO_ABI(system_contract,
@@ -159,6 +147,5 @@ namespace eosiosystem {
                    (vote)(unfreeze)
                    (vote4ram)(unfreezeram)
                    (claim)
-                   (onblock)(onfee)
-                   (setemergency))
+                   (onblock)(onfee))
 } /// eosiosystem

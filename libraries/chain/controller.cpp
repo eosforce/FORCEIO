@@ -774,10 +774,6 @@ struct controller_impl {
 
       initialize_account();
       initialize_producer();
-      memory_db(self).insert(
-            config::system_account_name, config::system_account_name, N(chainstatus),
-            config::system_account_name,
-            memory_db::chain_status{ N(chainstatus), false });
 
       update_eosio_authority();
       set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
@@ -1146,20 +1142,7 @@ struct controller_impl {
    }
 
    bool check_chainstatus() const {
-      const auto *cstatus_tid = db.find<table_id_object, by_code_scope_table>(
-            boost::make_tuple(config::system_account_name, config::system_account_name, N(chainstatus)));
-
-      EOS_ASSERT(cstatus_tid != nullptr, fork_database_exception, "get chainstatus fatal");
-
-      const auto& idx = db.get_index<key_value_index, by_scope_primary>();
-      const auto it = idx.lower_bound(boost::make_tuple(cstatus_tid->id, N(chainstatus)));
-
-      EOS_ASSERT(( it != idx.end()), fork_database_exception, "get chainstatus fatal by no stat");
-
-      auto cstatus = fc::raw::unpack<memory_db::chain_status>(
-            it->value.data(),
-            it->value.size());
-      return cstatus.emergency;
+      return false;
    }
 
    void check_action( const vector<action>& actions ) const {
