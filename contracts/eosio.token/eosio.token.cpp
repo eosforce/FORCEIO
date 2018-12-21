@@ -16,8 +16,7 @@ void token::create( account_name issuer,
     eosio_assert( sym.is_valid(), "invalid symbol name" );
     eosio_assert( maximum_supply.is_valid(), "invalid supply");
     eosio_assert( maximum_supply.amount > 0, "max-supply must be positive");
-    eosio::symbol_type eos = S(4,EOS);
-    eosio_assert( sym.name() != eos.name(), "not create EOS");
+    eosio_assert( sym != CORE_SYMBOL, "not allow create core symbol token by token contract");
 
     stats statstable( _self, sym.name() );
     auto existing = statstable.find( sym.name() );
