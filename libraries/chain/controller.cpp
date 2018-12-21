@@ -6,7 +6,6 @@
 #include <eosio/chain/exceptions.hpp>
 
 #include <eosio/chain/account_object.hpp>
-#include <eosio/chain/memory_db.hpp>
 #include <eosio/chain/block_summary_object.hpp>
 #include <eosio/chain/eosio_contract.hpp>
 #include <eosio/chain/global_property_object.hpp>
@@ -16,11 +15,7 @@
 #include <eosio/chain/reversible_block_object.hpp>
 
 #include <eosio/chain/authorization_manager.hpp>
-#include <eosio/chain/txfee_manager.hpp>
-#include <eosio/chain/config_on_chain.hpp>
 #include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/resource_limits_private.hpp>
-#include <eosio/chain/config.hpp>
 #include <eosio/chain/chain_snapshot.hpp>
 
 #include <chainbase/chainbase.hpp>
@@ -28,11 +23,15 @@
 #include <fc/scoped_exit.hpp>
 #include <fc/variant_object.hpp>
 
-#include <eosio/chain/eosio_contract.hpp>
-#include <set>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/post.hpp>
 
+#include <eosio/chain/memory_db.hpp>
+#include <eosio/chain/txfee_manager.hpp>
+#include <eosio/chain/config_on_chain.hpp>
+#include <eosio/chain/resource_limits_private.hpp>
+#include <eosio/chain/config.hpp>
+#include <eosio/chain/eosio_contract.hpp>
 
 namespace eosio { namespace chain {
 
@@ -200,7 +199,6 @@ struct controller_impl {
     wasmif( cfg.wasm_runtime ),
     resource_limits( db ),
     authorization( s, db ),
-    txfee(),
     conf( cfg ),
     chain_id( cfg.genesis.compute_chain_id() ),
     read_mode( cfg.read_mode )
@@ -209,14 +207,8 @@ struct controller_impl {
 #define SET_APP_HANDLER( receiver, contract, action) \
    set_apply_handler( #receiver, #contract, #action, &BOOST_PP_CAT(apply_, BOOST_PP_CAT(contract, BOOST_PP_CAT(_,action) ) ) )
 
-   // add a asset if system account is change, if it changed, next SET_APP_HANDLER need also change
-   BOOST_STATIC_ASSERT(N(eosio)       == config::system_account_name);
-   BOOST_STATIC_ASSERT(N(eosio.token) == config::token_account_name);
-
    SET_APP_HANDLER( eosio, eosio, newaccount );
    SET_APP_HANDLER( eosio, eosio, setcode );
-   SET_APP_HANDLER( eosio, eosio, setconfig );
-   SET_APP_HANDLER( eosio, eosio, setfee );
    SET_APP_HANDLER( eosio, eosio, setabi );
    SET_APP_HANDLER( eosio, eosio, updateauth );
    SET_APP_HANDLER( eosio, eosio, deleteauth );
@@ -230,7 +222,14 @@ struct controller_impl {
 
    SET_APP_HANDLER( eosio, eosio, canceldelay );
    SET_APP_HANDLER( eosio, eosio, onfee );
+   SET_APP_HANDLER( eosio, eosio, setconfig );
+   SET_APP_HANDLER( eosio, eosio, setfee );
+   
+   // add a asset if system account is change, if it changed, next SET_APP_HANDLER need also change
+   BOOST_STATIC_ASSERT(N(eosio)       == config::system_account_name);
+   BOOST_STATIC_ASSERT(N(eosio.token) == config::token_account_name);
 
+   
    fork_db.irreversible.connect( [&]( auto b ) {
                                  on_irreversible(b);
                                  });
@@ -468,14 +467,6 @@ struct controller_impl {
       });
    }
 
-   void initialize_schedule( producer_schedule_type& schedule ) {
-      schedule.version = 0;
-      schedule.producers.reserve(config::max_producers);
-      for( const auto& producer : conf.genesis.initial_producer_list ) {
-         schedule.producers.push_back({producer.name, producer.bpkey});
-      }
-   }
-
    void add_contract_tables_to_snapshot( const snapshot_writer_ptr& snapshot ) const {
       snapshot->write_section("contract_tables", [this]( auto& section ) {
          index_utils<table_id_multi_index>::walk(db, [this, &section]( const table_id_object& table_row ){
@@ -647,10 +638,6 @@ struct controller_impl {
    }
 
    void create_native_account( account_name name, const authority& owner, const authority& active, bool is_privileged = false ) {
-      if (db.find<account_object, by_name>(name) != nullptr) {
-        // elog("create_native_account, This account already exists : ${name}", ("name", name));
-        return;
-      }
       db.create<account_object>([&](auto& a) {
          a.name = name;
          a.creation_date = conf.genesis.initial_timestamp;
@@ -684,10 +671,6 @@ struct controller_impl {
    void initialize_producer() {
       auto db = memory_db(self);
       for( const auto& producer : conf.genesis.initial_producer_list ) {
-         // create accpimt for init bps
-         const authority auth(producer.bpkey);
-         create_native_account(producer.name, auth, auth, false);
-
          // store bp data in bp table
          db.insert(config::system_account_name, config::system_account_name, N(bps),
                    producer.name,
@@ -695,37 +678,27 @@ struct controller_impl {
                          producer.name,
                          producer.bpkey,
                          producer.commission_rate,
-                         producer.url});
+                         producer.url });
       }
    }
 
-   // initialize_chain_emergency init chain emergency stat
-   void initialize_chain_emergency() {
-      memory_db(self).insert(
-            config::system_account_name, config::system_account_name, N(chainstatus),
-            config::system_account_name,
-            memory_db::chain_status{N(chainstatus), false});
+   void initialize_schedule( producer_schedule_type& schedule ) {
+      schedule.producers.reserve(config::max_producers);
+      for( const auto& producer : conf.genesis.initial_producer_list ) {
+         schedule.producers.push_back({ producer.name, producer.bpkey });
+      }
    }
 
    // initialize_account init account from genesis;
    void initialize_account() {
-      const auto acc_name_a = N(a);
       auto db = memory_db(self);
-      for (const auto &account : conf.genesis.initial_account_list) {
-         const auto &public_key = account.key;
-         auto acc_name = account.name;
-         if (acc_name == acc_name_a) {
-            const auto pk_str = std::string(public_key);
-            const auto name_r = pk_str.substr(pk_str.size() - 12, 12);
-            acc_name = string_to_name(format_name(name_r).c_str());
-         }
-
-         // initialize_account_to_table
+      for( const auto& account : conf.genesis.initial_account_list ) {
+         const auto& public_key = account.key;
          db.insert(
-                 config::system_account_name, config::system_account_name, N(accounts), acc_name,
-                 memory_db::account_info{acc_name, account.asset});
+               config::system_account_name, config::system_account_name, N(accounts), account.name,
+               memory_db::account_info{ account.name, account.asset });
          const authority auth(public_key);
-         create_native_account(acc_name, auth, auth, false);
+         create_native_account(account.name, auth, auth, false);
       }
    }
 
@@ -759,24 +732,54 @@ struct controller_impl {
          aso.abi_sequence += 1;
       });
 
-      const auto& usage  = db.get<resource_limits::resource_usage_object, resource_limits::by_owner>( contract );
-      db.modify( usage, [&]( auto& u ) {
-          u.ram_usage += (code_size + abi_size) * config::setcode_ram_bytes_multiplier;
+      const auto& usage = db.get<resource_limits::resource_usage_object, resource_limits::by_owner>(contract);
+      db.modify(usage, [&]( auto& u ) {
+         u.ram_usage += (code_size + abi_size) * config::setcode_ram_bytes_multiplier;
       });
 
-      ilog("initialize_contract: name:${n}, code_size:${code}, abi_size:${abi}", ("n", account.name)("code",code_size)("abi",abi_size));
+      ilog("initialize_contract: name:${n}, code_size:${code}, abi_size:${abi}", ("n", account.name)("code", code_size)("abi", abi_size));
    }
 
-   // initialize_eos_stats init stats for eos token
-   void initialize_eos_stats() {
+   void update_eosio_authority() {
+      auto update_permission = [&]( auto& permission, auto threshold ) {
+         auto auth = authority(threshold, {}, {});
+         auth.accounts.push_back({ { config::producers_account_name, config::active_name }, 1 });
+
+         if( static_cast<authority>(permission.auth) != auth ) {
+            db.modify(permission, [&]( auto& po ) {
+               po.auth = auth;
+            });
+         }
+      };
+
+      update_permission(authorization.get_permission({ config::system_account_name, config::active_name }), 1);
+   }
+
+   void initialize_database_force() {
+      authority system_auth(conf.genesis.initial_key);
+      create_native_account(config::token_account_name, system_auth, system_auth, false);
+      create_native_account(config::msig_account_name, system_auth, system_auth, false);
+
+      initialize_contract(config::system_account_name, conf.system_code, conf.system_abi, true);
+      initialize_contract(config::token_account_name, conf.token_code, conf.token_abi);
+      initialize_contract(config::msig_account_name, conf.msig_code, conf.msig_abi);
+
       const auto& sym = symbol(CORE_SYMBOL).to_symbol_code();
       memory_db(self).insert(config::token_account_name, sym, N(stat),
                              config::token_account_name,
                              memory_db::currency_stats{
                                    asset(10000000),
                                    asset(100000000000),
-                                   config::token_account_name});
+                                   config::token_account_name });
+
+      initialize_account();
+      initialize_producer();
+
+      update_eosio_authority();
+      set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
+      set_num_config_on_chain(db, config::func_typ::onfee_action, 1);
    }
+
 
    void initialize_database() {
       // Initialize block summary index
@@ -799,22 +802,8 @@ struct controller_impl {
 
       authority system_auth(conf.genesis.initial_key);
       create_native_account( config::system_account_name, system_auth, system_auth, true );
-      create_native_account( config::token_account_name, system_auth, system_auth, false );
-      create_native_account( config::msig_account_name, system_auth, system_auth, false );
 
-      initialize_contract( config::system_account_name, conf.system_code, conf.system_abi, true );
-      initialize_contract( config::token_account_name, conf.token_code, conf.token_abi );
-      initialize_contract( config::msig_account_name, conf.msig_code, conf.msig_abi );
-
-      initialize_eos_stats();
-
-      initialize_account();
-      initialize_producer();
-      initialize_chain_emergency();
-
-      update_eosio_authority();
-      set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
-      set_num_config_on_chain(db, config::func_typ::onfee_action, 1);
+      initialize_database_force();
 
       auto empty_authority = authority(1, {}, {});
       auto active_producers_authority = authority(1, {}, {});
@@ -1152,32 +1141,17 @@ struct controller_impl {
       return r;
    }
 
-   bool check_chainstatus() const {
-      const auto *cstatus_tid = db.find<table_id_object, by_code_scope_table>(
-            boost::make_tuple(config::system_account_name, config::system_account_name, N(chainstatus)));
-
-      EOS_ASSERT(cstatus_tid != nullptr, fork_database_exception, "get chainstatus fatal");
-
-      const auto& idx = db.get_index<key_value_index, by_scope_primary>();
-      const auto it = idx.lower_bound(boost::make_tuple(cstatus_tid->id, N(chainstatus)));
-
-      EOS_ASSERT(( it != idx.end()), fork_database_exception, "get chainstatus fatal by no stat");
-
-      auto cstatus = fc::raw::unpack<memory_db::chain_status>(
-            it->value.data(),
-            it->value.size());
-      return cstatus.emergency;
-   }
-
    void check_action( const vector<action>& actions ) const {
-      const auto chain_status = check_chainstatus();
-      for( const auto& _a : actions ) {
-         EOS_ASSERT(( !chain_status
-                      || _a.name == N(setemergency)
-                      || _a.name == N(onblock)
-                      || _a.name == N(onfee)),
+      const auto is_stop_chain_for_maintain = is_func_has_open(self, config::func_typ::chain_maintain_stat);
+      for( const auto& act : actions ) {
+         EOS_ASSERT(( !is_stop_chain_for_maintain
+                      || ( act.account == config::system_account_name
+                           && (   act.name == N(setconfig)
+                               || act.name == N(onblock)
+                               || act.name == N(onfee))
+                               )),
                     invalid_action_args_exception,
-                    "chain is in emergency now !");
+                    "chain is in maintain now !");
       }
    }
 
@@ -1674,21 +1648,6 @@ struct controller_impl {
       create_block_summary(p->id);
 
    } FC_CAPTURE_AND_RETHROW() }
-
-    void update_eosio_authority() {
-        auto update_permission = [&]( auto& permission, auto threshold ) {
-            auto auth = authority( threshold, {}, {});
-            auth.accounts.push_back({{config::producers_account_name, config::active_name}, 1});
-
-            if( static_cast<authority>(permission.auth) != auth ) {
-                db.modify(permission, [&]( auto& po ) {
-                    po.auth = auth;
-                });
-            }
-        };
-
-        update_permission( authorization.get_permission({config::system_account_name, config::active_name}), 1);
-    }
 
    void update_producers_authority() {
       const auto& producers = pending->_pending_block_state->active_schedule.producers;
@@ -2446,30 +2405,6 @@ bool controller::is_resource_greylisted(const account_name &name) const {
 
 const flat_set<account_name> &controller::get_resource_greylist() const {
    return  my->conf.resource_greylist;
-}
-
-// format_name format name from genesis
-const std::string format_name( const std::string& name ) {
-   std::stringstream ss;
-   for( int i = 0; i < 12; i++ ) {
-      const auto n = name[i];
-      if( n >= 'A' && n <= 'Z' ) {
-         ss << static_cast<char>( n + 32 );
-      } else if(( n >= 'a' && n <= 'z' ) || ( n >= '1' && n <= '5' )) {
-         ss << static_cast<char>( n );
-      } else if( n >= '6' && n <= '9' ) {
-         ss << static_cast<char>( n - 5 );
-      } else {
-         // unknown char no process
-      }
-   }
-
-   const auto res = ss.str();
-
-   if( res.size() < 12 ) {
-      EOS_ASSERT(false, name_type_exception, "initialize format name failed");
-   }
-   return res;
 }
 
 } } /// eosio::chain

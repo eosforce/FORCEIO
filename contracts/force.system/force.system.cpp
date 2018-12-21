@@ -296,32 +296,6 @@ namespace eosiosystem {
    void system_contract::onfee( const account_name actor, const asset fee ) {
    }
 
-   void system_contract::setemergency( const account_name bpname, const bool emergency ) {
-      require_auth(bpname);
-      bps_table bps_tbl(_self, _self);
-      const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
-
-      cstatus_table cstatus_tbl(_self, _self);
-      const auto& cstatus = cstatus_tbl.get(N(chainstatus), "get chainstatus fatal");
-
-      bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-         b.emergency = emergency;
-      });
-
-      account_name block_producers[NUM_OF_TOP_BPS] = {};
-      get_active_producers(block_producers, sizeof(account_name) * NUM_OF_TOP_BPS);
-
-      int proposal = 0;
-      for( auto name : block_producers ) {
-         const auto& b = bps_tbl.get(name, "setemergency: bpname is not registered");
-         proposal += b.emergency ? 1 : 0;
-      }
-
-      cstatus_tbl.modify(cstatus, 0, [&]( chain_status& cs ) {
-         cs.emergency = proposal > NUM_OF_TOP_BPS * 2 / 3;
-      });
-   }
-
 //******** private ********//
 
    void system_contract::update_elected_bps() {

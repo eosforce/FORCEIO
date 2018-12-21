@@ -337,12 +337,6 @@
           "key_names": ["bpname"],
           "key_types": ["account_name"]
        },{
-          "name":"chainstatus",
-          "type":"chain_status",
-          "index_type":"i64",
-          "key_names": ["name"],
-          "key_types": ["account_name"]
-       },{
           "name":"schedules",
           "type":"schedule_info",
           "index_type":"i64",
