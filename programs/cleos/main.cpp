@@ -91,7 +91,6 @@ Options:
 #include <eosio/chain/trace.hpp>
 #include <eosio/chain_plugin/chain_plugin.hpp>
 #include <eosio/chain/contract_types.hpp>
-#include <eosio/chain/asset.hpp>
 
 #pragma push_macro("N")
 #undef N
@@ -185,7 +184,6 @@ bool   no_auto_keosd = false;
 uint8_t  tx_max_cpu_usage = 0;
 uint32_t tx_max_net_usage = 0;
 
-const asset zeroAsset = asset(0);
 uint32_t delaysec = 0;
 
 vector<string> tx_permission;
@@ -304,9 +302,8 @@ void sign_transaction(signed_transaction& trx, fc::variant& required_keys, const
    trx = signed_trx.as<signed_transaction>();
 }
 
-fc::variant push_transaction( signed_transaction& trx, int32_t extra_kcpu = 1000, packed_transaction::compression_type compression = packed_transaction::none, asset fee_ext =  zeroAsset) {
+fc::variant push_transaction( signed_transaction& trx, int32_t extra_kcpu = 1000, packed_transaction::compression_type compression = packed_transaction::none ) {
    auto info = get_info();
-   trx.expiration = info.head_block_time + fc::seconds(fc::time_point::now().time_since_epoch().count()%3600); //tx_expiration;
 
    if (trx.signatures.size() == 0) { // #5445 can't change txn content if already signed
       trx.expiration = info.head_block_time + tx_expiration;
@@ -331,12 +328,6 @@ fc::variant push_transaction( signed_transaction& trx, int32_t extra_kcpu = 1000
       trx.delay_sec = delaysec;
    }
 
-   auto required_keys = determine_required_keys(trx);
-   size_t num_keys = required_keys.is_array() ? required_keys.get_array().size() : 1;
-
-   trx.max_cpu_usage_ms = tx_max_cpu_usage;
-   trx.max_net_usage_words = (tx_max_net_usage + 7)/8;
-
    if (!tx_skip_sign) {
       auto required_keys = determine_required_keys(trx);
       sign_transaction(trx, required_keys, info.chain_id);
@@ -353,11 +344,11 @@ fc::variant push_transaction( signed_transaction& trx, int32_t extra_kcpu = 1000
    }
 }
 
-fc::variant push_actions(std::vector<chain::action>&& actions, int32_t extra_kcpu, packed_transaction::compression_type compression = packed_transaction::none, const asset fee_ext =  zeroAsset ) {
+fc::variant push_actions(std::vector<chain::action>&& actions, int32_t extra_kcpu, packed_transaction::compression_type compression = packed_transaction::none ) {
    signed_transaction trx;
    trx.actions = std::forward<decltype(actions)>(actions);
 
-   return push_transaction(trx, extra_kcpu, compression, fee_ext);
+   return push_transaction(trx, extra_kcpu, compression);
 }
 
 void print_action( const fc::variant& at ) {
@@ -501,8 +492,8 @@ void print_result( const fc::variant& result ) { try {
 } FC_CAPTURE_AND_RETHROW( (result) ) }
 
 using std::cout;
-void send_actions(std::vector<chain::action>&& actions, int32_t extra_kcpu = 1000, packed_transaction::compression_type compression = packed_transaction::none, const asset fee_ext =  zeroAsset ) {
-   auto result = push_actions( move(actions), extra_kcpu, compression, fee_ext);
+void send_actions(std::vector<chain::action>&& actions, int32_t extra_kcpu = 1000, packed_transaction::compression_type compression = packed_transaction::none ) {
+   auto result = push_actions( move(actions), extra_kcpu, compression);
 
    if( tx_print_json ) {
       cout << fc::json::to_pretty_string( result ) << endl;
@@ -511,8 +502,8 @@ void send_actions(std::vector<chain::action>&& actions, int32_t extra_kcpu = 100
    }
 }
 
-void send_transaction( signed_transaction& trx, int32_t extra_kcpu, packed_transaction::compression_type compression = packed_transaction::none, const asset fee_ext =  zeroAsset  ) {
-   auto result = push_transaction(trx, extra_kcpu, compression, fee_ext);
+void send_transaction( signed_transaction& trx, int32_t extra_kcpu, packed_transaction::compression_type compression = packed_transaction::none  ) {
+   auto result = push_transaction(trx, extra_kcpu, compression);
 
    if( tx_print_json ) {
       cout << fc::json::to_pretty_string( result ) << endl;
@@ -2291,10 +2282,8 @@ int main( int argc, char** argv ) {
    bool prettyact = false;
    bool printconsole = false;
 
-//   int32_t pos_seq = -1;
-//   int32_t offset = -20;
-   int32_t pos_seq = 0;
-   int32_t offset = 0;
+   int32_t pos_seq = -1;
+   int32_t offset = -20;
    auto getActions = get->add_subcommand("actions", localized("Retrieve all actions with specific account name referenced in authorization or receiver"), false);
    getActions->add_option("account_name", account_name, localized("name of account to query on"))->required();
    getActions->add_option("pos", pos_seq, localized("sequence number of action for this account, -1 for last"));
@@ -2601,8 +2590,8 @@ int main( int argc, char** argv ) {
    add_standard_transaction_options(codeSubcommand, "account@active");
    add_standard_transaction_options(abiSubcommand, "account@active");
    contractSubcommand->set_callback([&] {
-      shouldSend = true;
       if(!contract_clear) EOS_ASSERT( !contractPath.empty(), contract_exception, " contract-dir is null ", ("f", contractPath) );
+      shouldSend = false;
       set_code_callback();
       set_abi_callback();
       if (actions.size()) {
@@ -2755,7 +2744,7 @@ int main( int argc, char** argv ) {
    string wallet_key_str;
    auto importWallet = wallet->add_subcommand("import", localized("Import private key into wallet"), false);
    importWallet->add_option("-n,--name", wallet_name, localized("The name of the wallet to import key into"));
-   importWallet->add_option("--private-key", wallet_key_str, localized("Private key in WIF format to import"))->required();
+   importWallet->add_option("--private-key", wallet_key_str, localized("Private key in WIF format to import"));
    importWallet->set_callback([&wallet_name, &wallet_key_str] {
       if( wallet_key_str.size() == 0 ) {
          std::cout << localized("private key: ");
@@ -2889,9 +2878,7 @@ int main( int argc, char** argv ) {
    });
 
    // Push subcommand
-   string fee_ext;
    auto push = app.add_subcommand("push", localized("Push arbitrary transactions to the blockchain"), false);
-   push->add_option("--ext-fee", fee_ext, localized("fee ext to cost for more res"));
    push->require_subcommand();
 
    // push action
@@ -2909,10 +2896,6 @@ int main( int argc, char** argv ) {
 
    add_standard_transaction_options(actionsSubcommand);
    actionsSubcommand->set_callback([&] {
-      asset fee_ext_asset(0);
-      if (fee_ext != ""){
-         fee_ext_asset = fee_ext_asset.from_string(fee_ext);
-      }
       fc::variant action_args_var;
       if( !data.empty() ) {
          try {
@@ -2920,15 +2903,8 @@ int main( int argc, char** argv ) {
          } EOS_RETHROW_EXCEPTIONS(action_type_exception, "Fail to parse action JSON data='${data}'", ("data", data))
       }
       auto accountPermissions = get_account_permissions(tx_permission);
-      send_actions(
-            {
-               chain::action{
-                  accountPermissions,
-                  contract_account,
-                  action,
-                  variant_to_bin( contract_account, action, action_args_var )
-               }
-            }, 1000, packed_transaction::none, fee_ext_asset);
+
+      send_actions({chain::action{accountPermissions, contract_account, action, variant_to_bin( contract_account, action, action_args_var ) }});
    });
 
    // push transaction
@@ -2938,22 +2914,18 @@ int main( int argc, char** argv ) {
    add_standard_transaction_options(trxSubcommand);
 
    trxSubcommand->set_callback([&] {
-      asset fee_ext_asset(0);
-      if (fee_ext != ""){
-         fee_ext_asset = fee_ext_asset.from_string(fee_ext);
-      }
       fc::variant trx_var;
       try {
          trx_var = json_from_file_or_string(trx_to_push);
       } EOS_RETHROW_EXCEPTIONS(transaction_type_exception, "Fail to parse transaction JSON '${data}'", ("data",trx_to_push))
       try {
          signed_transaction trx = trx_var.as<signed_transaction>();
-         std::cout << fc::json::to_pretty_string( push_transaction( trx, 1000, packed_transaction::none, fee_ext_asset )) << std::endl;
+         std::cout << fc::json::to_pretty_string( push_transaction( trx )) << std::endl;
       } catch( fc::exception& ) {
          // unable to convert so try via abi
          signed_transaction trx;
          abi_serializer::from_variant( trx_var, trx, abi_serializer_resolver, abi_serializer_max_time );
-         std::cout << fc::json::to_pretty_string( push_transaction( trx, 1000, packed_transaction::none, fee_ext_asset )) << std::endl;
+         std::cout << fc::json::to_pretty_string( push_transaction( trx )) << std::endl;
       }
    });
 
