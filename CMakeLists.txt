@@ -213,8 +213,16 @@ if ("${CORE_SYMBOL_NAME}" STREQUAL "")
 endif()
 string(TOUPPER ${CORE_SYMBOL_NAME} CORE_SYMBOL_NAME)
 
-set( PUB_KEY_LEGACY_PREFIX "FOSC" )
-set( PUB_KEY_BASE_PREFIX "PUB" )
+if ("${PUB_KEY_LEGACY_PREFIX}" STREQUAL "")
+    set(PUB_KEY_LEGACY_PREFIX "FOSC")
+endif()
+
+if ("${PUB_KEY_BASE_PREFIX}" STREQUAL "")
+    set(PUB_KEY_BASE_PREFIX "PUB")
+endif()
+
+message( STATUS "Using '${PUB_KEY_LEGACY_PREFIX}' as pubkey legacy prefix" )
+message( STATUS "Using '${PUB_KEY_BASE_PREFIX}' as pubkey common prefix" )
 
 string(LENGTH ${CORE_SYMBOL_NAME} CORE_SYMBOL_NAME_LENGTH)
 if (CORE_SYMBOL_NAME_LENGTH GREATER 7)
@@ -224,7 +232,7 @@ endif()
 message( STATUS "Using '${CORE_SYMBOL_NAME}' as CORE symbol name" )
 
 if ("${SYSTEM_ACCOUNT_ROOT_KEY}" STREQUAL "")
-   set(SYSTEM_ACCOUNT_ROOT_KEY "${PUB_KEY_LEGACY_PREFIX}6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
+   set(SYSTEM_ACCOUNT_ROOT_KEY "${PUB_KEY_LEGACY_PREFIX}1111111111111111111111111111111114T1Anm")
 endif()
 
 message( STATUS "Using '${SYSTEM_ACCOUNT_ROOT_KEY}' as public key for system root account" )
