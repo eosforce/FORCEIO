@@ -213,16 +213,27 @@ if ("${CORE_SYMBOL_NAME}" STREQUAL "")
 endif()
 string(TOUPPER ${CORE_SYMBOL_NAME} CORE_SYMBOL_NAME)
 
+# set(USE_PUB_KEY_LEGACY_PREFIX 1)
+
 if ("${PUB_KEY_LEGACY_PREFIX}" STREQUAL "")
     set(PUB_KEY_LEGACY_PREFIX "FOSC")
 endif()
+string(TOUPPER ${PUB_KEY_LEGACY_PREFIX} PUB_KEY_LEGACY_PREFIX)
+message( STATUS "Using '${PUB_KEY_LEGACY_PREFIX}' as pubkey legacy prefix" )
 
 if ("${PUB_KEY_BASE_PREFIX}" STREQUAL "")
     set(PUB_KEY_BASE_PREFIX "PUB")
 endif()
-
-message( STATUS "Using '${PUB_KEY_LEGACY_PREFIX}' as pubkey legacy prefix" )
+string(TOUPPER ${PUB_KEY_BASE_PREFIX} PUB_KEY_BASE_PREFIX)
 message( STATUS "Using '${PUB_KEY_BASE_PREFIX}' as pubkey common prefix" )
+
+if (USE_PUB_KEY_LEGACY_PREFIX)
+    set(USE_PUB_KEY_LEGACY_PREFIX 1)
+    message( STATUS "Using legacy prefix for public or private key" )
+else()
+    set(USE_PUB_KEY_LEGACY_PREFIX 0)
+    message( STATUS "Using common prefix for public or private key" )
+endif(USE_PUB_KEY_LEGACY_PREFIX)
 
 string(LENGTH ${CORE_SYMBOL_NAME} CORE_SYMBOL_NAME_LENGTH)
 if (CORE_SYMBOL_NAME_LENGTH GREATER 7)
