@@ -141,6 +141,8 @@ namespace eosiosystem {
 
       // @abi action
       void onfee( const account_name actor, const asset fee );
+      // @abi action
+      void setparams( const eosio::blockchain_parameters& params );
    };
 
    EOSIO_ABI(system_contract,
@@ -148,5 +150,6 @@ namespace eosiosystem {
                    (vote)(unfreeze)
                    (vote4ram)(unfreezeram)
                    (claim)
-                   (onblock)(onfee))
+                   (onblock)(onfee)
+                   (setparams))
 } /// eosiosystem

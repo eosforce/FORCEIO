@@ -393,6 +393,11 @@ namespace eosiosystem {
       });
    }
 
+   void system_contract::setparams( const eosio::blockchain_parameters& params ) {
+      require_auth( _self );
+      set_blockchain_parameters( params );
+   }
+
    bool system_contract::is_super_bp( account_name block_producers[], account_name name ) {
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
          if( name == block_producers[i] ) {
