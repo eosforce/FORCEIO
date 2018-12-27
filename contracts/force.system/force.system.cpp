@@ -86,7 +86,7 @@ namespace eosiosystem {
             }
          });
       }
-
+      eosio_assert(bp.isactive || (!bp.isactive && change < 0), "bp is not active");
       if( change > 0 ) {
          acnts_tbl.modify(act, 0, [&]( account_info& a ) {
             a.available.amount -= change;
@@ -306,7 +306,7 @@ namespace eosiosystem {
 
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
          for( int i = 0; i < NUM_OF_TOP_BPS; ++i ) {
-            if( sorts[size_t(i)] <= it->total_staked ) {
+            if( sorts[size_t(i)] <= it->total_staked && it->isactive) {
                eosio::producer_key key;
                key.producer_name = it->name;
                key.block_signing_key = it->block_signing_key;
@@ -396,6 +396,20 @@ namespace eosiosystem {
    void system_contract::setparams( const eosio::blockchain_parameters& params ) {
       require_auth( _self );
       set_blockchain_parameters( params );
+   }
+
+   void system_contract::rmvproducer( account_name bpname ) {
+      require_auth(_self);
+
+      bps_table bps_tbl(_self, _self);
+      auto bp = bps_tbl.find(bpname);
+      if( bp == bps_tbl.end()) {
+        eosio_assert(false,"bpname is not registered");
+      } else {
+         bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
+            b.deactivate();
+         });
+      }
    }
 
    bool system_contract::is_super_bp( account_name block_producers[], account_name name ) {
