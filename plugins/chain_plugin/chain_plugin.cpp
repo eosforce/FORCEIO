@@ -362,10 +362,10 @@ void chain_plugin::plugin_initialize(const variables_map& options) {
 
    try {
       try {
-         genesis_state gs; // Check if EOSIO_ROOT_KEY is bad
+         genesis_state gs; // Check if ROOT_KEY is bad
       } catch ( const fc::exception& ) {
-         elog( "EOSIO_ROOT_KEY ('${root_key}') is invalid. Recompile with a valid public key.",
-               ("root_key", genesis_state::eosio_root_key));
+         elog( "ROOT_KEY ('${root_key}') is invalid. Recompile with a valid public key.",
+               ("root_key", genesis_state::system_account_root_key));
          throw;
       }
 

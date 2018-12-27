@@ -213,8 +213,27 @@ if ("${CORE_SYMBOL_NAME}" STREQUAL "")
 endif()
 string(TOUPPER ${CORE_SYMBOL_NAME} CORE_SYMBOL_NAME)
 
-set( PUB_KEY_LEGACY_PREFIX "FOSC" )
-set( PUB_KEY_BASE_PREFIX "PUB" )
+# set(USE_PUB_KEY_LEGACY_PREFIX 1)
+
+if ("${PUB_KEY_LEGACY_PREFIX}" STREQUAL "")
+    set(PUB_KEY_LEGACY_PREFIX "FOSC")
+endif()
+string(TOUPPER ${PUB_KEY_LEGACY_PREFIX} PUB_KEY_LEGACY_PREFIX)
+message( STATUS "Using '${PUB_KEY_LEGACY_PREFIX}' as pubkey legacy prefix" )
+
+if ("${PUB_KEY_BASE_PREFIX}" STREQUAL "")
+    set(PUB_KEY_BASE_PREFIX "PUB")
+endif()
+string(TOUPPER ${PUB_KEY_BASE_PREFIX} PUB_KEY_BASE_PREFIX)
+message( STATUS "Using '${PUB_KEY_BASE_PREFIX}' as pubkey common prefix" )
+
+if (USE_PUB_KEY_LEGACY_PREFIX)
+    set(USE_PUB_KEY_LEGACY_PREFIX 1)
+    message( STATUS "Using legacy prefix for public or private key" )
+else()
+    set(USE_PUB_KEY_LEGACY_PREFIX 0)
+    message( STATUS "Using common prefix for public or private key" )
+endif(USE_PUB_KEY_LEGACY_PREFIX)
 
 string(LENGTH ${CORE_SYMBOL_NAME} CORE_SYMBOL_NAME_LENGTH)
 if (CORE_SYMBOL_NAME_LENGTH GREATER 7)
@@ -223,11 +242,18 @@ endif()
 
 message( STATUS "Using '${CORE_SYMBOL_NAME}' as CORE symbol name" )
 
-if ("${EOSIO_ROOT_KEY}" STREQUAL "")
-   set(EOSIO_ROOT_KEY "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
+if ("${SYSTEM_ACCOUNT_ROOT_KEY}" STREQUAL "")
+   set(SYSTEM_ACCOUNT_ROOT_KEY "${PUB_KEY_LEGACY_PREFIX}1111111111111111111111111111111114T1Anm")
 endif()
 
-message( STATUS "Using '${EOSIO_ROOT_KEY}' as public key for 'eosio' account" )
+message( STATUS "Using '${SYSTEM_ACCOUNT_ROOT_KEY}' as public key for system root account" )
+
+if ("${CHAIN_INIT_TIMESTAMP}" STREQUAL "")
+    set(CHAIN_INIT_TIMESTAMP "2018-12-01T12:00:00")
+endif()
+
+message( STATUS "Using '${CHAIN_INIT_TIMESTAMP}' as chain init timestamp" )
+
 #add contract_config
 if ("${FROZEN_DELAY}" STREQUAL "")
   set( FROZEN_DELAY "3 * 24 * 60 * 20" )
