@@ -1,6 +1,6 @@
 {
   "initial_timestamp": "2018-05-28T12:00:00.000",
-  "initial_key": "EOS1111111111111111111111111111111114T1Anm",
+  "initial_key": "#PUB#1111111111111111111111111111111114T1Anm",
   "initial_configuration": {
     "max_block_net_usage": 1048576,
     "target_block_net_usage_pct": 1000,
@@ -21,372 +21,372 @@
     "max_authority_depth": 6
   },
   "initial_account_list": [{
-      "key": "EOS5RwCzy3EDiv66gP1Z7XCw1XNDgADxAVx2TCuYLQ5goLcPcRAuz",
+      "key": "#PUB#5RwCzy3EDiv66gP1Z7XCw1XNDgADxAVx2TCuYLQ5goLcPcRAuz",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpa"
     },{
-      "key": "EOS5zwzBPmeQuoLaRudc58dDZ3cv1tmt5M8jVRFhZVB7A5qLcmjah",
+      "key": "#PUB#5zwzBPmeQuoLaRudc58dDZ3cv1tmt5M8jVRFhZVB7A5qLcmjah",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpb"
     },{
-      "key": "EOS4y9gHT4zzQhSZ8pNktK7yZT7mRaYXxartw66qRQgcxHM3bPybC",
+      "key": "#PUB#4y9gHT4zzQhSZ8pNktK7yZT7mRaYXxartw66qRQgcxHM3bPybC",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpc"
     },{
-      "key": "EOS7ScLJWawLfC2pZSNifW7pWDNiykZJG5C27zZb3iemggG3eLUXq",
+      "key": "#PUB#7ScLJWawLfC2pZSNifW7pWDNiykZJG5C27zZb3iemggG3eLUXq",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpd"
     },{
-      "key": "EOS5xJhEAxtW11Z1NSxuAcVtttw1pgwJWNTKa5VneAQFimy9cXsZv",
+      "key": "#PUB#5xJhEAxtW11Z1NSxuAcVtttw1pgwJWNTKa5VneAQFimy9cXsZv",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpe"
     },{
-      "key": "EOS6PnviyQ19JpppYhgWneRitqm3b49mnRfxP8bNPMwS2JVoktrd4",
+      "key": "#PUB#6PnviyQ19JpppYhgWneRitqm3b49mnRfxP8bNPMwS2JVoktrd4",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpf"
     },{
-      "key": "EOS6akcLwTd85yWdXG2YmE4J5rWsKn2auwin2ebQmPsukpVvrrvts",
+      "key": "#PUB#6akcLwTd85yWdXG2YmE4J5rWsKn2auwin2ebQmPsukpVvrrvts",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpg"
     },{
-      "key": "EOS7yHH17yNN6x1RfnEtPea31rEFYZMvRjUfEs4xkomJ9kPCu5NgT",
+      "key": "#PUB#7yHH17yNN6x1RfnEtPea31rEFYZMvRjUfEs4xkomJ9kPCu5NgT",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbph"
     },{
-      "key": "EOS6NaspmEtghzs1rkNWbv847cofqJjuAxKuLuij9BU5XsgUSpcvW",
+      "key": "#PUB#6NaspmEtghzs1rkNWbv847cofqJjuAxKuLuij9BU5XsgUSpcvW",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpi"
     },{
-      "key": "EOS7vuhc9kVNz9C5UK1azZozTqy4MuEx3yTG99vMKFVuDAhjLt3VT",
+      "key": "#PUB#7vuhc9kVNz9C5UK1azZozTqy4MuEx3yTG99vMKFVuDAhjLt3VT",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpj"
     },{
-      "key": "EOS6gDgjMUSs4pGZ2YhHESN4gLLrBRqFRRReCKxUhrq1gzY3TV4N2",
+      "key": "#PUB#6gDgjMUSs4pGZ2YhHESN4gLLrBRqFRRReCKxUhrq1gzY3TV4N2",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpk"
     },{
-      "key": "EOS6PXtheP5cf9FmPK98pGyHV7JxEFVXgxPGnt6PnGsq38S4d3ZU4",
+      "key": "#PUB#6PXtheP5cf9FmPK98pGyHV7JxEFVXgxPGnt6PnGsq38S4d3ZU4",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpl"
     },{
-      "key": "EOS5Qm7tmPKhZQDKcc7iZzJM9aEFoL1gFExcnrZ2hrCZDi5qUM6mh",
+      "key": "#PUB#5Qm7tmPKhZQDKcc7iZzJM9aEFoL1gFExcnrZ2hrCZDi5qUM6mh",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpm"
     },{
-      "key": "EOS5G3V9N9HYdK8LnP1KChCJkJzYskP7UWu4dHjEicVXd7bYNoCe5",
+      "key": "#PUB#5G3V9N9HYdK8LnP1KChCJkJzYskP7UWu4dHjEicVXd7bYNoCe5",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpn"
     },{
-      "key": "EOS7WJNx4spJrc3fvjFcKrvb7wWXRKimj5SKcGg3pTpRHz2r1nSLq",
+      "key": "#PUB#7WJNx4spJrc3fvjFcKrvb7wWXRKimj5SKcGg3pTpRHz2r1nSLq",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpo"
     },{
-      "key": "EOS5UgJ6YEoxzLPjueJyCsPpqdyFw3KjDRGdYtgVa9ALKCctaWNjw",
+      "key": "#PUB#5UgJ6YEoxzLPjueJyCsPpqdyFw3KjDRGdYtgVa9ALKCctaWNjw",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpp"
     },{
-      "key": "EOS5M4wYiHLTPCZ9GhRJe9J3zvE44gArQvgozGkNyqcGKygCa25tb",
+      "key": "#PUB#5M4wYiHLTPCZ9GhRJe9J3zvE44gArQvgozGkNyqcGKygCa25tb",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpq"
     },{
-      "key": "EOS6e6GwbB7nKidqztFicku7tvFac1kLV4VkeHB2GfbUrv6DYHvH8",
+      "key": "#PUB#6e6GwbB7nKidqztFicku7tvFac1kLV4VkeHB2GfbUrv6DYHvH8",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpr"
     },{
-      "key": "EOS7TFWbYDBomWwKozFKzmJkHDgAqSPFvayFah5UunVjGGjCAjrtu",
+      "key": "#PUB#7TFWbYDBomWwKozFKzmJkHDgAqSPFvayFah5UunVjGGjCAjrtu",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbps"
     },{
-      "key": "EOS6DBeJau2vWw2iEiydnBzeeAweHWsk3J3TexR9MPMBxW9gdxcUu",
+      "key": "#PUB#6DBeJau2vWw2iEiydnBzeeAweHWsk3J3TexR9MPMBxW9gdxcUu",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpt"
     },{
-      "key": "EOS5PeWjKoKz2nrPDEcnNesfA4zaL1u9gWuAxGBCVJcmAm1DBs8wW",
+      "key": "#PUB#5PeWjKoKz2nrPDEcnNesfA4zaL1u9gWuAxGBCVJcmAm1DBs8wW",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpu"
     },{
-      "key": "EOS8K5p6yXsPyDtHmwgNKWAMh3p3vcuJZPHZRhVCzchaqkhAW7WLU",
+      "key": "#PUB#8K5p6yXsPyDtHmwgNKWAMh3p3vcuJZPHZRhVCzchaqkhAW7WLU",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpv"
     },{
-      "key": "EOS7Y7wg3xEoEmS5u5498Ri4DbSBrahoDkuquZePCaafXx9jWaaFq",
+      "key": "#PUB#7Y7wg3xEoEmS5u5498Ri4DbSBrahoDkuquZePCaafXx9jWaaFq",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "biosbpw"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000000.0000 #CORE_SYMBOL#",
       "name": "eosforce"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "devfund"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "eosfund1"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "1.0000 #CORE_SYMBOL#",
       "name": "b1"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "10000.0000 #CORE_SYMBOL#",
       "name": "force.test"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "10000.0000 #CORE_SYMBOL#",
       "name": "force.ram"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "10000.0000 #CORE_SYMBOL#",
       "name": "force.cpu"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "10000.0000 #CORE_SYMBOL#",
       "name": "force.net"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "10000.0000 #CORE_SYMBOL#",
       "name": "force.config"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "1000000.0000 #CORE_SYMBOL#",
       "name": "r.token.in"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "1000000.0000 #CORE_SYMBOL#",
       "name": "r.token.out"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "1000000.0000 #CORE_SYMBOL#",
       "name": "r.acc.map"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "1000000.0000 #CORE_SYMBOL#",
       "name": "r.t.exchange"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "10000000.0000 #CORE_SYMBOL#",
       "name": "test"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testa"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testb"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testc"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testd"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "teste"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testf"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testg"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testh"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testi"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testj"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testk"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testl"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testm"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testn"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testo"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testp"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testq"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testr"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "tests"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testt"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testu"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testv"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testw"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testx"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testy"
     },{
-      "key": "EOS7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
+      "key": "#PUB#7o5Uz5Po6RohDByRS1sesQEEUGz7JWJxK3T3nvjeL5er9eDrWk",
       "asset": "100000.0000 #CORE_SYMBOL#",
       "name": "testz"
     }
   ],
   "initial_producer_list": [{
       "name": "biosbpa",
-      "bpkey": "EOS75TjxzEuFjFV1htmt1kEwJY5eYio16qCCJiMYS5naP19kJXCNE",
+      "bpkey": "#PUB#75TjxzEuFjFV1htmt1kEwJY5eYio16qCCJiMYS5naP19kJXCNE",
       "commission_rate": 0,
       "url": ""
     },{
       "name": "biosbpb",
-      "bpkey": "EOS6o3fD1cTd9hc2biHCdnjt6Ket6SFnsrnC3yMJYAW4pqHvNWkvh",
+      "bpkey": "#PUB#6o3fD1cTd9hc2biHCdnjt6Ket6SFnsrnC3yMJYAW4pqHvNWkvh",
       "commission_rate": 10000,
       "url": ""
     },{
       "name": "biosbpc",
-      "bpkey": "EOS88UT4jH8uKBNos5sH7MAvWKGXUbVhaqoJDQJnBrCqA3zNuuKcT",
+      "bpkey": "#PUB#88UT4jH8uKBNos5sH7MAvWKGXUbVhaqoJDQJnBrCqA3zNuuKcT",
       "commission_rate": 5000,
       "url": ""
     },{
       "name": "biosbpd",
-      "bpkey": "EOS6Gi4gV1csc4puburKiuxaaBgeieZPi1DLdkdNXb4NQfwHvQ1y3",
+      "bpkey": "#PUB#6Gi4gV1csc4puburKiuxaaBgeieZPi1DLdkdNXb4NQfwHvQ1y3",
       "commission_rate": 3333,
       "url": ""
     },{
       "name": "biosbpe",
-      "bpkey": "EOS52QFUYM7QLNN3JjWF3QXm6h73Zw5dno52eBDaFUfdoaAxHp5Ah",
+      "bpkey": "#PUB#52QFUYM7QLNN3JjWF3QXm6h73Zw5dno52eBDaFUfdoaAxHp5Ah",
       "commission_rate": 2500,
       "url": ""
     },{
       "name": "biosbpf",
-      "bpkey": "EOS7nbBXvu4pqav6DtNKsCxGicxMzxj2XbYwEr1Q33KN6FuVrYCLr",
+      "bpkey": "#PUB#7nbBXvu4pqav6DtNKsCxGicxMzxj2XbYwEr1Q33KN6FuVrYCLr",
       "commission_rate": 2000,
       "url": ""
     },{
       "name": "biosbpg",
-      "bpkey": "EOS5H1rD3w39sQMu982oAYo4gjw6BY2AEq2EVCXPMBm9Sc7af4oCA",
+      "bpkey": "#PUB#5H1rD3w39sQMu982oAYo4gjw6BY2AEq2EVCXPMBm9Sc7af4oCA",
       "commission_rate": 1666,
       "url": ""
     },{
       "name": "biosbph",
-      "bpkey": "EOS52CdPMvWVqtxNP4fqrrgbFmygn6M5jSaQmqFsojbJj3mH4JMKT",
+      "bpkey": "#PUB#52CdPMvWVqtxNP4fqrrgbFmygn6M5jSaQmqFsojbJj3mH4JMKT",
       "commission_rate": 1428,
       "url": ""
     },{
       "name": "biosbpi",
-      "bpkey": "EOS6TPxVLE48KEHdC1L7MKB3coaUQCm8c3TkJpRDAEXJ5VLvv2XW9",
+      "bpkey": "#PUB#6TPxVLE48KEHdC1L7MKB3coaUQCm8c3TkJpRDAEXJ5VLvv2XW9",
       "commission_rate": 1250,
       "url": ""
     },{
       "name": "biosbpj",
-      "bpkey": "EOS5CyZV8LTi3zGuecX2HHTZm2jWmjyYZTjXDVxcSKf7WeHdywGkt",
+      "bpkey": "#PUB#5CyZV8LTi3zGuecX2HHTZm2jWmjyYZTjXDVxcSKf7WeHdywGkt",
       "commission_rate": 1111,
       "url": ""
     },{
       "name": "biosbpk",
-      "bpkey": "EOS4uiZknFgTrgDTmTraJ3oKL4fdPbkApDrXh1LzohZyVtsfyhXs5",
+      "bpkey": "#PUB#4uiZknFgTrgDTmTraJ3oKL4fdPbkApDrXh1LzohZyVtsfyhXs5",
       "commission_rate": 1000,
       "url": ""
     },{
       "name": "biosbpl",
-      "bpkey": "EOS5bPhL6JNbx48dxrTtkAbp9ekLGWRuGbsP6QPhExR4Xmf16kWaD",
+      "bpkey": "#PUB#5bPhL6JNbx48dxrTtkAbp9ekLGWRuGbsP6QPhExR4Xmf16kWaD",
       "commission_rate": 909,
       "url": ""
     },{
       "name": "biosbpm",
-      "bpkey": "EOS7J7H1eKtpHfDSHQVB35YnSNXJ11ajAJins95beMQE4NUkYP3B4",
+      "bpkey": "#PUB#7J7H1eKtpHfDSHQVB35YnSNXJ11ajAJins95beMQE4NUkYP3B4",
       "commission_rate": 833,
       "url": ""
     },{
       "name": "biosbpn",
-      "bpkey": "EOS72CbddAqDxsQQGcRdLCPfYyQ2HQg65qE5tJUdgomw17NgHsNfu",
+      "bpkey": "#PUB#72CbddAqDxsQQGcRdLCPfYyQ2HQg65qE5tJUdgomw17NgHsNfu",
       "commission_rate": 769,
       "url": ""
     },{
       "name": "biosbpo",
-      "bpkey": "EOS5GV5SsDYy593pqDJUcqVHmpXwT8krVYFHAWVcgqXXNe3df1p8Z",
+      "bpkey": "#PUB#5GV5SsDYy593pqDJUcqVHmpXwT8krVYFHAWVcgqXXNe3df1p8Z",
       "commission_rate": 714,
       "url": ""
     },{
       "name": "biosbpp",
-      "bpkey": "EOS57sGRRgj8CKuKZHrdyMQUfUPqQVuDGRBp79qtPdwauq4hFSoLR",
+      "bpkey": "#PUB#57sGRRgj8CKuKZHrdyMQUfUPqQVuDGRBp79qtPdwauq4hFSoLR",
       "commission_rate": 666,
       "url": ""
     },{
       "name": "biosbpq",
-      "bpkey": "EOS5rFrrDeN64D7bCC7FLjTXfaTjfewe3wdoxSZmwZ7BrN8EkA211",
+      "bpkey": "#PUB#5rFrrDeN64D7bCC7FLjTXfaTjfewe3wdoxSZmwZ7BrN8EkA211",
       "commission_rate": 625,
       "url": ""
     },{
       "name": "biosbpr",
-      "bpkey": "EOS65K5wm8eZYQ7VLL9Afp3g5pN2keN7uXnzno7K9nYn7HE522bqb",
+      "bpkey": "#PUB#65K5wm8eZYQ7VLL9Afp3g5pN2keN7uXnzno7K9nYn7HE522bqb",
       "commission_rate": 588,
       "url": ""
     },{
       "name": "biosbps",
-      "bpkey": "EOS5hnnkcVKpMJZWXqaS6vTqC82rwgwPyctRrdLAR64j7rrk2MfsP",
+      "bpkey": "#PUB#5hnnkcVKpMJZWXqaS6vTqC82rwgwPyctRrdLAR64j7rrk2MfsP",
       "commission_rate": 555,
       "url": ""
     },{
       "name": "biosbpt",
-      "bpkey": "EOS8LDwUz9eFC6yurZ4qbfgLKMkeLmKvJHqgATztX65q8WjnmCT87",
+      "bpkey": "#PUB#8LDwUz9eFC6yurZ4qbfgLKMkeLmKvJHqgATztX65q8WjnmCT87",
       "commission_rate": 526,
       "url": ""
     },{
       "name": "biosbpu",
-      "bpkey": "EOS5iXZvUM5sES654piXwpEPVLHun7oQ2BeLTTdgHYRzhdbh4asvF",
+      "bpkey": "#PUB#5iXZvUM5sES654piXwpEPVLHun7oQ2BeLTTdgHYRzhdbh4asvF",
       "commission_rate": 500,
       "url": ""
     },{
       "name": "biosbpv",
-      "bpkey": "EOS7hSvvjJKybkicTYhMPUhc9mRBf9kudRcpWECHUHxH17erc6RnA",
+      "bpkey": "#PUB#7hSvvjJKybkicTYhMPUhc9mRBf9kudRcpWECHUHxH17erc6RnA",
       "commission_rate": 476,
       "url": ""
     },{
       "name": "biosbpw",
-      "bpkey": "EOS76Hb2nxXXawehsLQ6U4uCRCFP5uwnP24J5R9zpefXczvuHByko",
+      "bpkey": "#PUB#76Hb2nxXXawehsLQ6U4uCRCFP5uwnP24J5R9zpefXczvuHByko",
       "commission_rate": 10000,
       "url": ""
     }
