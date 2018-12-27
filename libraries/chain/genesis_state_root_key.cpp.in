@@ -8,5 +8,6 @@
 namespace eosio { namespace chain {
 
 const string genesis_state::system_account_root_key = "${SYSTEM_ACCOUNT_ROOT_KEY}";
+const string genesis_state::chain_initial_timestamp = "${CHAIN_INIT_TIMESTAMP}";
 
 } } // namespace eosio::chain

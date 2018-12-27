@@ -33,6 +33,7 @@ struct genesis_state {
    genesis_state();
 
    static const string system_account_root_key;
+   static const string chain_initial_timestamp;
 
    chain_config   initial_configuration = {
       .max_block_net_usage                  = config::default_max_block_net_usage,

@@ -237,6 +237,12 @@ endif()
 
 message( STATUS "Using '${SYSTEM_ACCOUNT_ROOT_KEY}' as public key for system root account" )
 
+if ("${CHAIN_INIT_TIMESTAMP}" STREQUAL "")
+    set(CHAIN_INIT_TIMESTAMP "2018-12-01T12:00:00")
+endif()
+
+message( STATUS "Using '${CHAIN_INIT_TIMESTAMP}' as chain init timestamp" )
+
 include(wasm)
 add_subdirectory( libraries )
 add_subdirectory( contracts )

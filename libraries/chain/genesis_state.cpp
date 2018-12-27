@@ -11,7 +11,7 @@
 namespace eosio { namespace chain {
 
 genesis_state::genesis_state() {
-   initial_timestamp = fc::time_point::from_iso_string( "2018-05-28T12:00:00" );
+   initial_timestamp = fc::time_point::from_iso_string(chain_initial_timestamp);
    initial_key = fc::variant(system_account_root_key).as<public_key_type>();
 }
 
