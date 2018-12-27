@@ -181,6 +181,7 @@ def stepMakeGenesis():
 
     run('cp ./genesis-data/genesis.json ' + os.path.abspath(args.config_dir))
     replaceFile(os.path.abspath(args.config_dir) + "/genesis.json", "#CORE_SYMBOL#", args.symbol)
+    replaceFile(os.path.abspath(args.config_dir) + "/genesis.json", "#PUB#", args.pr)
     run('cp ./genesis-data/key.json ' + os.path.abspath(args.config_dir) + '/keys/')
     run('cp ./genesis-data/sigkey.json ' + os.path.abspath(args.config_dir) + '/keys/')
 
@@ -249,6 +250,7 @@ parser.add_argument('--log-path', metavar='', help="Path to log file", default='
 parser.add_argument('--wallet-dir', metavar='', help="Path to wallet directory", default='./wallet/')
 parser.add_argument('--config-dir', metavar='', help="Path to config directory", default='./config')
 parser.add_argument('--symbol', metavar='', help="The core symbol", default='SYS')
+parser.add_argument('--pr', metavar='', help="The Public Key Start Symbol", default='FOSC')
 parser.add_argument('-a', '--all', action='store_true', help="Do everything marked with (*)")
 
 for (flag, command, function, inAll, help) in commands:

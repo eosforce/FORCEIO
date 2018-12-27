@@ -7,12 +7,13 @@
 
 // these are required to serialize a genesis_state
 #include <fc/smart_ref_impl.hpp>   // required for gcc in release mode
+#include <fc/fc_defines.hpp>
 
 namespace eosio { namespace chain {
 
 genesis_state::genesis_state() {
    initial_timestamp = fc::time_point::from_iso_string( "2018-05-28T12:00:00" );
-   initial_key = fc::variant("EOS1111111111111111111111111111111114T1Anm").as<public_key_type>();
+   initial_key = fc::variant(std::string(fc::crypto::config::public_key_legacy_prefix) + "1111111111111111111111111111111114T1Anm").as<public_key_type>();
 }
 
 chain::chain_id_type genesis_state::compute_chain_id() const {
