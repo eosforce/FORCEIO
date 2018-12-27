@@ -27,6 +27,7 @@
 [submodule "libraries/fc"]
 	path = libraries/fc
 	url = https://gitlab.com/eosforce/fc
+	branch = force
 [submodule "libraries/wabt"]
 	path = libraries/wabt
 	url = http://github.com/EOSIO/wabt
