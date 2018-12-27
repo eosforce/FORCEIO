@@ -223,11 +223,11 @@ endif()
 
 message( STATUS "Using '${CORE_SYMBOL_NAME}' as CORE symbol name" )
 
-if ("${EOSIO_ROOT_KEY}" STREQUAL "")
-   set(EOSIO_ROOT_KEY "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
+if ("${SYSTEM_ACCOUNT_ROOT_KEY}" STREQUAL "")
+   set(SYSTEM_ACCOUNT_ROOT_KEY "${PUB_KEY_LEGACY_PREFIX}6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
 endif()
 
-message( STATUS "Using '${EOSIO_ROOT_KEY}' as public key for 'eosio' account" )
+message( STATUS "Using '${SYSTEM_ACCOUNT_ROOT_KEY}' as public key for system root account" )
 
 include(wasm)
 add_subdirectory( libraries )

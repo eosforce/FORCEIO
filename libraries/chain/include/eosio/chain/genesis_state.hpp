@@ -32,7 +32,7 @@ struct producer_tuple {
 struct genesis_state {
    genesis_state();
 
-   static const string eosio_root_key;
+   static const string system_account_root_key;
 
    chain_config   initial_configuration = {
       .max_block_net_usage                  = config::default_max_block_net_usage,
