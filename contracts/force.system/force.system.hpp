@@ -8,6 +8,7 @@
 #include <eosiolib/producer_schedule.hpp>
 #include <eosiolib/time.hpp>
 #include <eosiolib/chain.h>
+#include <eosiolib/contract_config.hpp>
 
 namespace eosiosystem {
 
@@ -17,11 +18,11 @@ namespace eosiosystem {
    using eosio::block_timestamp;
    using std::string;
 
-   static constexpr uint32_t FROZEN_DELAY = 3 * 24 * 60 * 20; //3*24*60*20*3s;
-   static constexpr int NUM_OF_TOP_BPS = 23;
-   static constexpr int BLOCK_REWARDS_BP = 9 * 10000; //9.0000 EOS
-   static constexpr int BLOCK_REWARDS_B1 = 1 * 10000; //1.0000 EOS
-   static constexpr uint32_t UPDATE_CYCLE = 100; //every 100 blocks update
+   static constexpr uint32_t FROZEN_DELAY = CONTRACT_FROZEN_DELAY; // 3 * 24 * 60 * 20; //3*24*60*20*3s;
+   static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
+   static constexpr int BLOCK_REWARDS_BP = CONTRACT_BLOCK_REWARDS_BP;//9 * 10000; //9.0000 EOS
+   static constexpr int BLOCK_REWARDS_B1 = CONTRACT_BLOCK_REWARDS_B1;//1 * 10000; //1.0000 EOS
+   static constexpr uint32_t UPDATE_CYCLE = CONTRACT_UPDATE_CYCLE;//100; //every 100 blocks update
 
    class system_contract : private eosio::contract {
    public:
