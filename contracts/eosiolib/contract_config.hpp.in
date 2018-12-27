@@ -1,0 +1,11 @@
+/** @file 
+ *    @copyright defined in eos/LICENSE.txt 
+ *
+ * \warning This file is machine generated. DO NOT EDIT.  See contract_config.hpp.in for changes.
+ */
+
+#define CONTRACT_FROZEN_DELAY ${FROZEN_DELAY}
+#define CONTRACT_NUM_OF_TOP_BPS ${NUM_OF_TOP_BPS}
+#define CONTRACT_BLOCK_REWARDS_BP ${BLOCK_REWARDS_BP}
+#define CONTRACT_BLOCK_REWARDS_B1 ${BLOCK_REWARDS_B1}
+#define CONTRACT_UPDATE_CYCLE ${UPDATE_CYCLE}
