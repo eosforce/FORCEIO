@@ -30,15 +30,6 @@ namespace eosiosystem {
 
    private:
 
-      struct account_info {
-         account_name name;
-         asset available = asset(0);
-
-         uint64_t primary_key() const { return name; }
-
-         EOSLIB_SERIALIZE(account_info, ( name )(available))
-      };
-
       struct vote_info {
          account_name bpname;
          asset staked = asset(0);
@@ -66,6 +57,7 @@ namespace eosiosystem {
          uint32_t commission_rate = 0; // 0 - 10000 for 0% - 100%
          int64_t total_staked = 0;
          asset rewards_pool = asset(0);
+         asset rewards_block = asset(0);
          int64_t total_voteage = 0; // asset.amount * block height
          uint32_t voteage_update_height = current_block_num();
          std::string url;
@@ -81,7 +73,7 @@ namespace eosiosystem {
          }
          void     deactivate()       {isactive = false;}
          EOSLIB_SERIALIZE(bp_info, ( name )(block_signing_key)(commission_rate)(total_staked)
-               (rewards_pool)(total_voteage)(voteage_update_height)(url)(emergency)(isactive))
+               (rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(isactive))
       };
 
       struct producer {
@@ -99,8 +91,6 @@ namespace eosiosystem {
          EOSLIB_SERIALIZE(schedule_info, ( version )(block_height)(producers))
       };
 
-
-      typedef eosio::multi_index<N(accounts), account_info> accounts_table;
       typedef eosio::multi_index<N(votes), vote_info> votes_table;
       typedef eosio::multi_index<N(votes4ram), vote_info> votes4ram_table;
       typedef eosio::multi_index<N(vote4ramsum), vote4ram_info> vote4ramsum_table;
@@ -114,9 +104,6 @@ namespace eosiosystem {
       bool is_super_bp( account_name block_producers[], account_name name );
 
    public:
-      // @abi action
-      void transfer( const account_name from, const account_name to, const asset quantity, const string memo );
-
       // @abi action
       void updatebp( const account_name bpname, const public_key producer_key,
                      const uint32_t commission_rate, const std::string& url );
@@ -148,8 +135,7 @@ namespace eosiosystem {
       void rmvproducer( account_name producer );
    };
 
-   EOSIO_ABI(system_contract,
-             ( transfer )(updatebp)
+   EOSIO_ABI(system_contract,(updatebp)
                    (vote)(unfreeze)
                    (vote4ram)(unfreezeram)
                    (claim)

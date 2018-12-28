@@ -1,31 +1,7 @@
 #include "force.system.hpp"
+#include <eosio.token/eosio.token.hpp>
 
 namespace eosiosystem {
-
-   void system_contract::transfer( const account_name from, const account_name to, const asset quantity,
-                                   const string memo ) {
-      require_auth(from);
-      accounts_table acnts_tbl(_self, _self);
-      const auto& from_act = acnts_tbl.get(from, "from account is not found in accounts table");
-      const auto& to_act = acnts_tbl.get(to, "to account is not found in accounts table");
-
-      eosio_assert(quantity.symbol == CORE_SYMBOL, "only support CORE SYMBOL token");
-      //from_act.available is already handling fee
-      eosio_assert(0 <= quantity.amount && quantity.amount <= from_act.available.amount,
-                   "need 0 < quantity < available balance");
-      eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
-
-      require_recipient(from);
-      require_recipient(to);
-
-      acnts_tbl.modify(from_act, 0, [&]( account_info& a ) {
-         a.available -= quantity;
-      });
-
-      acnts_tbl.modify(to_act, 0, [&]( account_info& a ) {
-         a.available += quantity;
-      });
-   }
 
    void system_contract::updatebp( const account_name bpname, const public_key block_signing_key,
                                    const uint32_t commission_rate, const std::string& url ) {
@@ -49,8 +25,6 @@ namespace eosiosystem {
 
    void system_contract::vote( const account_name voter, const account_name bpname, const asset stake ) {
       require_auth(voter);
-      accounts_table acnts_tbl(_self, _self);
-      const auto& act = acnts_tbl.get(voter, "voter is not found in accounts table");
 
       bps_table bps_tbl(_self, _self);
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
@@ -64,18 +38,12 @@ namespace eosiosystem {
       auto vts = votes_tbl.find(bpname);
       if( vts == votes_tbl.end()) {
          change = stake.amount;
-         //act.available is already handling fee
-         eosio_assert(stake.amount <= act.available.amount, "need stake quantity < your available balance");
-
          votes_tbl.emplace(voter, [&]( vote_info& v ) {
             v.bpname = bpname;
             v.staked = stake;
          });
       } else {
          change = stake.amount - vts->staked.amount;
-         //act.available is already handling fee
-         eosio_assert(change <= act.available.amount, "need stake change quantity < your available balance");
-
          votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
             v.voteage += v.staked.amount / 10000 * ( current_block_num() - v.voteage_update_height );
             v.voteage_update_height = current_block_num();
@@ -88,9 +56,8 @@ namespace eosiosystem {
       }
       eosio_assert(bp.isactive || (!bp.isactive && change < 0), "bp is not active");
       if( change > 0 ) {
-         acnts_tbl.modify(act, 0, [&]( account_info& a ) {
-            a.available.amount -= change;
-         });
+         INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {voter, N(active)},
+                                                       { voter, N(eosio), asset(change), std::string("vote") } );
       }
 
       bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
@@ -102,8 +69,6 @@ namespace eosiosystem {
 
    void system_contract::unfreeze( const account_name voter, const account_name bpname ) {
       require_auth(voter);
-      accounts_table acnts_tbl(_self, _self);
-      const auto& act = acnts_tbl.get(voter, "voter is not found in accounts table");
 
       votes_table votes_tbl(_self, voter);
       const auto& vts = votes_tbl.get(bpname, "voter have not add votes to the the producer yet");
@@ -111,9 +76,8 @@ namespace eosiosystem {
       eosio_assert(vts.unstake_height + FROZEN_DELAY < current_block_num(), "unfreeze is not available yet");
       eosio_assert(0 < vts.unstaking.amount, "need unstaking quantity > 0");
 
-      acnts_tbl.modify(act, 0, [&]( account_info& a ) {
-         a.available += vts.unstaking;
-      });
+      INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {N(eosio), N(active)},
+                                                    { N(eosio), voter, vts.unstaking, std::string("unfreeze") } );
 
       votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
          v.unstaking.set_amount(0);
@@ -122,8 +86,6 @@ namespace eosiosystem {
 
    void system_contract::vote4ram( const account_name voter, const account_name bpname, const asset stake ) {
       require_auth(voter);
-      accounts_table acnts_tbl(_self, _self);
-      const auto& act = acnts_tbl.get(voter, "voter is not found in accounts table");
 
       bps_table bps_tbl(_self, _self);
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
@@ -137,18 +99,12 @@ namespace eosiosystem {
       auto vts = votes_tbl.find(bpname);
       if( vts == votes_tbl.end()) {
          change = stake.amount;
-         //act.available is already handling fee
-         eosio_assert(stake.amount <= act.available.amount, "need stake quantity < your available balance");
-
          votes_tbl.emplace(voter, [&]( vote_info& v ) {
             v.bpname = bpname;
             v.staked = stake;
          });
       } else {
          change = stake.amount - vts->staked.amount;
-         //act.available is already handling fee
-         eosio_assert(change <= act.available.amount, "need stake change quantity < your available balance");
-
          votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
             v.voteage += v.staked.amount / 10000 * ( current_block_num() - v.voteage_update_height );
             v.voteage_update_height = current_block_num();
@@ -161,9 +117,8 @@ namespace eosiosystem {
       }
 
       if( change > 0 ) {
-         acnts_tbl.modify(act, 0, [&]( account_info& a ) {
-            a.available.amount -= change;
-         });
+         INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {voter, N(active)},
+                                                       { voter, N(eosio), asset(change), std::string("vote4ram") } );
       }
 
       bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
@@ -190,8 +145,6 @@ namespace eosiosystem {
 
    void system_contract::unfreezeram( const account_name voter, const account_name bpname ) {
       require_auth(voter);
-      accounts_table acnts_tbl(_self, _self);
-      const auto& act = acnts_tbl.get(voter, "voter is not found in accounts table");
 
       votes4ram_table votes_tbl(_self, voter);
       const auto& vts = votes_tbl.get(bpname, "voter have not add votes to the the producer yet");
@@ -199,9 +152,8 @@ namespace eosiosystem {
       eosio_assert(vts.unstake_height + FROZEN_DELAY < current_block_num(), "unfreeze is not available yet");
       eosio_assert(0 < vts.unstaking.amount, "need unstaking quantity > 0");
 
-      acnts_tbl.modify(act, 0, [&]( account_info& a ) {
-         a.available += vts.unstaking;
-      });
+      INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {N(eosio), N(active)},
+                                                    { N(eosio), voter, vts.unstaking, std::string("unfreezeram") } );
 
       votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
          v.unstaking.set_amount(0);
@@ -210,8 +162,6 @@ namespace eosiosystem {
 
    void system_contract::claim( const account_name voter, const account_name bpname ) {
       require_auth(voter);
-      accounts_table acnts_tbl(_self, _self);
-      const auto& act = acnts_tbl.get(voter, "voter is not found in accounts table");
 
       bps_table bps_tbl(_self, _self);
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
@@ -230,17 +180,26 @@ namespace eosiosystem {
       eosio_assert(0 <= reward.amount && reward.amount <= bp.rewards_pool.amount,
                    "need 0 <= claim reward quantity <= rewards_pool");
 
-      acnts_tbl.modify(act, 0, [&]( account_info& a ) {
-         a.available += reward;
-      });
+      if(voter == bpname){
+         reward += bp.rewards_block;
+         bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
+             b.rewards_block.set_amount(0);
+         });
+      }
+
+      INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {N(eosio), N(active)},
+                                                    { N(eosio), voter, reward, std::string("claim") } );
 
       votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
          v.voteage = 0;
          v.voteage_update_height = current_block_num();
       });
 
-      bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
+      bps_tbl.modify(bp, 0, [&](bp_info &b) {
          b.rewards_pool -= reward;
+         if (voter == bpname) {
+            b.rewards_block.set_amount(0);
+         }
          b.total_voteage = newest_total_voteage - newest_voteage;
          b.voteage_update_height = current_block_num();
       });
@@ -249,7 +208,6 @@ namespace eosiosystem {
    void system_contract::onblock( const block_timestamp, const account_name bpname, const uint16_t, const block_id_type,
                                   const checksum256, const checksum256, const uint32_t schedule_version ) {
       bps_table bps_tbl(_self, _self);
-      accounts_table acnts_tbl(_self, _self);
       schedules_table schs_tbl(_self, _self);
 
       account_name block_producers[NUM_OF_TOP_BPS] = {};
@@ -276,19 +234,16 @@ namespace eosiosystem {
          });
       }
 
+      INLINE_ACTION_SENDER(eosio::token, issue)( N(eosio.token), {{N(eosio),N(active)}},
+                                                 {N(eosio), asset(BLOCK_REWARDS_BP + BLOCK_REWARDS_B1), std::string("issue tokens for producer pay and b1")} );
       //reward bps
       reward_bps(block_producers);
 
-
-
-      //update schedule
       if( current_block_num() % UPDATE_CYCLE == 0 ) {
          //reward block.one
-         const auto& b1 = acnts_tbl.get(N(b1), "b1 is not found in accounts table");
-         acnts_tbl.modify(b1, 0, [&]( account_info& a ) {
-            a.available += asset(BLOCK_REWARDS_B1 * UPDATE_CYCLE);
-         });
-
+         INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {N(eosio), N(active)},
+                                                       { N(eosio), N(b1), asset(BLOCK_REWARDS_B1 * UPDATE_CYCLE), std::string("reward block.one") } );
+         //update schedule
          update_elected_bps();
       }
    }
@@ -330,7 +285,6 @@ namespace eosiosystem {
 
    void system_contract::reward_bps( account_name block_producers[] ) {
       bps_table bps_tbl(_self, _self);
-      accounts_table acnts_tbl(_self, _self);
       schedules_table schs_tbl(_self, _self);
 
       //calculate total staked all of the bps
@@ -347,7 +301,7 @@ namespace eosiosystem {
       //reward bps, (bp_reward => bp_account_reward + bp_rewards_pool + eosfund_reward;)
       auto sum_bps_reward = 0;
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
-         if( it->total_staked <= rewarding_bp_staked_threshold || it->commission_rate < 1 ||
+         if( !it->isactive || it->total_staked <= rewarding_bp_staked_threshold || it->commission_rate < 1 ||
              it->commission_rate > 10000 ) {
             continue;
          }
@@ -359,38 +313,21 @@ namespace eosiosystem {
          if( is_super_bp(block_producers, it->name)) {
             bp_account_reward += bp_reward * 15 / 100;
          }
-         const auto& act = acnts_tbl.get(it->name, "bpname is not found in accounts table");
-         acnts_tbl.modify(act, 0, [&]( account_info& a ) {
-            a.available += asset(bp_account_reward);
-         });
 
-         //reward pool
+         //reward bp and pool
          auto bp_rewards_pool = bp_reward * 70 / 100 * ( 10000 - it->commission_rate ) / 10000;
          const auto& bp = bps_tbl.get(it->name, "bpname is not registered");
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
             b.rewards_pool += asset(bp_rewards_pool);
+            b.rewards_block += asset(bp_account_reward);
          });
 
          sum_bps_reward += ( bp_account_reward + bp_rewards_pool );
-
-         /* no log
-         if( current_block_num() % 100 == 0 ) {
-            print(" bp: ", eosio::name{.value=it->name}, ", staked:", it->total_staked, ", bp_stake_rate:",
-                  double(it->total_staked) / double(staked_all_bps),
-                  ", is_super_bp: ", is_super_bp(block_producers, it->name), ", commission_rate:", it->commission_rate,
-                  ", bp_reward: ", bp_reward,
-                  ", bp_account_reward+=", bp_account_reward, ", bp_rewards_pool+=", bp_rewards_pool, "\n");
-         }
-         */
-
       }
 
       //reward eosfund
-      const auto& eosfund = acnts_tbl.get(N(devfund), "eosfund1 is not found in accounts table");
-      auto total_eosfund_reward = BLOCK_REWARDS_BP - sum_bps_reward;
-      acnts_tbl.modify(eosfund, 0, [&]( account_info& a ) {
-         a.available += asset(total_eosfund_reward);
-      });
+      INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {N(eosio), N(active)},
+                                                    { N(eosio), N(devfund), asset(BLOCK_REWARDS_BP - sum_bps_reward), std::string("reward for developer fund") } );
    }
 
    void system_contract::setparams( const eosio::blockchain_parameters& params ) {
