@@ -139,7 +139,7 @@ def stepCreateWallet():
 
 def stepStartProducers():
     startProducers(datas["initProducers"], datas["initProducerSigKeys"])
-    sleep(5)
+    sleep(15)
     stepSetFuncs()
 
 def stepCreateNodeDirs():
@@ -179,11 +179,19 @@ def stepMakeGenesis():
     run('cp ' + args.contracts_dir + '/eosio.msig/eosio.msig.abi ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/eosio.msig/eosio.msig.wasm ' + os.path.abspath(args.config_dir))
 
-    run('cp ./genesis-data/genesis.json ' + os.path.abspath(args.config_dir))
-    replaceFile(os.path.abspath(args.config_dir) + "/genesis.json", "#CORE_SYMBOL#", args.symbol)
-    replaceFile(os.path.abspath(args.config_dir) + "/genesis.json", "#PUB#", args.pr)
-    run('cp ./genesis-data/key.json ' + os.path.abspath(args.config_dir) + '/keys/')
-    run('cp ./genesis-data/sigkey.json ' + os.path.abspath(args.config_dir) + '/keys/')
+    #run('cp ./genesis-data/genesis.json ' + os.path.abspath(args.config_dir))
+    #replaceFile(os.path.abspath(args.config_dir) + "/genesis.json", "#CORE_SYMBOL#", args.symbol)
+    #replaceFile(os.path.abspath(args.config_dir) + "/genesis.json", "#PUB#", args.pr)
+    #run('cp ./genesis-data/key.json ' + os.path.abspath(args.config_dir) + '/keys/')
+    #run('cp ./genesis-data/sigkey.json ' + os.path.abspath(args.config_dir) + '/keys/')
+    run('echo "" > ' + os.path.abspath(args.config_dir) + '/config.ini')
+        
+    run(args.root + 'build/programs/genesis/genesis')
+    run('mv ./genesis.json ' + os.path.abspath(args.config_dir))
+    run('mv ./activeacc.json ' + os.path.abspath(args.config_dir))
+    
+    run('mv ./key.json ' + os.path.abspath(args.config_dir) + '/keys/')
+    run('mv ./sigkey.json ' + os.path.abspath(args.config_dir) + '/keys/')
 
 def setFuncStartBlock(func_typ, num):
     run(args.cleos +
