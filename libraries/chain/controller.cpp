@@ -695,8 +695,8 @@ struct controller_impl {
       for( const auto& account : conf.genesis.initial_account_list ) {
          const auto& public_key = account.key;
          db.insert(
-               config::system_account_name, config::system_account_name, N(accounts), account.name,
-               memory_db::account_info{ account.name, account.asset });
+               config::token_account_name, account.name, N(accounts), account.name,
+               memory_db::token_account{ account.asset });
          const authority auth(public_key);
          create_native_account(account.name, auth, auth, false);
       }

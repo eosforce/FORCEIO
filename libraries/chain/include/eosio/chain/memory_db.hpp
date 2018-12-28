@@ -101,6 +101,12 @@ public:
 
       uint64_t primary_key() const { return name; }
    };
+    // eosio.token accounts
+    struct token_account {
+        asset    balance;
+
+        uint64_t primary_key()const { return balance.get_symbol().value(); }
+    };
 
     struct eoslock_account {
         account_name owner;
@@ -280,6 +286,7 @@ public:
 FC_REFLECT(eosio::chain::memory_db::bp_info, (name)(producer_key)
             (commission_rate)(total_staked)(rewards_pool)(total_voteage)(voteage_update_height)(url)(emergency))
 FC_REFLECT(eosio::chain::memory_db::account_info, (name)(available))
+FC_REFLECT(eosio::chain::memory_db::token_account, (balance))
 FC_REFLECT(eosio::chain::memory_db::eoslock_account, (owner)(balance))
 FC_REFLECT(eosio::chain::memory_db::chain_status, (name)(emergency))
 FC_REFLECT(eosio::chain::memory_db::currency_stats, (supply)(max_supply)(issuer))
