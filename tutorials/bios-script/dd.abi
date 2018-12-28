@@ -1,0 +1,25 @@
+{
+  "version": "eosio::abi/1.0",
+  "types": [],
+  "structs": [{
+      "name": "hello",
+      "base": "",
+      "fields": [{
+          "name": "actor",
+          "type": "account_name"
+        }
+      ]
+    }
+  ],
+  "actions": [{
+      "name": "hello",
+      "type": "hello",
+      "ricardian_contract": ""
+    }
+  ],
+  "tables": [],
+  "ricardian_clauses": [],
+  "error_messages": [],
+  "abi_extensions": [],
+  "variants": []
+}

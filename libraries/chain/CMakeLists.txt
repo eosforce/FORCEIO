@@ -43,6 +43,7 @@ add_library( eosio_chain
 
              native-contract/native_contracts.cpp
              native-contract/native_contracts_abi.cpp
+             native-contract/native_contracts_apply.cpp
 
              ${HEADERS}
              )
