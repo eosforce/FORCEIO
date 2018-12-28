@@ -28,29 +28,22 @@ add_library( eosio_chain
              chain_id_type.cpp
              genesis_state.cpp
              ${CMAKE_CURRENT_BINARY_DIR}/genesis_state_root_key.cpp
-
-#             chain_config.cpp
-#             block_trace.cpp
-              wast_to_wasm.cpp
-              wasm_interface.cpp
-              wasm_eosio_validation.cpp
-              wasm_eosio_injection.cpp
-              apply_context.cpp
-              memory_db.cpp
-              abi_serializer.cpp
-              asset.cpp
-              snapshot.cpp
+             wast_to_wasm.cpp
+             wasm_interface.cpp
+             wasm_eosio_validation.cpp
+             wasm_eosio_injection.cpp
+             apply_context.cpp
+             memory_db.cpp
+             abi_serializer.cpp
+             asset.cpp
+             snapshot.cpp
 
              webassembly/wavm.cpp
              webassembly/wabt.cpp
 
-#             get_config.cpp
-#             global_property_object.cpp
-#
-#             contracts/chain_initializer.cpp
+             native-contract/native_contracts.cpp
+             native-contract/native_contracts_abi.cpp
 
-
-#             transaction_metadata.cpp
              ${HEADERS}
              )
 
