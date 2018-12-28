@@ -70,6 +70,7 @@ namespace eosiosystem {
          uint32_t voteage_update_height = current_block_num();
          std::string url;
          bool emergency = false;
+         bool isactive = true;
 
          uint64_t primary_key() const { return name; }
 
@@ -78,9 +79,9 @@ namespace eosiosystem {
             commission_rate = rate;
             url = u;
          }
-
+         void     deactivate()       {isactive = false;}
          EOSLIB_SERIALIZE(bp_info, ( name )(block_signing_key)(commission_rate)(total_staked)
-               (rewards_pool)(total_voteage)(voteage_update_height)(url)(emergency))
+               (rewards_pool)(total_voteage)(voteage_update_height)(url)(emergency)(isactive))
       };
 
       struct producer {
@@ -143,6 +144,8 @@ namespace eosiosystem {
       void onfee( const account_name actor, const asset fee );
       // @abi action
       void setparams( const eosio::blockchain_parameters& params );
+      // @abi action
+      void rmvproducer( account_name producer );
    };
 
    EOSIO_ABI(system_contract,
@@ -151,5 +154,5 @@ namespace eosiosystem {
                    (vote4ram)(unfreezeram)
                    (claim)
                    (onblock)(onfee)
-                   (setparams))
+                   (setparams)(rmvproducer))
 } /// eosiosystem
