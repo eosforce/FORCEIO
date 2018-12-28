@@ -49,13 +49,6 @@
         {"name":"bpname",     "type":"account_name"}
       ]
     },{
-      "name": "account_info",
-      "base": "",
-      "fields": [
-        {"name":"name",         "type":"account_name"},
-        {"name":"available",    "type":"asset"}
-      ]
-    },{
       "name": "vote",
       "base": "",
       "fields": [
@@ -358,12 +351,6 @@
   ],
   "tables": [
         {
-          "name":"accounts",
-          "type":"account_info",
-          "index_type": "i64",
-          "key_names" : ["name"],
-          "key_types" : ["account_name"]
-       },{
           "name":"bps",
           "type":"bp_info",
           "index_type":"i64",
