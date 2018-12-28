@@ -773,7 +773,7 @@ struct controller_impl {
                                    config::token_account_name });
       auto db = memory_db(self);
       db.insert(config::token_account_name, config::system_account_name, N(accounts), config::system_account_name,
-              memory_db::token_account{ account.asset });
+              memory_db::token_account{ eosio::chain::asset(0) });
 
       initialize_account();
       initialize_producer();
