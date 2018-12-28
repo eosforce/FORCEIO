@@ -17,15 +17,6 @@
       "type": "uint16"
    }],
   "structs": [{
-      "name": "transfer",
-      "base": "",
-      "fields": [
-         {"name":"from",     "type":"account_name"},
-         {"name":"to",       "type":"account_name"},
-         {"name":"quantity", "type":"asset"},
-         {"name":"memo",     "type":"string"}
-      ]
-    },{
       "name": "updatebp",
       "base": "",
       "fields": [
@@ -268,10 +259,6 @@
      }
   ],
   "actions": [{
-      "name": "transfer",
-      "type": "transfer",
-      "ricardian_contract": ""
-    },{
       "name": "updatebp",
       "type": "updatebp",
       "ricardian_contract": ""
