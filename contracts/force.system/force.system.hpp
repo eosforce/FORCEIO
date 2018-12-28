@@ -79,9 +79,9 @@ namespace eosiosystem {
             commission_rate = rate;
             url = u;
          }
-         void     deactivate()       {isactive = false; }
+         void     deactivate()       {isactive = false;}
          EOSLIB_SERIALIZE(bp_info, ( name )(block_signing_key)(commission_rate)(total_staked)
-               (rewards_pool)(total_voteage)(voteage_update_height)(url)(emergency))
+               (rewards_pool)(total_voteage)(voteage_update_height)(url)(emergency)(isactive))
       };
 
       struct producer {

@@ -395,6 +395,7 @@ namespace eosiosystem {
 
    void system_contract::setparams( const eosio::blockchain_parameters& params ) {
       require_auth( _self );
+      eosio_assert( 3 <= params.max_authority_depth, "max_authority_depth should be at least 3" );
       set_blockchain_parameters( params );
    }
 

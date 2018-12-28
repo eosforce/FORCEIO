@@ -762,7 +762,7 @@ struct controller_impl {
 
       initialize_contract(config::system_account_name, conf.system_code, conf.system_abi, true);
       initialize_contract(config::token_account_name, conf.token_code, conf.token_abi);
-      initialize_contract(config::msig_account_name, conf.msig_code, conf.msig_abi);
+      initialize_contract(config::msig_account_name, conf.msig_code, conf.msig_abi, true);
 
       const auto& sym = symbol(CORE_SYMBOL).to_symbol_code();
       memory_db(self).insert(config::token_account_name, sym, N(stat),

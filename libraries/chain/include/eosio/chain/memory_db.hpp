@@ -125,6 +125,7 @@ public:
       uint32_t        voteage_update_height    = 0;
       std::string     url;
       bool            emergency                = false;
+      bool            isactive                 = true;
 
       bp_info() : commission_rate(0) {
       }
@@ -278,7 +279,7 @@ public:
 } } // namespace eosio::chain
 
 FC_REFLECT(eosio::chain::memory_db::bp_info, (name)(producer_key)
-            (commission_rate)(total_staked)(rewards_pool)(total_voteage)(voteage_update_height)(url)(emergency))
+            (commission_rate)(total_staked)(rewards_pool)(total_voteage)(voteage_update_height)(url)(emergency)(isactive))
 FC_REFLECT(eosio::chain::memory_db::account_info, (name)(available))
 FC_REFLECT(eosio::chain::memory_db::eoslock_account, (owner)(balance))
 FC_REFLECT(eosio::chain::memory_db::chain_status, (name)(emergency))
