@@ -92,6 +92,7 @@ def startNode(nodeIndex, bpaccount, key):
         '    --plugin eosio::history_api_plugin'
     )
 
+
     print('bpaccount ', bpaccount)
     print('key ', key, ' ', key[1])
 
