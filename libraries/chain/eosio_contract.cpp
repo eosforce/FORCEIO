@@ -459,10 +459,12 @@ void apply_eosio_onfee( apply_context& context ) {
    acnts_tbl.get(symbol(CORE_SYMBOL).value(), token_account, "symbol is not found in accounts table");
    eosio_contract_assert(fee <= token_account.balance, "overdrawn available balance");
 
+   /*
    acnts_tbl.modify(acnts_tbl.find_itr(symbol(CORE_SYMBOL).value()), token_account, 0,
                     [fee]( memory_db::token_account& a ) {
                        a.balance -= fee;
                     });
+                    */
 }
 
 } } // namespace eosio::chain
