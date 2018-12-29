@@ -88,9 +88,11 @@ void token::transfer( account_name from,
 void token::sub_balance( account_name owner, asset value ) {
    accounts from_acnts( _self, owner );
 
+   //TODO: if not do this, can't get the data
+   for( auto it = from_acnts.cbegin(); it != from_acnts.cend(); ++it ) {}
+
    const auto& from = from_acnts.get( value.symbol.name(), "no balance object found" );
    eosio_assert( from.balance.amount >= value.amount, "overdrawn balance" );
-
 
    if( from.balance.amount == value.amount ) {
       from_acnts.erase( from );
@@ -104,6 +106,10 @@ void token::sub_balance( account_name owner, asset value ) {
 void token::add_balance( account_name owner, asset value, account_name ram_payer )
 {
    accounts to_acnts( _self, owner );
+
+   //TODO: if not do this, can't get the data
+   for( auto it = to_acnts.cbegin(); it != to_acnts.cend(); ++it ) {}
+
    auto to = to_acnts.find( value.symbol.name() );
    if( to == to_acnts.end() ) {
       to_acnts.emplace( ram_payer, [&]( auto& a ){
