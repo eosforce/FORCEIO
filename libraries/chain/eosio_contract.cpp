@@ -116,12 +116,6 @@ void apply_eosio_newaccount(apply_context& context) {
       a.name = create.name;
    });
 
-   // accounts_table
-   memory_db(db).insert(
-         config::system_account_name, config::system_account_name, N(accounts),
-         create.name,
-         memory_db::account_info{create.name, asset(0)});
-
    for( const auto& auth : { create.owner, create.active } ){
       validate_authority_precondition( context, auth );
    }
@@ -457,17 +451,17 @@ void apply_eosio_onfee( apply_context& context ) {
    // need actor authorization
    // context.require_authorization(data.actor);
 
-   // accounts_table
-   auto acnts_tbl = native_multi_index<N(accounts), memory_db::account_info>{
-         context, config::system_account_name, config::system_account_name
+   // accounts_table eosio.token
+   auto acnts_tbl = native_multi_index<N(accounts), memory_db::token_account>{
+         context, config::token_account_name, data.actor
    };
-   memory_db::account_info account_info_data;
-   acnts_tbl.get(data.actor, account_info_data, "account is not found in accounts table");
-   eosio_contract_assert(fee <= account_info_data.available, "overdrawn available balance");
+   memory_db::token_account token_account;
+   acnts_tbl.get(symbol(CORE_SYMBOL).value(), token_account, "symbol is not found in accounts table");
+   eosio_contract_assert(fee <= token_account.balance, "overdrawn available balance");
 
-   acnts_tbl.modify(acnts_tbl.find_itr(data.actor), account_info_data, 0,
-                    [fee]( memory_db::account_info& a ) {
-                       a.available -= fee;
+   acnts_tbl.modify(acnts_tbl.find_itr(symbol(CORE_SYMBOL).value()), token_account, 0,
+                    [fee]( memory_db::token_account& a ) {
+                       a.balance -= fee;
                     });
 }
 

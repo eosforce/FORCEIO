@@ -695,8 +695,8 @@ struct controller_impl {
       for( const auto& account : conf.genesis.initial_account_list ) {
          const auto& public_key = account.key;
          db.insert(
-               config::system_account_name, config::system_account_name, N(accounts), account.name,
-               memory_db::account_info{ account.name, account.asset });
+               config::token_account_name, account.name, N(accounts), account.name,
+               memory_db::token_account{ account.asset });
          const authority auth(public_key);
          create_native_account(account.name, auth, auth, false);
       }
@@ -762,7 +762,7 @@ struct controller_impl {
 
       initialize_contract(config::system_account_name, conf.system_code, conf.system_abi, true);
       initialize_contract(config::token_account_name, conf.token_code, conf.token_abi);
-      initialize_contract(config::msig_account_name, conf.msig_code, conf.msig_abi);
+      initialize_contract(config::msig_account_name, conf.msig_code, conf.msig_abi, true);
 
       const auto& sym = symbol(CORE_SYMBOL).to_symbol_code();
       memory_db(self).insert(config::token_account_name, sym, N(stat),
@@ -771,6 +771,8 @@ struct controller_impl {
                                    asset(10000000),
                                    asset(100000000000),
                                    config::token_account_name });
+      memory_db(self).insert(config::token_account_name, config::system_account_name, N(accounts), config::system_account_name,
+              memory_db::token_account{ eosio::chain::asset(0) });
 
       initialize_account();
       initialize_producer();
