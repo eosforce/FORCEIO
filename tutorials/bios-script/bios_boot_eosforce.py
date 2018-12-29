@@ -152,7 +152,6 @@ def stepLog():
     run(args.cleos + ' get info')
     print('you can use \"alias cleost=\'%s\'\" to call cleos to testnet' % args.cleos)
 
-
 def stepMkConfig():
     with open(os.path.abspath(args.config_dir) + '/genesis.json') as f:
         a = json.load(f)
