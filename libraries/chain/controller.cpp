@@ -689,6 +689,14 @@ struct controller_impl {
       }
    }
 
+   asset get_token_sum() {
+      asset sum = asset(0);
+       for (const auto &account : conf.genesis.initial_account_list) {
+         sum += account.asset;
+      }
+      return sum;
+   }
+
    // initialize_account init account from genesis;
    void initialize_account() {
       auto db = memory_db(self);
@@ -765,14 +773,17 @@ struct controller_impl {
       initialize_contract(config::msig_account_name, conf.msig_code, conf.msig_abi, true);
 
       const auto& sym = symbol(CORE_SYMBOL).to_symbol_code();
+      const auto tsum = get_token_sum();
       memory_db(self).insert(config::token_account_name, sym, N(stat),
                              config::token_account_name,
                              memory_db::currency_stats{
-                                   asset(10000000),
-                                   asset(100000000000),
-                                   config::token_account_name });
-      memory_db(self).insert(config::token_account_name, config::system_account_name, N(accounts), config::system_account_name,
-              memory_db::token_account{ eosio::chain::asset(0) });
+                                   tsum,
+                                   asset(config::system_token_maximum_supply),
+                                   config::system_account_name });
+
+      memory_db(self).insert(config::token_account_name, config::system_account_name, N(accounts),
+                             config::system_account_name,
+                             memory_db::token_account{eosio::chain::asset(0)});
 
       initialize_account();
       initialize_producer();
