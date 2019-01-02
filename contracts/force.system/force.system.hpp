@@ -9,6 +9,7 @@
 #include <eosiolib/time.hpp>
 #include <eosiolib/chain.h>
 #include <eosiolib/contract_config.hpp>
+#include <force.system/native.hpp>
 
 namespace eosiosystem {
 
@@ -24,9 +25,9 @@ namespace eosiosystem {
    static constexpr int BLOCK_REWARDS_B1 = CONTRACT_BLOCK_REWARDS_B1;//1 * 10000; //1.0000 EOS
    static constexpr uint32_t UPDATE_CYCLE = CONTRACT_UPDATE_CYCLE;//100; //every 100 blocks update
 
-   class system_contract : private eosio::contract {
+   class system_contract : public native {
    public:
-      system_contract( account_name self ) : contract(self) {}
+      system_contract( account_name self ) : native(self) {}
 
    private:
 
@@ -140,5 +141,6 @@ namespace eosiosystem {
                    (vote4ram)(unfreezeram)
                    (claim)
                    (onblock)(onfee)
-                   (setparams)(rmvproducer))
+                   (setparams)(rmvproducer)
+                   (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi))
 } /// eosiosystem

@@ -66,8 +66,9 @@ namespace eosiosystem {
     */
    class native : public eosio::contract {
       public:
-
+        using eosio::contract::contract;
         // using eosio::contract::contract;
+        native( account_name s ):contract(s){}
 
          /**
           *  Called after a new account is created. This code enforces resource-limits rules
@@ -85,34 +86,34 @@ namespace eosiosystem {
                           account_name     newact
                             no need to parse authorites
                           const authority& owner,
-                          const authority& active*/ ) {}
+                          const authority& active*/ );
 
 
          void updateauth( /*account_name     account,
                                  permission_name  permission,
                                  permission_name  parent,
-                                 const authority& data*/ ) {}
+                                 const authority& data*/ );
 
-         void deleteauth( /*account_name account, permission_name permission*/ ) {}
+         void deleteauth( /*account_name account, permission_name permission*/ );
 
          void linkauth( /*account_name    account,
                                account_name    code,
                                action_name     type,
-                               permission_name requirement*/ ) {}
+                               permission_name requirement*/ );
 
          void unlinkauth( /*account_name account,
                                  account_name code,
-                                 action_name  type*/ ) {}
+                                 action_name  type*/ );
 
-         void canceldelay( /*permission_level canceling_auth, transaction_id_type trx_id*/ ) {}
+         void canceldelay( /*permission_level canceling_auth, transaction_id_type trx_id*/ );
 
-         void onerror( /*const bytes&*/ ) {}
+         void onerror( /*const bytes&*/ );
 
-         void setconfig(){}
-         void setcode(){}
-         void setfee(){}
-         void setabi(){}
-         void onfee(){}
+         void setconfig();
+         void setcode();
+         void setfee();
+         void setabi();
+         //void onfee(){}
 
    };
 }

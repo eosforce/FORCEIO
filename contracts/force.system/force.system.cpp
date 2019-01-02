@@ -1,5 +1,6 @@
 #include "force.system.hpp"
 #include <eosio.token/eosio.token.hpp>
+#include "native.cpp"
 
 namespace eosiosystem {
 
