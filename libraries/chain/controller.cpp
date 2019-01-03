@@ -767,6 +767,7 @@ struct controller_impl {
       authority system_auth(conf.genesis.initial_key);
       create_native_account(config::token_account_name, system_auth, system_auth, false);
       create_native_account(config::msig_account_name, system_auth, system_auth, false);
+      create_native_account(config::fee_account_name, system_auth, system_auth, false);
 
       initialize_contract(config::system_account_name, conf.system_code, conf.system_abi, true);
       initialize_contract(config::token_account_name, conf.token_code, conf.token_abi);
