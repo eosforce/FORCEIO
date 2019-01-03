@@ -25,9 +25,9 @@ namespace eosiosystem {
    static constexpr int BLOCK_REWARDS_B1 = CONTRACT_BLOCK_REWARDS_B1;//1 * 10000; //1.0000 EOS
    static constexpr uint32_t UPDATE_CYCLE = CONTRACT_UPDATE_CYCLE;//100; //every 100 blocks update
 
-   class system_contract : public native {
+   class system_contract : private eosio::contract {
    public:
-      system_contract( account_name self ) : native(self) {}
+      system_contract( account_name self ) : contract(self) {}
 
    private:
 
@@ -129,8 +129,6 @@ namespace eosiosystem {
                     const block_id_type, const checksum256, const checksum256, const uint32_t schedule_version );
 
       // @abi action
-      void onfee( const account_name actor, const eosio::asset fee );
-      // @abi action
       void setparams( const eosio::blockchain_parameters& params );
       // @abi action
       void rmvproducer( account_name producer );
@@ -142,8 +140,8 @@ namespace eosiosystem {
                    (vote)(unfreeze)
                    (vote4ram)(unfreezeram)
                    (claim)
-                   (onblock)(onfee)
+                   (onblock)
                    (setparams)(rmvproducer)
-                  (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi))
-} /// eosiosystem
+                 )
+} /// eosiosystem (onfee)
 //  (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)
