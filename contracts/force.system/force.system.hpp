@@ -133,6 +133,31 @@ namespace eosiosystem {
       // @abi action
       void rmvproducer( account_name producer );
 
+      //native action
+      // @abi action
+      void newaccount();
+      // @abi action
+      void updateauth();
+      // @abi action
+      void deleteauth();
+      // @abi action
+      void linkauth();
+      // @abi action
+      void unlinkauth();
+      // @abi action
+      void canceldelay();
+      // @abi action
+      void onerror();
+      // @abi action
+      void setconfig();
+      // @abi action
+      void setcode();
+      // @abi action
+      void setfee();
+      // @abi action
+      void setabi();
+      // @abi action
+      void onfee();
       
    };
 
@@ -142,6 +167,7 @@ namespace eosiosystem {
                    (claim)
                    (onblock)
                    (setparams)(rmvproducer)
+                   (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)(onfee)
                  )
 } /// eosiosystem (onfee)
 //  (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)

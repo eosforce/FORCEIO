@@ -2,50 +2,50 @@
 
 namespace eosiosystem {
 
-    void native::newaccount() {
+    void system_contract::newaccount() {
         print( "newaccount" );
     }
 
-    void native::updateauth() {
+    void system_contract::updateauth() {
         print( "updateauth" );
     }
 
-    void native::deleteauth() {
+    void system_contract::deleteauth() {
         print( "deleteauth" );
     }
 
-    void native::linkauth() {
+    void system_contract::linkauth() {
         print( "linkauth" );
     }
 
-    void native::unlinkauth() {
+    void system_contract::unlinkauth() {
         print( "unlinkauth" );
     }
 
-    void native::canceldelay() {
+    void system_contract::canceldelay() {
         print( "canceldelay" );
     }
 
-    void native::onerror() {
+    void system_contract::onerror() {
         print( "onerror" );
     }
 
-    void native::setconfig(){
+    void system_contract::setconfig(){
         print( "setconfig" );
     }
 
-    void native::setcode(){
+    void system_contract::setcode(){
         print( "setcode" );
     }
     
-    void native::setfee(){
+    void system_contract::setfee(){
         print( "setfee" );
     }
-    void native::setabi(){
+    void system_contract::setabi(){
         print( "setabi" );
     }
 
-    void native::onfee() {
+    void system_contract::onfee() {
         print( "onfee" );
     }
    
