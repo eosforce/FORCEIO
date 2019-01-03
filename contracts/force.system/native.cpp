@@ -39,12 +39,14 @@ namespace eosiosystem {
     }
     
     void native::setfee(){
-        //print( "setfee" );
+        print( "setfee" );
     }
     void native::setabi(){
         print( "setabi" );
     }
-//    void system_contract::onfee( const account_name actor, const asset fee ) {
-//        print( "onfee" );
-//    }
+
+    void native::onfee( const account_name actor, const eosio::asset fee ) {
+        print( "onfee" );
+   }
+
 }

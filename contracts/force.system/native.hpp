@@ -12,6 +12,7 @@
 #include <eosiolib/optional.hpp>
 #include <eosiolib/producer_schedule.hpp>
 #include <eosiolib/contract.hpp>
+#include <eosiolib/asset.hpp>
 
 namespace eosiosystem {
    // using eosio::permission_level;
@@ -113,6 +114,8 @@ namespace eosiosystem {
          void setcode();
          void setfee();
          void setabi();
+          // @abi action
+      void onfee( const account_name actor, const eosio::asset fee );
          //void onfee(){}
 
    };
