@@ -180,15 +180,16 @@ namespace eosiosystem {
       eosio_assert(0 <= reward.amount && reward.amount <= bp.rewards_pool.amount,
                    "need 0 <= claim reward quantity <= rewards_pool");
 
-      if(voter == bpname){
-         reward += bp.rewards_block;
+       asset reward_block;
+       if(voter == bpname){
+         reward_block = bp.rewards_block;
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
              b.rewards_block.set_amount(0);
          });
       }
 
       INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {N(eosio), N(active)},
-                                                    { N(eosio), voter, reward, std::string("claim") } );
+                                                    { N(eosio), voter, reward + reward_block, std::string("claim") } );
 
       votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
          v.voteage = 0;
@@ -325,7 +326,6 @@ namespace eosiosystem {
          sum_bps_reward += ( bp_account_reward + bp_rewards_pool );
       }
 
-      //reward eosfund
       INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {N(eosio), N(active)},
                                                     { N(eosio), N(devfund), asset(BLOCK_REWARDS_BP - sum_bps_reward), std::string("reward for developer fund") } );
    }
