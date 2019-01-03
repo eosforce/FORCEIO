@@ -120,6 +120,7 @@ public:
       uint32_t        commission_rate;
       int64_t         total_staked             = 0;
       asset           rewards_pool;
+      asset           rewards_block;
       int64_t         total_voteage            = 0;
       uint32_t        voteage_update_height    = 0;
       std::string     url;
@@ -278,7 +279,7 @@ public:
 } } // namespace eosio::chain
 
 FC_REFLECT(eosio::chain::memory_db::bp_info, (name)(producer_key)
-            (commission_rate)(total_staked)(rewards_pool)(total_voteage)(voteage_update_height)(url)(emergency)(isactive))
+            (commission_rate)(total_staked)(rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(isactive))
 FC_REFLECT(eosio::chain::memory_db::token_account, (balance))
 FC_REFLECT(eosio::chain::memory_db::eoslock_account, (owner)(balance))
 FC_REFLECT(eosio::chain::memory_db::chain_status, (name)(emergency))

@@ -67,6 +67,7 @@
         {"name":"commission_rate",      "type":"uint32"},
         {"name":"total_staked",         "type":"int64"},
         {"name":"rewards_pool",         "type":"asset"},
+        {"name":"rewards_block",        "type":"asset"},
         {"name":"total_voteage",        "type":"int64"},
         {"name":"voteage_update_height","type":"uint32"},
         {"name":"url",                  "type":"string"},

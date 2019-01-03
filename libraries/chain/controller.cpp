@@ -1217,11 +1217,9 @@ struct controller_impl {
                        false
                );
             }
-			
-		      if( is_func_has_open(self, config::func_typ::onfee_action) ) {
-            	trx_context.set_fee_data();
+            if( !trx->implicit && is_func_has_open(self, config::func_typ::onfee_action)) {
+               trx_context.set_fee_data();
             }
-			   
             trx_context.exec();
             trx_context.finalize(); // Automatically rounds up network and CPU usage in trace and bills payers if successful
 
