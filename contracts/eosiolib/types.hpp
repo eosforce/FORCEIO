@@ -4,14 +4,13 @@
  */
 #pragma once
 #include <eosiolib/types.h>
+#include <eosiolib/serialize.hpp>
 #include <functional>
 #include <tuple>
 #include <string>
+#include <vector>
 
 namespace eosio {
-
-   typedef std::vector<std::tuple<uint16_t,std::vector<char>>> extensions_type;
-
    /**
     *  Converts a base32 symbol into its binary representation, used by string_to_name()
     *
@@ -162,6 +161,20 @@ namespace eosio {
          if (last != std::string::npos)
             str = str.substr(0, last + 1);
       }
+   };
+
+   /**
+    * extensions_type
+    * ext data in trx, abi and block
+    */
+   struct extensions_type {
+      std::vector<std::tuple<name, std::vector<char>>> datas;
+
+      std::size_t size() const {
+         return datas.size();
+      }
+
+      EOSLIB_SERIALIZE( extensions_type, (datas) )
    };
 
 } // namespace eosio

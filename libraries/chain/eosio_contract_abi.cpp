@@ -52,6 +52,12 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
    });
 
    eos_abi.structs.emplace_back( struct_def {
+         "extensions", "", {
+            {"datas", "extension[]"}
+         }
+   });
+
+   eos_abi.structs.emplace_back( struct_def {
       "transaction_header", "", {
          {"expiration", "time_point_sec"},
          {"ref_block_num", "uint16"},
@@ -66,7 +72,7 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
       "transaction", "transaction_header", {
          {"context_free_actions", "action[]"},
          {"actions", "action[]"},
-         {"transaction_extensions", "extension[]"}
+         {"transaction_extensions", "extensions"}
       }
    });
 
@@ -96,7 +102,7 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
          {"action_mroot", "checksum256"},
          {"schedule_version", "uint32"},
          {"new_producers", "producer_schedule?"},
-         {"header_extensions", "extension[]"}
+         {"header_extensions", "extensions"}
       }
    });
 
