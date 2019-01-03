@@ -209,7 +209,7 @@ namespace eosio { namespace chain {
    public:
       // get data from extensions
       template <typename T>
-      T get( const name& typ_name ) const {
+      inline T get( const name& typ_name ) const {
          // datas size is not too mush
          for( const auto& i : datas ){
             if( i.first == typ_name ){
@@ -220,9 +220,22 @@ namespace eosio { namespace chain {
          FC_THROW("not found typ ${t} in ext data", ("t", typ_name));
       }
 
+      // get data to res, if no found return false
+      template <typename T>
+      inline bool get( const name& typ_name, T& res ) const {
+         for( const auto& i : datas ){
+            if( i.first == typ_name ){
+               fc::raw::unpack(i.second, res);
+               return true;
+            }
+         }
+
+         return false;
+      }
+
       // set data to extensions
       template <typename T>
-      void set( const name& typ_name, const T& data ) {
+      inline void set( const name& typ_name, const T& data ) {
          // datas size is not too mush
          for( const auto& i : datas ){
             if( i.first == typ_name ){
