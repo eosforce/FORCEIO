@@ -205,6 +205,35 @@ namespace eosio { namespace chain {
       std::size_t size() const {
          return datas.size();
       }
+
+   public:
+      // get data from extensions
+      template <typename T>
+      T get( const name& typ_name ) const {
+         // datas size is not too mush
+         for( const auto& i : datas ){
+            if( i.first == typ_name ){
+               return fc::raw::unpack<T>(i.second);
+            }
+         }
+
+         FC_THROW("not found typ ${t} in ext data", ("t", typ_name));
+      }
+
+      // set data to extensions
+      template <typename T>
+      void set( const name& typ_name, const T& data ) {
+         // datas size is not too mush
+         for( const auto& i : datas ){
+            if( i.first == typ_name ){
+               i.second = fc::raw::pack(data);
+               return;
+            }
+         }
+
+         datas.emplace_back(typ_name, fc::raw::pack(data));
+      }
+
    };
 
 } }  // eosio::chain
