@@ -65,6 +65,20 @@ namespace eosiosystem {
       }
    }
 
+   void system_contract::rmvproducer( account_name bpname ) {
+      require_auth(_self);
+
+      bps_table bps_tbl(_self, _self);
+      auto bp = bps_tbl.find(bpname);
+      if( bp == bps_tbl.end()) {
+        eosio_assert(false,"bpname is not registered");
+      } else {
+         bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
+            b.deactivate();
+         });
+      }
+   }
+
    void system_contract::update_elected_bps() {
       bps_table bps_tbl(_self, _self);
 
