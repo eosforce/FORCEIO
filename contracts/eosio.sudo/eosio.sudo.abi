@@ -41,8 +41,14 @@
       "name": "extension",
       "base": "",
       "fields": [
-         {"name": "type", "type" : "uint16" },
+         {"name": "type", "type" : "uint64" },
          {"name": "data", "type": "bytes"}
+      ]
+   },{
+      "name": "extensions",
+      "base": "",
+      "fields": [
+         {"name": "datas", "type": "extension[]"}
       ]
    },{
       "name": "transaction",
@@ -50,7 +56,7 @@
       "fields": [
          {"name": "context_free_actions", "type": "action[]"},
          {"name": "actions", "type": "action[]"},
-         {"name": "transaction_extensions", "type": "extension[]"}
+         {"name": "transaction_extensions", "type": "extensions"}
       ]
    },{
       "name": "exec",
@@ -69,5 +75,5 @@
   ],
   "tables": [],
   "ricardian_clauses": [],
-  "abi_extensions": []
+  "abi_extensions": { "datas":[] }
 }
