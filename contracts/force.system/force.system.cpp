@@ -115,7 +115,7 @@ namespace eosiosystem {
             }
          });
       }
-
+      eosio_assert(bp.isactive || (!bp.isactive && change < 0), "bp is not active");
       if( change > 0 ) {
          INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {voter, N(active)},
                                                        { voter, N(eosio), asset(change), std::string("vote4ram") } );
