@@ -200,7 +200,7 @@ namespace eosio { namespace chain {
     *  interpreted by code that is aware and ignored by unaware code.
     */
    struct extensions_type {
-      vector<std::pair<name, vector<char>>> datas;
+      vector<std::pair<uint64_t, vector<char>>> datas;
 
       std::size_t size() const {
          return datas.size();
@@ -212,7 +212,7 @@ namespace eosio { namespace chain {
       inline T get( const name& typ_name ) const {
          // datas size is not too mush
          for( const auto& i : datas ){
-            if( i.first == typ_name ){
+            if( i.first == typ_name.value ){
                return fc::raw::unpack<T>(i.second);
             }
          }
@@ -224,7 +224,7 @@ namespace eosio { namespace chain {
       template <typename T>
       inline bool get( const name& typ_name, T& res ) const {
          for( const auto& i : datas ){
-            if( i.first == typ_name ){
+            if( i.first == typ_name.value ){
                fc::raw::unpack(i.second, res);
                return true;
             }
@@ -238,7 +238,7 @@ namespace eosio { namespace chain {
       inline void set( const name& typ_name, const T& data ) {
          // datas size is not too mush
          for( const auto& i : datas ){
-            if( i.first == typ_name ){
+            if( i.first == typ_name.value ){
                i.second = fc::raw::pack(data);
                return;
             }

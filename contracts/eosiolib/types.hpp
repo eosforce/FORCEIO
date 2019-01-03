@@ -167,13 +167,9 @@ namespace eosio {
     * extensions_type
     * ext data in trx, abi and block
     */
-   struct extensions_type {
-      std::vector<std::tuple<name, std::vector<char>>> datas;
-
-      std::size_t size() const {
-         return datas.size();
-      }
-
+   class extensions_type {
+   public:
+      std::vector<std::tuple<uint64_t, std::vector<char>>> datas;
       EOSLIB_SERIALIZE( extensions_type, (datas) )
    };
 

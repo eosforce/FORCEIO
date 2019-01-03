@@ -139,7 +139,7 @@ extern const char* const state_history_plugin_abi = R"({
         },
         {
             "name": "extension", "fields": [
-                { "name": "type", "type": "uint16" },
+                { "name": "type", "type": "uint64" },
                 { "name": "data", "type": "bytes" }
             ]
         },

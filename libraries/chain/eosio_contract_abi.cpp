@@ -46,7 +46,7 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
 
    eos_abi.structs.emplace_back( struct_def {
       "extension", "", {
-         {"type", "uint16"},
+         {"type", "uint64"},
          {"data", "bytes"}
       }
    });
