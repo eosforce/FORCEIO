@@ -385,10 +385,9 @@ namespace bacc = boost::accumulators;
       */
    }
 
-   const action transaction_context::mk_fee_action( const action& act ) {
-      const auto fee = control.get_txfee_manager().get_required_fee(control, act);
+   const action transaction_context::mk_fee_action() {
       const bytes param_data = fc::raw::pack(fee_paramter{
-            fee_payer, fee
+            fee_payer, fee_costed
       });
       return action{
             vector<permission_level>{{fee_payer, config::active_name}},
@@ -409,13 +408,11 @@ namespace bacc = boost::accumulators;
       }
    }
 
-   void transaction_context::dispatch_fee_action( vector<action_trace>& action_traces, const action& act ){
+   void transaction_context::dispatch_fee_action( vector<action_trace>& action_traces ){
       // if fee_payer is nil, it is mean now is not pay fee by action
       if(fee_payer != name{}) {
          action_traces.emplace_back();
-         const auto& fee_act = mk_fee_action(act);
-         add_limit_by_fee(act);
-         dispatch_action(action_traces.back(), fee_act);
+         dispatch_action(action_traces.back(), mk_fee_action());
       }
    }
 
@@ -441,6 +438,9 @@ namespace bacc = boost::accumulators;
       } else {
          schedule_transaction();
       }
+
+      dlog("fee cost ${c}", ("c", fee_costed));
+      dispatch_fee_action( trace->action_traces );
    }
 
    void transaction_context::finalize() {
