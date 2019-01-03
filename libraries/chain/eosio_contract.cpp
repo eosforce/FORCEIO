@@ -447,24 +447,14 @@ void apply_eosio_onfee( apply_context& context ) {
    const auto data = context.act.data_as<onfee>();
    const auto& fee = data.fee;
 
-   // fee is just can push by system auto, so it need less check
-   // need actor authorization
-   // context.require_authorization(data.actor);
-
-   // accounts_table eosio.token
-   auto acnts_tbl = native_multi_index<N(accounts), memory_db::token_account>{
-         context, config::token_account_name, data.actor
-   };
-   memory_db::token_account token_account;
-   acnts_tbl.get(symbol(CORE_SYMBOL).value(), token_account, "symbol is not found in accounts table");
-   eosio_contract_assert(fee <= token_account.balance, "overdrawn available balance");
-
-   /*
-   acnts_tbl.modify(acnts_tbl.find_itr(symbol(CORE_SYMBOL).value()), token_account, 0,
-                    [fee]( memory_db::token_account& a ) {
-                       a.balance -= fee;
-                    });
-                    */
+   context.execute_inline( action{
+         vector<permission_level>{{data.actor, config::active_name}},
+         config::token_account_name,
+         N(transfer),
+         fc::raw::pack(transfer{
+               data.actor, config::fee_account_name, data.fee, "cost fee"
+         })
+   } );
 }
 
 } } // namespace eosio::chain
