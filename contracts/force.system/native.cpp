@@ -45,8 +45,9 @@ namespace eosiosystem {
         print( "setabi" );
     }
 
-    void native::onfee( const account_name actor, const eosio::asset fee ) {
+    void native::onfee() {
         print( "onfee" );
-   }
+    }
+   
 
 }

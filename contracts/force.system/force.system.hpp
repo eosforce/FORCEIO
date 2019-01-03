@@ -129,11 +129,13 @@ namespace eosiosystem {
                     const block_id_type, const checksum256, const checksum256, const uint32_t schedule_version );
 
       // @abi action
-      void onfee( const account_name actor, const asset fee );
+      void onfee( const account_name actor, const eosio::asset fee );
       // @abi action
       void setparams( const eosio::blockchain_parameters& params );
       // @abi action
       void rmvproducer( account_name producer );
+
+      
    };
 
    EOSIO_ABI(system_contract,(updatebp)
@@ -142,5 +144,6 @@ namespace eosiosystem {
                    (claim)
                    (onblock)(onfee)
                    (setparams)(rmvproducer)
-                   (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi))
+                  (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi))
 } /// eosiosystem
+//  (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)

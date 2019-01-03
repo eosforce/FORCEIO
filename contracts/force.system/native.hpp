@@ -114,8 +114,8 @@ namespace eosiosystem {
          void setcode();
          void setfee();
          void setabi();
-          // @abi action
-      void onfee( const account_name actor, const eosio::asset fee );
+         // @abi action
+         void onfee();
          //void onfee(){}
 
    };

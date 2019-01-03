@@ -1,8 +1,54 @@
 #include "force.system.hpp"
 #include <eosio.token/eosio.token.hpp>
 #include "native.cpp"
+//#include "producer.cpp"
 
 namespace eosiosystem {
+   void system_contract::onblock( const block_timestamp, const account_name bpname, const uint16_t, const block_id_type,
+                                  const checksum256, const checksum256, const uint32_t schedule_version ) {
+      bps_table bps_tbl(_self, _self);
+      schedules_table schs_tbl(_self, _self);
+
+      account_name block_producers[NUM_OF_TOP_BPS] = {};
+      get_active_producers(block_producers, sizeof(account_name) * NUM_OF_TOP_BPS);
+         
+      auto sch = schs_tbl.find(uint64_t(schedule_version));
+      if( sch == schs_tbl.end()) {
+         schs_tbl.emplace(bpname, [&]( schedule_info& s ) {
+            s.version = schedule_version;
+            s.block_height = current_block_num();
+            for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
+               s.producers[i].amount = block_producers[i] == bpname ? 1 : 0;
+               s.producers[i].bpname = block_producers[i];
+            }
+         });
+      } else {
+         schs_tbl.modify(sch, 0, [&]( schedule_info& s ) {
+            for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
+               if( s.producers[i].bpname == bpname ) {
+                  s.producers[i].amount += 1;
+                  break;
+               }
+            }
+         });
+      }
+
+      INLINE_ACTION_SENDER(eosio::token, issue)( N(eosio.token), {{N(eosio),N(active)}},
+                                                 {N(eosio), asset(BLOCK_REWARDS_BP + BLOCK_REWARDS_B1), std::string("issue tokens for producer pay and b1")} );
+      //reward bps
+      reward_bps(block_producers);
+
+      if( current_block_num() % UPDATE_CYCLE == 0 ) {
+         //reward block.one
+         INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {N(eosio), N(active)},
+                                                       { N(eosio), N(b1), asset(BLOCK_REWARDS_B1 * UPDATE_CYCLE), std::string("reward block.one") } );
+         //update schedule
+         update_elected_bps();
+      }
+   }
+   void system_contract::onfee( const account_name actor, const eosio::asset fee ) {
+        print( "onfee" );
+   }
 
    void system_contract::updatebp( const account_name bpname, const public_key block_signing_key,
                                    const uint32_t commission_rate, const std::string& url ) {
@@ -205,53 +251,6 @@ namespace eosiosystem {
          b.voteage_update_height = current_block_num();
       });
    }
-
-   void system_contract::onblock( const block_timestamp, const account_name bpname, const uint16_t, const block_id_type,
-                                  const checksum256, const checksum256, const uint32_t schedule_version ) {
-      bps_table bps_tbl(_self, _self);
-      schedules_table schs_tbl(_self, _self);
-
-      account_name block_producers[NUM_OF_TOP_BPS] = {};
-      get_active_producers(block_producers, sizeof(account_name) * NUM_OF_TOP_BPS);
-
-      auto sch = schs_tbl.find(uint64_t(schedule_version));
-      if( sch == schs_tbl.end()) {
-         schs_tbl.emplace(bpname, [&]( schedule_info& s ) {
-            s.version = schedule_version;
-            s.block_height = current_block_num();
-            for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
-               s.producers[i].amount = block_producers[i] == bpname ? 1 : 0;
-               s.producers[i].bpname = block_producers[i];
-            }
-         });
-      } else {
-         schs_tbl.modify(sch, 0, [&]( schedule_info& s ) {
-            for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
-               if( s.producers[i].bpname == bpname ) {
-                  s.producers[i].amount += 1;
-                  break;
-               }
-            }
-         });
-      }
-
-      INLINE_ACTION_SENDER(eosio::token, issue)( N(eosio.token), {{N(eosio),N(active)}},
-                                                 {N(eosio), asset(BLOCK_REWARDS_BP + BLOCK_REWARDS_B1), std::string("issue tokens for producer pay and b1")} );
-      //reward bps
-      reward_bps(block_producers);
-
-      if( current_block_num() % UPDATE_CYCLE == 0 ) {
-         //reward block.one
-         INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {N(eosio), N(active)},
-                                                       { N(eosio), N(b1), asset(BLOCK_REWARDS_B1 * UPDATE_CYCLE), std::string("reward block.one") } );
-         //update schedule
-         update_elected_bps();
-      }
-   }
-
-   void system_contract::onfee( const account_name actor, const asset fee ) {
-   }
-
 //******** private ********//
 
    void system_contract::update_elected_bps() {
@@ -331,6 +330,15 @@ namespace eosiosystem {
                                                     { N(eosio), N(devfund), asset(BLOCK_REWARDS_BP - sum_bps_reward), std::string("reward for developer fund") } );
    }
 
+   bool system_contract::is_super_bp( account_name block_producers[], account_name name ) {
+      for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
+         if( name == block_producers[i] ) {
+            return true;
+         }
+      }
+      return false;
+   }
+
    void system_contract::setparams( const eosio::blockchain_parameters& params ) {
       require_auth( _self );
       eosio_assert( 3 <= params.max_authority_depth, "max_authority_depth should be at least 3" );
@@ -351,12 +359,5 @@ namespace eosiosystem {
       }
    }
 
-   bool system_contract::is_super_bp( account_name block_producers[], account_name name ) {
-      for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
-         if( name == block_producers[i] ) {
-            return true;
-         }
-      }
-      return false;
-   }
+   
 }
