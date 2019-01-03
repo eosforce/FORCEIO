@@ -8,23 +8,8 @@
 
 namespace eosio { namespace chain {
 
-struct native_hello_param {
-   account_name actor;
-
-   static account_name get_account() {
-      return N(force.native);
-   }
-
-   static action_name get_name() {
-      return N(hello);
-   }
-};
-
-void apply_native_hello( apply_context& context ) {
-   const auto data = context.act.data_as<native_hello_param>();
-   ilog("apply_native_hello ${h}", ("h", data.actor));
+void hello::apply( apply_context& context ) const {
+   ilog("apply_native_hello ${h}", ("h", actor));
 }
 
 } }
-
-FC_REFLECT( eosio::chain::native_hello_param, (actor) )
