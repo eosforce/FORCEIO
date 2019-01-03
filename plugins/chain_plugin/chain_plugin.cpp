@@ -339,14 +339,10 @@ void load_contract_code_abi( const string& contract, bytes& code, bytes& abi ) {
       FC_ASSERT("not support this wast");
    }
 
-   ilog("dd");
-
    const auto abi_path = app().config_dir() / contract += ".abi";
    EOS_ASSERT(fc::exists(abi_path), abi_not_found_exception, "no abi file found ");
    const auto abijson = fc::json::from_file(abi_path).as<abi_def>();
    abi = fc::raw::pack(abijson);
-
-   ilog("dd2");
 }
 
 
