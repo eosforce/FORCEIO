@@ -199,9 +199,15 @@ namespace eosio { namespace chain {
     *  Extentions are prefixed with type and are a buffer that can be
     *  interpreted by code that is aware and ignored by unaware code.
     */
-   typedef vector<std::pair<uint16_t,vector<char>>> extensions_type;
+   struct extensions_type {
+      vector<std::pair<name, vector<char>>> datas;
 
+      std::size_t size() const {
+         return datas.size();
+      }
+   };
 
 } }  // eosio::chain
 
 FC_REFLECT( eosio::chain::void_t, )
+FC_REFLECT( eosio::chain::extensions_type, (datas) )
