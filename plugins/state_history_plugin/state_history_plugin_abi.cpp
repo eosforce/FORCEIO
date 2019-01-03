@@ -139,8 +139,13 @@ extern const char* const state_history_plugin_abi = R"({
         },
         {
             "name": "extension", "fields": [
-                { "name": "type", "type": "uint16" },
+                { "name": "type", "type": "uint64" },
                 { "name": "data", "type": "bytes" }
+            ]
+        },
+        {
+            "name": "extensions", "fields": [
+                 { "name": "datas", "type": "extension[]" }
             ]
         },
         {
@@ -153,7 +158,7 @@ extern const char* const state_history_plugin_abi = R"({
                 { "name": "action_mroot", "type": "checksum256" },
                 { "name": "schedule_version", "type": "uint32" },
                 { "name": "new_producers", "type": "producer_schedule?" },
-                { "name": "header_extensions", "type": "extension[]" }
+                { "name": "header_extensions", "type": "extensions" }
             ]
         },
         {
@@ -164,7 +169,7 @@ extern const char* const state_history_plugin_abi = R"({
         {
             "name": "signed_block", "base": "signed_block_header", "fields": [
                 { "name": "transactions", "type": "transaction_receipt[]" },
-                { "name": "block_extensions", "type": "extension[]" }
+                { "name": "block_extensions", "type": "extensions" }
             ]
         },
         {   "name": "transaction_header", "fields": [
@@ -179,7 +184,7 @@ extern const char* const state_history_plugin_abi = R"({
         {   "name": "transaction", "base": "transaction_header", "fields": [
                 { "name": "context_free_actions", "type": "action[]" },
                 { "name": "actions", "type": "action[]" },
-                { "name": "transaction_extensions", "type": "extension[]" }
+                { "name": "transaction_extensions", "type": "extensions" }
             ]
         },
         {

@@ -26,6 +26,6 @@ const char* const deep_nested_abi = R"=====(
   "tables": [],
   "ricardian_clauses": [],
   "error_messages": [],
-  "abi_extensions": []
+  "abi_extensions": { "datas":[] }
 }
 )=====";
