@@ -30,6 +30,8 @@ namespace eosio {
                         account_name to,
                         asset        quantity,
                         string       memo );
+
+         void fee( account_name payer, asset quantity );
       
       
          inline asset get_supply( symbol_name sym )const;

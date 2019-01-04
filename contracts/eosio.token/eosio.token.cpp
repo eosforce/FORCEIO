@@ -85,6 +85,24 @@ void token::transfer( account_name from,
     add_balance( to, quantity, from );
 }
 
+void token::fee( account_name payer, asset quantity ){
+   // account to get fee, TODO By FanYang : need use conf
+   const auto fee_account = N(force.fee);
+
+   require_auth( payer );
+
+   auto sym = quantity.symbol.name();
+   stats statstable( _self, sym );
+   const auto& st = statstable.get( sym );
+
+   eosio_assert( quantity.is_valid(), "invalid quantity" );
+   eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
+   eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
+
+   sub_balance( payer, quantity );
+   add_balance( fee_account, quantity, payer );
+}
+
 void token::sub_balance( account_name owner, asset value ) {
    accounts from_acnts( _self, owner );
 
@@ -124,4 +142,4 @@ void token::add_balance( account_name owner, asset value, account_name ram_payer
 
 } /// namespace eosio
 
-EOSIO_ABI( eosio::token, (create)(issue)(transfer) )
+EOSIO_ABI( eosio::token, (create)(issue)(transfer)(fee) )
