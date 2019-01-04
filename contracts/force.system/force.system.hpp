@@ -131,7 +131,7 @@ namespace eosiosystem {
       // @abi action
       void setparams( const eosio::blockchain_parameters& params );
       // @abi action
-      void rmvproducer( account_name producer );
+      void removebp( account_name producer );
 
       //native action
       // @abi action
@@ -166,7 +166,7 @@ namespace eosiosystem {
                    (vote4ram)(unfreezeram)
                    (claim)
                    (onblock)
-                   (setparams)(rmvproducer)
+                   (setparams)(removebp)
                    (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)(onfee)
                  )
 } /// eosiosystem (onfee)

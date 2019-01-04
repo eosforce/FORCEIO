@@ -252,7 +252,7 @@
         {"name":"params", "type":"blockchain_parameters"}
       ]
     },{
-       "name": "rmvproducer",
+       "name": "removebp",
        "base": "",
        "fields": [
          {"name":"bpname",  "type":"account_name"}
@@ -332,8 +332,8 @@
        "type": "setparams",
        "ricardian_contract": ""
      },{
-       "name": "rmvproducer",
-       "type": "rmvproducer",
+       "name": "removebp",
+       "type": "removebp",
        "ricardian_contract": ""
      }
   ],

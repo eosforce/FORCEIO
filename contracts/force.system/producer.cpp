@@ -64,7 +64,7 @@ namespace eosiosystem {
       }
    }
 
-   void system_contract::rmvproducer( account_name bpname ) {
+   void system_contract::removebp( account_name bpname ) {
       require_auth(_self);
 
       bps_table bps_tbl(_self, _self);
@@ -103,7 +103,7 @@ namespace eosiosystem {
 
       /// sort by producer name
       std::sort(vote_schedule.begin(), vote_schedule.end());
-
+      print("xuyapeng add for test onblock ",vote_schedule.size(),"----",NUM_OF_TOP_BPS,"\n");
       bytes packed_schedule = pack(vote_schedule);
       set_proposed_producers(packed_schedule.data(), packed_schedule.size());
    }
