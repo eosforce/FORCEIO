@@ -140,7 +140,7 @@ def stepCreateWallet():
 
 def stepStartProducers():
     startProducers(datas["initProducers"], datas["initProducerSigKeys"])
-    sleep(15)
+    sleep(7)
     stepSetFuncs()
 
 def stepCreateNodeDirs():
