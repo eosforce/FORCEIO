@@ -9,7 +9,7 @@
 #include <eosiolib/time.hpp>
 #include <eosiolib/chain.h>
 #include <eosiolib/contract_config.hpp>
-#include <force.system/native.hpp>
+
 
 namespace eosiosystem {
 

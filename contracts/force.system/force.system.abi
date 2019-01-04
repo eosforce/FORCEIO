@@ -364,5 +364,8 @@
           "key_types": ["uint64"]
        }
   ],
-  "ricardian_clauses": []
+  "ricardian_clauses": [],
+  "abi_extensions": {
+      "datas" : []
+    }
 }
