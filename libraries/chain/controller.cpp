@@ -781,9 +781,11 @@ struct controller_impl {
                                    asset(config::system_token_maximum_supply),
                                    config::system_account_name });
 
-      memory_db(self).insert(config::token_account_name, config::system_account_name, N(accounts),
+      memory_db(self).insert(config::token_account_name,
                              config::system_account_name,
-                             memory_db::token_account{eosio::chain::asset(0)});
+                             N(accounts),
+                             config::system_account_name,
+                             memory_db::token_account());
 
       initialize_account();
       initialize_producer();
