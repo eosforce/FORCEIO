@@ -443,16 +443,4 @@ void apply_eosio_setconfig(apply_context& context) {
    set_config_on_chain(context.db, cfg_data);
 }
 
-void apply_eosio_onfee( apply_context& context ) {
-   const auto data = context.act.data_as<onfee>();
-   context.execute_inline( action{
-         vector<permission_level>{{data.actor, config::active_name}},
-         config::token_account_name,
-         N(fee),
-         fc::raw::pack( transfer_fee{
-               data.actor, data.fee
-         } )
-   } );
-}
-
 } } // namespace eosio::chain
