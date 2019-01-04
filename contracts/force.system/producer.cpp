@@ -9,7 +9,6 @@ namespace eosiosystem {
 
       account_name block_producers[NUM_OF_TOP_BPS] = {};
       get_active_producers(block_producers, sizeof(account_name) * NUM_OF_TOP_BPS);
-         print( "producer.cpp  \n" );
       auto sch = schs_tbl.find(uint64_t(schedule_version));
       if( sch == schs_tbl.end()) {
          schs_tbl.emplace(bpname, [&]( schedule_info& s ) {
