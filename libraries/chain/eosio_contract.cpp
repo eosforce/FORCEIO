@@ -445,15 +445,13 @@ void apply_eosio_setconfig(apply_context& context) {
 
 void apply_eosio_onfee( apply_context& context ) {
    const auto data = context.act.data_as<onfee>();
-   const auto& fee = data.fee;
-
    context.execute_inline( action{
          vector<permission_level>{{data.actor, config::active_name}},
          config::token_account_name,
-         N(transfer),
-         fc::raw::pack(transfer{
-               data.actor, config::fee_account_name, data.fee, "cost fee"
-         })
+         N(fee),
+         fc::raw::pack( transfer_fee{
+               data.actor, data.fee
+         } )
    } );
 }
 
