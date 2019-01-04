@@ -31,14 +31,11 @@ namespace eosiosystem {
       }
 
       INLINE_ACTION_SENDER(eosio::token, issue)( N(eosio.token), {{N(eosio),N(active)}},
-                                                 {N(eosio), asset(BLOCK_REWARDS_BP + BLOCK_REWARDS_B1), std::string("issue tokens for producer pay and b1")} );
+                                                 {N(eosio), asset(BLOCK_REWARDS_BP), std::string("issue tokens for producer pay")} );
       //reward bps
       reward_bps(block_producers);
 
       if( current_block_num() % UPDATE_CYCLE == 0 ) {
-         //reward block.one
-         INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {N(eosio), N(active)},
-                                                       { N(eosio), N(b1), asset(BLOCK_REWARDS_B1 * UPDATE_CYCLE), std::string("reward block.one") } );
          //update schedule
          update_elected_bps();
       }
