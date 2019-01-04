@@ -96,9 +96,9 @@ public:
 
     // eosio.token accounts
     struct token_account {
-        asset    balance;
+       asset    balance = asset{0};
 
-        uint64_t primary_key()const { return balance.get_symbol().value(); }
+       uint64_t primary_key()const { return balance.get_symbol().to_symbol_code().value; }
     };
 
     struct eoslock_account {
