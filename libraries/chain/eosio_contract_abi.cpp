@@ -227,13 +227,6 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
    });
 
    eos_abi.structs.emplace_back( struct_def {
-         "onfee", "", {
-               {"actor",  "account_name"},
-               {"fee",    "asset"}
-         }
-   });
-
-   eos_abi.structs.emplace_back( struct_def {
          "onerror", "", {
             {"sender_id", "uint128"},
             {"sent_trx",  "bytes"}
@@ -258,7 +251,6 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
    eos_abi.actions.push_back( action_def{name("canceldelay"), "canceldelay",""} );
    eos_abi.actions.push_back( action_def{name("onerror"), "onerror",""} );
    eos_abi.actions.push_back( action_def{name("onblock"), "onblock",""} );
-   eos_abi.actions.push_back( action_def{name("onfee"), "onfee",""} );
 
    return eos_abi;
 }

@@ -30,6 +30,7 @@ const static uint64_t chain_config_name      = N(force.config);
 const static uint64_t token_account_name     = N(eosio.token);
 const static uint64_t msig_account_name      = N(eosio.msig);
 const static uint64_t bios_account_name      = N(eosio.bios);
+const static uint64_t fee_account_name       = N(force.fee);
 
 const static uint64_t system_token_maximum_supply = 10000000000 * 10000ll; //maximum supply 10 billion
 

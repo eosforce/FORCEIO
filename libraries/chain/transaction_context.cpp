@@ -385,26 +385,29 @@ namespace bacc = boost::accumulators;
       */
    }
 
-   const action transaction_context::mk_fee_action( const action& act ) {
-      const auto fee = control.get_txfee_manager().get_required_fee(control, act);
-      const bytes param_data = fc::raw::pack(fee_paramter{
-            fee_payer, fee
-      });
-      return action{
-            vector<permission_level>{{fee_payer, config::active_name}},
-            config::system_account_name,
-            N(onfee),
-            param_data,
-      };
+   void transaction_context::process_fee( const action& act ){
+      if(fee_payer != name{}) {
+         const auto fee = control.get_txfee_manager().get_required_fee(control, act);
+         //dlog("process fee ${acc} ${act} to ${a} / ${all}",
+         //      ("acc", act.account)("act", act.name)("a", fee)("all", fee_costed));
+         fee_costed += fee;
+         // TODO check fee is enough
+         add_limit_by_fee(act);
+      }
    }
 
-   void transaction_context::dispatch_fee_action( vector<action_trace>& action_traces, const action& act ){
+   void transaction_context::dispatch_fee_action( vector<action_trace>& action_traces ) {
       // if fee_payer is nil, it is mean now is not pay fee by action
-      if(fee_payer != name{}) {
+      if( fee_payer != name{} ) {
          action_traces.emplace_back();
-         const auto& fee_act = mk_fee_action(act);
-         add_limit_by_fee(act);
-         dispatch_action(action_traces.back(), fee_act);
+         dispatch_action(action_traces.back(),
+                         action{
+                               vector<permission_level>{ { fee_payer, config::active_name } },
+                               config::token_account_name, N(fee),
+                               fc::raw::pack(transfer_fee{
+                                     fee_payer, fee_costed
+                               }),
+                         });
       }
    }
 
@@ -414,7 +417,7 @@ namespace bacc = boost::accumulators;
       if( apply_context_free ) {
          for( const auto& act : trx.context_free_actions ) {
             // to cost fee for action
-            dispatch_fee_action( trace->action_traces, act );
+            process_fee( act );
             trace->action_traces.emplace_back();
             dispatch_action( trace->action_traces.back(), act, true );
          }
@@ -423,13 +426,16 @@ namespace bacc = boost::accumulators;
       if( delay == fc::microseconds() ) {
          for( const auto& act : trx.actions ) {
             // to cost fee for action
-            dispatch_fee_action( trace->action_traces, act );
+            process_fee( act );
             trace->action_traces.emplace_back();
             dispatch_action( trace->action_traces.back(), act );
          }
       } else {
          schedule_transaction();
       }
+
+      //dlog("fee cost ${c}", ("c", fee_costed));
+      dispatch_fee_action( trace->action_traces );
    }
 
    void transaction_context::finalize() {

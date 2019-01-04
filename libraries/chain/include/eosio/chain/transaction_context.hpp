@@ -66,8 +66,8 @@ namespace eosio { namespace chain {
          friend struct controller_impl;
          friend class apply_context;
 
-         const action mk_fee_action( const action& act );
-         void dispatch_fee_action( vector<action_trace>& trace, const action& act );
+         void process_fee( const action& act );
+         void dispatch_fee_action( vector<action_trace>& trace );
          void add_limit_by_fee( const action &act );
 
          void add_ram_usage( account_name account, int64_t ram_delta );
@@ -112,6 +112,7 @@ namespace eosio { namespace chain {
          bool                          explicit_billed_cpu_time = false;
 
          account_name                  fee_payer      = name{};
+         asset                         fee_costed     = asset{0};
          asset                         max_fee_to_pay = asset{0};
 
       private:

@@ -172,16 +172,16 @@ struct canceldelay {
    }
 };
 
-struct onfee {
-   account_name actor;
-   asset        fee;
+struct transfer_fee {
+   account_name  payer;
+   asset         quantity;
 
    static account_name get_account() {
-      return config::system_account_name;
+      return config::token_account_name;
    }
 
    static action_name get_name() {
-      return N(onfee);
+      return N(fee);
    }
 };
 
@@ -213,5 +213,5 @@ FC_REFLECT( eosio::chain::deleteauth                       , (account)(permissio
 FC_REFLECT( eosio::chain::linkauth                         , (account)(code)(type)(requirement) )
 FC_REFLECT( eosio::chain::unlinkauth                       , (account)(code)(type) )
 FC_REFLECT( eosio::chain::canceldelay                      , (canceling_auth)(trx_id) )
-FC_REFLECT( eosio::chain::onfee                            , (actor)(fee) )
+FC_REFLECT( eosio::chain::transfer_fee                     , (payer)(quantity) )
 FC_REFLECT( eosio::chain::onerror                          , (sender_id)(sent_trx) )
