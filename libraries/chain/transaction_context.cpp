@@ -388,8 +388,8 @@ namespace bacc = boost::accumulators;
    void transaction_context::process_fee( const action& act ){
       if(fee_payer != name{}) {
          const auto fee = control.get_txfee_manager().get_required_fee(control, act);
-         dlog("process fee ${acc} ${act} to ${a} / ${all}",
-               ("acc", act.account)("act", act.name)("a", fee)("all", fee_costed));
+         //dlog("process fee ${acc} ${act} to ${a} / ${all}",
+         //      ("acc", act.account)("act", act.name)("a", fee)("all", fee_costed));
          fee_costed += fee;
          // TODO check fee is enough
          add_limit_by_fee(act);
@@ -434,7 +434,7 @@ namespace bacc = boost::accumulators;
          schedule_transaction();
       }
 
-      dlog("fee cost ${c}", ("c", fee_costed));
+      //dlog("fee cost ${c}", ("c", fee_costed));
       dispatch_fee_action( trace->action_traces );
    }
 
