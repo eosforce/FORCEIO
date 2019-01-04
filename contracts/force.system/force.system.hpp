@@ -10,6 +10,7 @@
 #include <eosiolib/chain.h>
 #include <eosiolib/contract_config.hpp>
 
+
 namespace eosiosystem {
 
    using eosio::asset;
@@ -128,17 +129,45 @@ namespace eosiosystem {
                     const block_id_type, const checksum256, const checksum256, const uint32_t schedule_version );
 
       // @abi action
-      void onfee( const account_name actor, const asset fee );
-      // @abi action
       void setparams( const eosio::blockchain_parameters& params );
       // @abi action
-      void rmvproducer( account_name producer );
+      void removebp( account_name producer );
+
+      //native action
+      // @abi action
+      void newaccount();
+      // @abi action
+      void updateauth();
+      // @abi action
+      void deleteauth();
+      // @abi action
+      void linkauth();
+      // @abi action
+      void unlinkauth();
+      // @abi action
+      void canceldelay();
+      // @abi action
+      void onerror();
+      // @abi action
+      void setconfig();
+      // @abi action
+      void setcode();
+      // @abi action
+      void setfee();
+      // @abi action
+      void setabi();
+      // @abi action
+      void onfee();
+      
    };
 
    EOSIO_ABI(system_contract,(updatebp)
                    (vote)(unfreeze)
                    (vote4ram)(unfreezeram)
                    (claim)
-                   (onblock)(onfee)
-                   (setparams)(rmvproducer))
-} /// eosiosystem
+                   (onblock)
+                   (setparams)(removebp)
+                   (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)(onfee)
+                 )
+} /// eosiosystem (onfee)
+//  (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)
