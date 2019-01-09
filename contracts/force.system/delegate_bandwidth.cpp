@@ -2,7 +2,7 @@
  *  @file
  *  @copyright defined in eos/LICENSE.txt
  */
-#include "foce.system.hpp"
+#include "force.system.hpp"
 
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/print.hpp>
