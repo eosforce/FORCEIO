@@ -441,19 +441,19 @@
            "index_type": "i64",
            "key_names" : ["owner"],
            "key_types" : ["uint64"]
-         },{
+       },{
            "name": "delband",
            "type": "delegated_bandwidth",
            "index_type": "i64",
            "key_names" : ["to"],
            "key_types" : ["uint64"]
-         },{
+       },{
             "name": "refunds",
             "type": "refund_request",
             "index_type": "i64",
             "key_names" : ["owner"],
             "key_types" : ["uint64"]
-          }
+       }
   ],
   "ricardian_clauses": [],
   "abi_extensions": {
