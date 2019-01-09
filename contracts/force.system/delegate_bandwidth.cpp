@@ -147,7 +147,7 @@ namespace eosiosystem {
       } // tot_itr can be invalid, should go out of scope
 
       // create refund or update from existing refund
-      if ( N(eosio.stake) != source_stake_from ) { //for eosio both transfer and refund make no sense
+      if ( N(eosio) != source_stake_from ) { //for eosio both transfer and refund make no sense
          refunds_table refunds_tbl( _self, from );
          auto req = refunds_tbl.find( from );
 
@@ -224,7 +224,7 @@ namespace eosiosystem {
          auto transfer_amount = net_balance + cpu_balance;
          if ( asset(0) < transfer_amount ) {
             INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {source_stake_from, N(active)},
-               { source_stake_from, N(eosio.stake), asset(transfer_amount), std::string("stake bandwidth") } );
+               { source_stake_from, N(eosio), asset(transfer_amount), std::string("stake bandwidth") } );
          }
       }
    }
