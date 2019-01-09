@@ -154,8 +154,6 @@ namespace eosiosystem {
          //create/update/delete refund
          auto net_balance = stake_net_delta;
          auto cpu_balance = stake_cpu_delta;
-         bool need_deferred_trx = false;
-
 
          // net and cpu are same sign by assertions in delegatebw and undelegatebw
          // redundant assertion also at start of changebw to protect against misuse of changebw
@@ -189,9 +187,6 @@ namespace eosiosystem {
 
                if ( req->net_amount == asset(0) && req->cpu_amount == asset(0) ) {
                   refunds_tbl.erase( req );
-                  need_deferred_trx = false;
-               } else {
-                  need_deferred_trx = true;
                }
 
             } else if ( net_balance < asset(0) || cpu_balance < asset(0) ) { //need to create refund
@@ -207,19 +202,9 @@ namespace eosiosystem {
                   } // else r.cpu_amount = 0 by default constructor
                   r.request_time = now();
                });
-               need_deferred_trx = true;
             } // else stake increase requested with no existing row in refunds_tbl -> nothing to do with refunds_tbl
          } /// end if is_delegating_to_self || is_undelegating
 
-         if ( need_deferred_trx ) {
-            eosio::transaction out;
-            out.actions.emplace_back( permission_level{ from, N(active) }, _self, N(refund), from );
-            out.delay_sec = refund_delay;
-            cancel_deferred( from ); // TODO: Remove this line when replacing deferred trxs is fixed
-            out.send( from, from, true );
-         } else {
-            cancel_deferred( from );
-         }
 
          auto transfer_amount = net_balance + cpu_balance;
          if ( asset(0) < transfer_amount ) {
