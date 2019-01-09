@@ -31,21 +31,22 @@ namespace eosiosystem {
    private:
 
       struct vote_info {
-         account_name bpname;
-         asset staked = asset(0);
-         uint32_t voteage_update_height = current_block_num();
-         int64_t voteage = 0; // asset.amount * block height
-         asset unstaking = asset(0);
-         uint32_t unstake_height = current_block_num();
+         asset        staked                = asset{0};
+         asset        unstaking             = asset{0};
+         account_name bpname                = 0;
+         int64_t      voteage               = 0;         // asset.amount * block height
+         uint32_t     voteage_update_height = 0;
+         uint32_t     unstake_height        = 0;
 
          uint64_t primary_key() const { return bpname; }
 
-         EOSLIB_SERIALIZE(vote_info, ( bpname )(staked)(voteage)(voteage_update_height)(unstaking)(unstake_height))
+         EOSLIB_SERIALIZE(vote_info, (bpname)(staked)(voteage)(voteage_update_height)(unstaking)(unstake_height))
       };
 
       struct vote4ram_info {
-         account_name voter;
-         asset staked = asset(0);
+         account_name voter  = 0;
+         asset        staked = asset(0);
+
          uint64_t primary_key() const { return voter; }
 
          EOSLIB_SERIALIZE(vote4ram_info, (voter)(staked))
@@ -53,14 +54,15 @@ namespace eosiosystem {
 
       struct bp_info {
          account_name name;
-         public_key block_signing_key;
-         uint32_t commission_rate = 0; // 0 - 10000 for 0% - 100%
-         int64_t total_staked = 0;
-         asset rewards_pool = asset(0);
-         asset rewards_block = asset(0);
-         int64_t total_voteage = 0; // asset.amount * block height
-         uint32_t voteage_update_height = current_block_num();
-         std::string url;
+         public_key   block_signing_key;
+         uint32_t     commission_rate = 0; // 0 - 10000 for 0% - 100%
+         int64_t      total_staked    = 0;
+         asset        rewards_pool    = asset(0);
+         asset        rewards_block   = asset(0);
+         int64_t      total_voteage   = 0; // asset.amount * block height
+         uint32_t     voteage_update_height = current_block_num();
+         std::string  url;
+
          bool emergency = false;
          bool isactive = true;
 
@@ -91,11 +93,11 @@ namespace eosiosystem {
          EOSLIB_SERIALIZE(schedule_info, ( version )(block_height)(producers))
       };
 
-      typedef eosio::multi_index<N(votes), vote_info> votes_table;
-      typedef eosio::multi_index<N(votes4ram), vote_info> votes4ram_table;
+      typedef eosio::multi_index<N(votes),       vote_info>     votes_table;
+      typedef eosio::multi_index<N(votes4ram),   vote_info>     votes4ram_table;
       typedef eosio::multi_index<N(vote4ramsum), vote4ram_info> vote4ramsum_table;
-      typedef eosio::multi_index<N(bps), bp_info> bps_table;
-      typedef eosio::multi_index<N(schedules), schedule_info> schedules_table;
+      typedef eosio::multi_index<N(bps),         bp_info>       bps_table;
+      typedef eosio::multi_index<N(schedules),   schedule_info> schedules_table;
 
       void update_elected_bps();
 
@@ -157,7 +159,7 @@ namespace eosiosystem {
       void setabi();
       // @abi action
       void onfee();
-      
+
    };
 
    EOSIO_ABI(system_contract,(updatebp)

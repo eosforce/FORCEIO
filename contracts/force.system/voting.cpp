@@ -1,6 +1,7 @@
 #include "force.system.hpp"
 
 namespace eosiosystem {
+   // vote vote to a bp from voter to bpname with stake EOSC
    void system_contract::vote( const account_name voter, const account_name bpname, const asset stake ) {
       require_auth(voter);
 
@@ -11,24 +12,29 @@ namespace eosiosystem {
       eosio_assert(0 <= stake.amount && stake.amount % 10000 == 0,
                    "need stake quantity >= 0 and quantity is integer");
 
+      const auto curr_block_num = current_block_num();
+
       int64_t change = 0;
       votes_table votes_tbl(_self, voter);
       auto vts = votes_tbl.find(bpname);
       if( vts == votes_tbl.end() ) {
+         // First vote the bp, it will cause ram add
          change = stake.amount;
          votes_tbl.emplace(voter, [&]( vote_info& v ) {
             v.bpname = bpname;
             v.staked = stake;
+            v.unstake_height        = curr_block_num;
+            v.voteage_update_height = curr_block_num;
          });
       } else {
          change = stake.amount - vts->staked.amount;
          votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
-            v.voteage += v.staked.amount / 10000 * (current_block_num() - v.voteage_update_height);
-            v.voteage_update_height = current_block_num();
+            v.voteage += v.staked.amount / 10000 * (curr_block_num - v.voteage_update_height);
+            v.voteage_update_height = curr_block_num;
             v.staked = stake;
             if( change < 0 ) {
-               v.unstaking.amount += -change;
-               v.unstake_height = current_block_num();
+               v.unstaking.amount += (-change);
+               v.unstake_height = curr_block_num;
             }
          });
       }
@@ -39,8 +45,8 @@ namespace eosiosystem {
       }
 
       bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-         b.total_voteage += b.total_staked * (current_block_num() - b.voteage_update_height);
-         b.voteage_update_height = current_block_num();
+         b.total_voteage += b.total_staked * (curr_block_num - b.voteage_update_height);
+         b.voteage_update_height = curr_block_num;
          b.total_staked += change / 10000;
       });
    }
@@ -51,7 +57,9 @@ namespace eosiosystem {
       votes_table votes_tbl(_self, voter);
       const auto& vts = votes_tbl.get(bpname, "voter have not add votes to the the producer yet");
 
-      eosio_assert(vts.unstake_height + FROZEN_DELAY < current_block_num(), "unfreeze is not available yet");
+      const auto curr_block_num = current_block_num();
+
+      eosio_assert(vts.unstake_height + FROZEN_DELAY < curr_block_num, "unfreeze is not available yet");
       eosio_assert(0 < vts.unstaking.amount, "need unstaking quantity > 0");
 
       INLINE_ACTION_SENDER(eosio::token, transfer)(N(eosio.token), { N(eosio), N(active) },
@@ -59,6 +67,7 @@ namespace eosiosystem {
 
       votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
          v.unstaking.set_amount(0);
+         v.unstake_height = curr_block_num;
       });
    }
 
@@ -71,10 +80,12 @@ namespace eosiosystem {
       votes_table votes_tbl(_self, voter);
       const auto& vts = votes_tbl.get(bpname, "voter have not add votes to the the producer yet");
 
+      const auto curr_block_num = current_block_num();
+
       int64_t newest_voteage =
-            vts.voteage + vts.staked.amount / 10000 * (current_block_num() - vts.voteage_update_height);
+            vts.voteage + vts.staked.amount / 10000 * (curr_block_num - vts.voteage_update_height);
       int64_t newest_total_voteage =
-            bp.total_voteage + bp.total_staked * (current_block_num() - bp.voteage_update_height);
+            bp.total_voteage + bp.total_staked * (curr_block_num - bp.voteage_update_height);
       eosio_assert(0 < newest_total_voteage, "claim is not available yet");
 
       int128_t amount_voteage = (int128_t) bp.rewards_pool.amount * (int128_t) newest_voteage;
@@ -96,7 +107,7 @@ namespace eosiosystem {
 
       votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
          v.voteage = 0;
-         v.voteage_update_height = current_block_num();
+         v.voteage_update_height = curr_block_num;
       });
 
       bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
@@ -105,7 +116,7 @@ namespace eosiosystem {
             b.rewards_block.set_amount(0);
          }
          b.total_voteage = newest_total_voteage - newest_voteage;
-         b.voteage_update_height = current_block_num();
+         b.voteage_update_height = curr_block_num;
       });
    }
 }
