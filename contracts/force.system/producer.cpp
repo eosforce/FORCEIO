@@ -100,7 +100,6 @@ namespace eosiosystem {
 
       /// sort by producer name
       std::sort(vote_schedule.begin(), vote_schedule.end());
-      print("xuyapeng add for test onblock ",vote_schedule.size(),"----",NUM_OF_TOP_BPS,"\n");
       bytes packed_schedule = pack(vote_schedule);
       set_proposed_producers(packed_schedule.data(), packed_schedule.size());
    }
@@ -120,8 +119,6 @@ namespace eosiosystem {
       //0.5% of staked_all_bps
       const auto rewarding_bp_staked_threshold = staked_all_bps / 200;
 
-      //reward bps, (bp_reward => bp_account_reward + bp_rewards_pool + eosfund_reward;)
-      auto sum_bps_reward = 0;
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
          if( !it->isactive || it->total_staked <= rewarding_bp_staked_threshold || it->commission_rate < 1 ||
              it->commission_rate > 10000 ) {
@@ -143,14 +140,6 @@ namespace eosiosystem {
             b.rewards_pool += asset(bp_rewards_pool);
             b.rewards_block += asset(bp_account_reward);
          });
-
-         sum_bps_reward += ( bp_account_reward + bp_rewards_pool );
-      }
-
-      auto reward_devfund = BLOCK_REWARDS_BP - sum_bps_reward;
-      if(reward_devfund > 0){
-          INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {N(eosio), N(active)},
-                                                        { N(eosio), N(devfund), asset(reward_devfund), std::string("reward for developer fund") } );
       }
    }
 
