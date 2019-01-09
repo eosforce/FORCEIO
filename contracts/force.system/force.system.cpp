@@ -4,6 +4,7 @@
 #include "producer.cpp"
 #include "voting.cpp"
 #include "vote4ram.cpp"
+#include "delegate_bandwidth.cpp"
 
 namespace eosiosystem {
    
