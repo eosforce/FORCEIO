@@ -103,6 +103,10 @@ namespace eosiosystem {
 
       bool is_super_bp( account_name block_producers[], account_name name );
 
+      //defind in delegate_bandwidth.cpp
+      void changebw( account_name from, account_name receiver,
+                      asset stake_net_quantity, asset stake_cpu_quantity, bool transfer );
+
    public:
       // @abi action
       void updatebp( const account_name bpname, const public_key producer_key,
