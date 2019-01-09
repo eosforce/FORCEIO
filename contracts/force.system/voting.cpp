@@ -83,28 +83,27 @@ namespace eosiosystem {
 
       const auto curr_block_num = current_block_num();
 
-      int64_t newest_voteage =
-            vts.voteage + vts.staked.amount / 10000 * (curr_block_num - vts.voteage_update_height);
-      int64_t newest_total_voteage =
-            bp.total_voteage + bp.total_staked * (curr_block_num - bp.voteage_update_height);
+      const auto newest_voteage =
+            static_cast<int128_t>(vts.voteage + vts.staked.amount / 10000 * (curr_block_num - vts.voteage_update_height));
+      const auto newest_total_voteage =
+            static_cast<int128_t>(bp.total_voteage + bp.total_staked * (curr_block_num - bp.voteage_update_height));
       eosio_assert(0 < newest_total_voteage, "claim is not available yet");
 
-      int128_t amount_voteage = (int128_t) bp.rewards_pool.amount * (int128_t) newest_voteage;
-      asset reward = asset(static_cast<int64_t>((int128_t) amount_voteage / (int128_t) newest_total_voteage ));
-      eosio_assert(0 <= reward.amount && reward.amount <= bp.rewards_pool.amount,
+      const auto amount_voteage = static_cast<int128_t>(bp.rewards_pool.amount) * newest_voteage;
+      asset reward = asset(static_cast<int64_t>( amount_voteage / newest_total_voteage ));
+      eosio_assert(asset{} <= reward && reward <= bp.rewards_pool,
                    "need 0 <= claim reward quantity <= rewards_pool");
 
-      asset reward_block;
+      auto reward_all = reward;
       if( voter == bpname ) {
-         reward_block = bp.rewards_block;
-         bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-            b.rewards_block.set_amount(0);
-         });
+         reward_all += bp.rewards_block;
       }
 
-      eosio_assert(reward + reward_block > asset(0), "no any reward!");
-      INLINE_ACTION_SENDER(eosio::token, transfer)(N(eosio.token), { N(eosio), N(active) },
-                                                   { N(eosio), voter, reward + reward_block, std::string("claim") });
+      eosio_assert(reward_all > asset{}, "no any reward!");
+      INLINE_ACTION_SENDER(eosio::token, transfer)(
+            N(eosio.token),
+            { N(eosio), N(active) },
+            { N(eosio), voter, reward_all, "claim" });
 
       votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
          v.voteage = 0;
@@ -116,7 +115,7 @@ namespace eosiosystem {
          if( voter == bpname ) {
             b.rewards_block.set_amount(0);
          }
-         b.total_voteage = newest_total_voteage - newest_voteage;
+         b.total_voteage = static_cast<int64_t>(newest_total_voteage - newest_voteage);
          b.voteage_update_height = curr_block_num;
       });
    }
