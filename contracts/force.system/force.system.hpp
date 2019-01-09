@@ -9,6 +9,7 @@
 #include <eosiolib/time.hpp>
 #include <eosiolib/chain.h>
 #include <eosiolib/contract_config.hpp>
+#include <vector>
 
 
 namespace eosiosystem {
@@ -18,11 +19,41 @@ namespace eosiosystem {
    using eosio::bytes;
    using eosio::block_timestamp;
    using std::string;
+   using eosio::permission_level;
+   using std::vector;
 
    static constexpr uint32_t FROZEN_DELAY = CONTRACT_FROZEN_DELAY; // 3 * 24 * 60 * 20; //3*24*60*20*3s;
    static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
    static constexpr int BLOCK_REWARDS_BP = CONTRACT_BLOCK_REWARDS_BP;
    static constexpr uint32_t UPDATE_CYCLE = CONTRACT_UPDATE_CYCLE;//100; //every 100 blocks update
+
+
+   struct permission_level_weight {
+      permission_level  permission;
+      weight_type       weight;
+   };
+
+   struct key_weight {
+      public_key key;
+      weight_type     weight;
+   };
+
+   struct wait_weight {
+      uint32_t     wait_sec;
+      weight_type  weight;
+   };
+
+
+
+   struct authority {
+      authority(){}
+
+      uint32_t                          threshold = 0;
+      vector<key_weight>                keys;
+      vector<permission_level_weight>   accounts;
+      vector<wait_weight>               waits;
+
+   };
 
    class system_contract : private eosio::contract {
    public:
@@ -134,29 +165,30 @@ namespace eosiosystem {
 
       //native action
       // @abi action
-      void newaccount();
+      //,authority owner,authority active
+      void newaccount(account_name creator,account_name name,authority owner,authority active);
       // @abi action
-      void updateauth();
+      // account_name account,permission_name permission,permission_name parent,authority auth
+      void updateauth(account_name account,permission_name permission,permission_name parent,authority auth);
       // @abi action
-      void deleteauth();
+      void deleteauth(account_name account,permission_name permission);
       // @abi action
-      void linkauth();
+      void linkauth(account_name account,account_name code,action_name type,permission_name requirement);
       // @abi action
-      void unlinkauth();
+      void unlinkauth(account_name account,account_name code,action_name type);
       // @abi action
-      void canceldelay();
+      void canceldelay(permission_level canceling_auth,transaction_id_type trx_id);
       // @abi action
-      void onerror();
+      void onerror(uint128_t sender_id,bytes sent_trx);
       // @abi action
-      void setconfig();
+      void setconfig(account_name typ,int64_t num,account_name key,asset fee);
       // @abi action
-      void setcode();
+      void setcode(account_name account,uint8_t vmtype,uint8_t vmversion,bytes code);
       // @abi action
-      void setfee();
+      void setfee(account_name account,action_name action,asset fee,uint32_t cpu_limit,uint32_t net_limit,uint32_t ram_limit);
       // @abi action
-      void setabi();
-      // @abi action
-      void onfee();
+      void setabi(account_name account,bytes abi);
+
       
    };
 
@@ -166,7 +198,7 @@ namespace eosiosystem {
                    (claim)
                    (onblock)
                    (setparams)(removebp)
-                   (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)(onfee)
+                   (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)
                  )
 } /// eosiosystem (onfee)
 //  (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)
