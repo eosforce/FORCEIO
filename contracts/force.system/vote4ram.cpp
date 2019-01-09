@@ -11,12 +11,11 @@ namespace eosiosystem {
       eosio_assert(0 <= stake.amount && stake.amount % 10000 == 0,
                    "need stake quantity >= 0 and quantity is integer");
 
-      int64_t change = 0;
+      auto change = stake;
       votes4ram_table votes_tbl(_self, voter);
       auto vts = votes_tbl.find(bpname);
       const auto curr_block_num = current_block_num();
       if( vts == votes_tbl.end() ) {
-         change = stake.amount;
          votes_tbl.emplace(voter, [&]( vote_info& v ) {
             v.bpname = bpname;
             v.staked = stake;
@@ -24,19 +23,19 @@ namespace eosiosystem {
             v.voteage_update_height = curr_block_num;
          });
       } else {
-         change = stake.amount - vts->staked.amount;
+         change -= vts->staked;
          votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
             v.voteage += (v.staked.amount / 10000) * (curr_block_num - v.voteage_update_height);
             v.voteage_update_height = curr_block_num;
             v.staked = stake;
-            if( change < 0 ) {
-               v.unstaking.amount += (-change);
+            if( change < asset{} ) {
+               v.unstaking += (-change);
                v.unstake_height = curr_block_num;
             }
          });
       }
-      eosio_assert(bp.isactive || (!bp.isactive && change < 0), "bp is not active");
-      if( change > 0 ) {
+      eosio_assert(bp.isactive || (!bp.isactive && change < asset{}), "bp is not active");
+      if( change > asset{} ) {
          INLINE_ACTION_SENDER(eosio::token, transfer)(N(eosio.token), { voter, N(active) },
                                                       { voter, N(eosio), asset(change), std::string("vote4ram") });
       }
@@ -44,7 +43,7 @@ namespace eosiosystem {
       bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
          b.total_voteage += b.total_staked * (curr_block_num - b.voteage_update_height);
          b.voteage_update_height = curr_block_num;
-         b.total_staked += change / 10000;
+         b.total_staked += (change.amount / 10000);
       });
 
       vote4ramsum_table vote4ramsum_tbl(_self, _self);
@@ -56,7 +55,7 @@ namespace eosiosystem {
          });
       } else {
          vote4ramsum_tbl.modify(vtss, 0, [&]( vote4ram_info& v ) {
-            v.staked += asset{ change };
+            v.staked += change;
          });
       }
 
