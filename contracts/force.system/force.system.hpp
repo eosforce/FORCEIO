@@ -157,7 +157,15 @@ namespace eosiosystem {
       void setabi();
       // @abi action
       void onfee();
-      
+
+      // @abi action
+      void delegatebw( account_name from, account_name receiver,
+                     asset stake_net_quantity, asset stake_cpu_quantity, bool transfer );
+      // @abi action
+      void undelegatebw( account_name from, account_name receiver,
+                       asset unstake_net_quantity, asset unstake_cpu_quantity );
+      // @abi action
+      void refund( account_name owner );
    };
 
    EOSIO_ABI(system_contract,(updatebp)
@@ -167,6 +175,7 @@ namespace eosiosystem {
                    (onblock)
                    (setparams)(removebp)
                    (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)(onfee)
+                   (delegatebw)(undelegatebw)(refund)
                  )
 } /// eosiosystem (onfee)
 //  (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)
