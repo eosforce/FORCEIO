@@ -29,8 +29,7 @@
       "name": "unfreeze",
       "base": "",
       "fields": [
-      {"name":"voter",      "type":"account_name"},
-      {"name":"bpname",     "type":"account_name"}
+         {"name":"voter",      "type":"account_name"}
       ]
     },{
       "name": "claim",

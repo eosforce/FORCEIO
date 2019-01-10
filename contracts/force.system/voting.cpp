@@ -89,21 +89,23 @@ namespace eosiosystem {
       });
    }
 
-   void system_contract::unfreeze( const account_name voter, const account_name bpname ) {
+   void system_contract::unfreeze( const account_name voter ) {
       require_auth(voter);
 
-      votes_table votes_tbl(_self, voter);
-      const auto& vts = votes_tbl.get(bpname, "voter have not add votes to the the producer yet");
+      freeze_table freeze_tbl(_self, _self);
+      const auto itr = freeze_tbl.get(voter, "voter have not freeze token yet");
 
       const auto curr_block_num = current_block_num();
 
-      eosio_assert(vts.unstake_height + FROZEN_DELAY < curr_block_num, "unfreeze is not available yet");
-      eosio_assert(0 < vts.unstaking.amount, "need unstaking quantity > 0");
+      eosio_assert(itr.unstake_height + FROZEN_DELAY < curr_block_num, "unfreeze is not available yet");
+      eosio_assert(0 < itr.unstaking.amount, "need unstaking quantity > 0");
 
-      INLINE_ACTION_SENDER(eosio::token, transfer)(N(eosio.token), { N(eosio), N(active) },
-                                                   { N(eosio), voter, vts.unstaking, std::string("unfreeze") });
+      INLINE_ACTION_SENDER(eosio::token, transfer)(
+            N(eosio.token),
+            { N(eosio), N(active) },
+            { N(eosio), voter, itr.unstaking, "unfreeze" });
 
-      votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
+      freeze_tbl.modify(itr, 0, [&]( freeze_info& v ) {
          v.unstaking.set_amount(0);
          v.unstake_height = curr_block_num;
       });
