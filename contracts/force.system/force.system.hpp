@@ -43,6 +43,17 @@ namespace eosiosystem {
          EOSLIB_SERIALIZE(vote_info, (bpname)(staked)(voteage)(voteage_update_height)(unstaking)(unstake_height))
       };
 
+      struct freeze_info {
+         asset        staked         = asset{0};
+         asset        unstaking      = asset{0};
+         account_name voter          = 0;
+         uint32_t     unstake_height = 0;
+
+         uint64_t primary_key() const { return voter; }
+
+         EOSLIB_SERIALIZE(freeze_info, (staked)(unstaking)(voter)(unstake_height))
+      };
+
       struct vote4ram_info {
          account_name voter  = 0;
          asset        staked = asset(0);
@@ -93,6 +104,7 @@ namespace eosiosystem {
          EOSLIB_SERIALIZE(schedule_info, ( version )(block_height)(producers))
       };
 
+      typedef eosio::multi_index<N(freezed),     freeze_info>   freeze_table;
       typedef eosio::multi_index<N(votes),       vote_info>     votes_table;
       typedef eosio::multi_index<N(votes4ram),   vote_info>     votes4ram_table;
       typedef eosio::multi_index<N(vote4ramsum), vote4ram_info> vote4ramsum_table;
