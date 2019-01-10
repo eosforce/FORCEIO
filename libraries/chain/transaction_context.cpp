@@ -386,6 +386,10 @@ namespace bacc = boost::accumulators;
    }
 
    void transaction_context::process_fee( const action& act ){
+      // if free resouse model fees are no longer charged
+      #ifdef FREE_RESOUSE
+         return ;
+      #endif //FREE_RESOUSE
       if(fee_payer != name{}) {
          const auto fee = control.get_txfee_manager().get_required_fee(control, act);
          //dlog("process fee ${acc} ${act} to ${a} / ${all}",
@@ -397,6 +401,11 @@ namespace bacc = boost::accumulators;
    }
 
    void transaction_context::dispatch_fee_action( vector<action_trace>& action_traces ) {
+      // if free resouse model fees are no longer charged
+      #ifdef FREE_RESOUSE
+         return ;
+      #endif //FREE_RESOUSE
+      
       // if fee_payer is nil, it is mean now is not pay fee by action
       if( fee_payer != name{} ) {
          action_traces.emplace_back();
