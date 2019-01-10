@@ -365,7 +365,7 @@
           "key_names": ["name"],
           "key_types": ["account_name"]
        },{
-          "name":"freeze",
+          "name":"freezed",
           "type":"freeze_info",
           "index_type":"i64",
           "key_names": ["voter"],
