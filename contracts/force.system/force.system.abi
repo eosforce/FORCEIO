@@ -59,6 +59,15 @@
         {"name":"unstake_height",        "type":"uint32"}
       ]
     },{
+      "name": "freeze_info",
+      "base": "",
+      "fields": [
+        {"name":"staked",         "type":"asset"},
+        {"name":"unstaking",      "type":"asset"},
+        {"name":"voter",          "type":"account_name"},
+        {"name":"unstake_height", "type":"uint32"}
+      ]
+    },{
       "name": "bp_info",
       "base": "",
       "fields": [
@@ -343,6 +352,12 @@
           "type":"bp_info",
           "index_type":"i64",
           "key_names": ["name"],
+          "key_types": ["account_name"]
+       },{
+          "name":"freeze",
+          "type":"freeze_info",
+          "index_type":"i64",
+          "key_names": ["voter"],
           "key_types": ["account_name"]
        },{
           "name":"votes",
