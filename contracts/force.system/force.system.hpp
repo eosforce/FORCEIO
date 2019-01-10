@@ -123,6 +123,9 @@ namespace eosiosystem {
                      const uint32_t commission_rate, const std::string& url );
 
       // @abi action
+      void freeze( const account_name voter, const asset stake );
+
+      // @abi action
       void vote( const account_name voter, const account_name bpname, const asset stake );
 
       // @abi action
@@ -175,7 +178,7 @@ namespace eosiosystem {
    };
 
    EOSIO_ABI(system_contract,(updatebp)
-                   (vote)(unfreeze)
+                   (freeze)(vote)(unfreeze)
                    (vote4ram)(unfreezeram)
                    (claim)
                    (onblock)

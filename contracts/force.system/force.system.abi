@@ -40,6 +40,13 @@
         {"name":"bpname",     "type":"account_name"}
       ]
     },{
+      "name": "freeze",
+      "base": "",
+      "fields": [
+        {"name":"voter",     "type":"account_name"},
+        {"name":"stake",     "type":"asset"}
+      ]
+    },{
       "name": "vote",
       "base": "",
       "fields": [
@@ -271,6 +278,10 @@
   "actions": [{
       "name": "updatebp",
       "type": "updatebp",
+      "ricardian_contract": ""
+    },{
+      "name": "freeze",
+      "type": "freeze",
       "ricardian_contract": ""
     },{
       "name": "vote",

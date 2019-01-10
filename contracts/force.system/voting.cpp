@@ -1,6 +1,43 @@
 #include "force.system.hpp"
 
 namespace eosiosystem {
+   void system_contract::freeze( const account_name voter, const asset stake ){
+      require_auth(voter);
+
+      eosio_assert(stake.symbol == CORE_SYMBOL, "only support CORE SYMBOL token");
+      eosio_assert(0 <= stake.amount && stake.amount % 10000 == 0,
+                   "need stake quantity >= 0 and quantity is integer");
+
+      const auto curr_block_num = current_block_num();
+
+      auto change = stake;
+      freeze_table freeze_tbl(_self, _self);
+      auto fts = freeze_tbl.find(voter);
+      if( fts == freeze_tbl.end() ) {
+         freeze_tbl.emplace(voter, [&]( freeze_info& v ) {
+            v.voter          = voter;
+            v.staked         = stake;
+            v.unstake_height = curr_block_num;
+         });
+      } else {
+         change -= fts->staked;
+         freeze_tbl.modify(fts, 0, [&]( freeze_info& v ) {
+            v.staked = stake;
+            if( change < asset{0} ) {
+               v.unstaking      += (-change);
+               v.unstake_height =  curr_block_num;
+            }
+         });
+      }
+
+      if( change > asset{0} ) {
+         INLINE_ACTION_SENDER(eosio::token, transfer)(
+               N(eosio.token),
+               { voter, N(active) },
+               { voter, N(eosio), asset(change), "freeze" });
+      }
+   }
+
    // vote vote to a bp from voter to bpname with stake EOSC
    void system_contract::vote( const account_name voter, const account_name bpname, const asset stake ) {
       require_auth(voter);
