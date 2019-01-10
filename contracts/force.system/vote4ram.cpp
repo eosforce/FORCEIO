@@ -11,6 +11,8 @@ namespace eosiosystem {
       eosio_assert(0 <= stake.amount && stake.amount % 10000 == 0,
                    "need stake quantity >= 0 and quantity is integer");
 
+      freeze_table freeze_tbl(_self, _self);
+
       auto change = stake;
       votes4ram_table votes_tbl(_self, voter);
       auto vts = votes_tbl.find(bpname);
@@ -18,26 +20,42 @@ namespace eosiosystem {
       if( vts == votes_tbl.end() ) {
          votes_tbl.emplace(voter, [&]( vote_info& v ) {
             v.bpname = bpname;
-            v.staked = stake;
-            v.unstake_height        = curr_block_num;
+            v.vote = stake;
             v.voteage_update_height = curr_block_num;
          });
       } else {
-         change -= vts->staked;
+         change -= vts->vote;
          votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
-            v.voteage += (v.staked.amount / 10000) * (curr_block_num - v.voteage_update_height);
+            v.voteage += (v.vote.amount / 10000) * (curr_block_num - v.voteage_update_height);
             v.voteage_update_height = curr_block_num;
-            v.staked = stake;
+            v.vote = stake;
             if( change < asset{} ) {
-               v.unstaking += (-change);
-               v.unstake_height = curr_block_num;
+               auto fts = freeze_tbl.find(voter);
+               if( fts == freeze_tbl.end() ) {
+                  freeze_tbl.emplace(voter, [&]( freeze_info& v ) {
+                     v.voter          = voter;
+                     v.staked         = (-change);
+                     v.unstake_height = curr_block_num;
+                  });
+               } else {
+                  freeze_tbl.modify(fts, 0, [&]( freeze_info& v ) {
+                     v.staked += (-change);
+                     v.unstake_height =  curr_block_num;
+                  });
+               }
             }
          });
       }
       eosio_assert(bp.isactive || (!bp.isactive && change < asset{}), "bp is not active");
+
       if( change > asset{} ) {
-         INLINE_ACTION_SENDER(eosio::token, transfer)(N(eosio.token), { voter, N(active) },
-                                                      { voter, N(eosio), asset(change), std::string("vote4ram") });
+         auto fts = freeze_tbl.find(voter);
+         eosio_assert( fts != freeze_tbl.end() && fts->staked >= change, "voter freeze token < vote token" );
+         print("cost freeze ", change);
+         freeze_tbl.modify( fts, 0, [&]( freeze_info& v ) {
+            v.staked -= change;
+            print("stat ", v.staked);
+         });
       }
 
       bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
@@ -67,19 +85,6 @@ namespace eosiosystem {
 
       votes4ram_table votes_tbl(_self, voter);
       const auto& vts = votes_tbl.get(bpname, "voter have not add votes to the the producer yet");
-
-      const auto curr_block_num = current_block_num();
-
-      eosio_assert(vts.unstake_height + FROZEN_DELAY < curr_block_num, "unfreeze is not available yet");
-      eosio_assert(0 < vts.unstaking.amount, "need unstaking quantity > 0");
-
-      INLINE_ACTION_SENDER(eosio::token, transfer)(N(eosio.token), { N(eosio), N(active) },
-                                                   { N(eosio), voter, vts.unstaking, std::string("unfreezeram") });
-
-      votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
-         v.unstaking.set_amount(0);
-         v.unstake_height = curr_block_num;
-      });
    }
 
 }

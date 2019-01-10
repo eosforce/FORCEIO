@@ -51,6 +51,8 @@ namespace eosiosystem {
 
       const auto curr_block_num = current_block_num();
 
+      freeze_table freeze_tbl(_self, _self);
+
       auto change = stake;
       votes_table votes_tbl(_self, voter);
       auto vts = votes_tbl.find(bpname);
@@ -58,28 +60,43 @@ namespace eosiosystem {
          // First vote the bp, it will cause ram add
          votes_tbl.emplace(voter, [&]( vote_info& v ) {
             v.bpname = bpname;
-            v.staked = stake;
-            v.unstake_height        = curr_block_num;
+            v.vote = stake;
             v.voteage_update_height = curr_block_num;
          });
       } else {
-         change -= vts->staked;
+         change -= vts->vote;
          votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
-            v.voteage += (v.staked.amount / 10000) * (curr_block_num - v.voteage_update_height);
+            v.voteage += (v.vote.amount / 10000) * (curr_block_num - v.voteage_update_height);
             v.voteage_update_height = curr_block_num;
-            v.staked = stake;
-            if( change < asset{0} ) {
-               v.unstaking += (-change);
-               v.unstake_height = curr_block_num;
+            v.vote = stake;
+            if( change < asset{} ) {
+               auto fts = freeze_tbl.find(voter);
+               if( fts == freeze_tbl.end() ) {
+                  freeze_tbl.emplace(voter, [&]( freeze_info& f ) {
+                     f.voter          = voter;
+                     f.staked         = (-change);
+                     f.unstake_height = curr_block_num;
+                  });
+               } else {
+                  freeze_tbl.modify(fts, 0, [&]( freeze_info& f ) {
+                     f.staked += (-change);
+                     f.unstake_height =  curr_block_num;
+                  });
+               }
             }
          });
       }
+
       eosio_assert(bp.isactive || (!bp.isactive && change < asset{0}), "bp is not active");
-      if( change > asset{0} ) {
-         INLINE_ACTION_SENDER(eosio::token, transfer)(
-               N(eosio.token),
-               { voter, N(active) },
-               { voter, N(eosio), asset(change), "vote" });
+
+      if( change > asset{} ) {
+         auto fts = freeze_tbl.find(voter);
+         eosio_assert( fts != freeze_tbl.end() && fts->staked >= change, "voter freeze token < vote token" );
+         print("cost freeze ", change);
+         freeze_tbl.modify( fts, 0, [&]( freeze_info& v ) {
+            v.staked -= change;
+            print("stat ", v.staked);
+         });
       }
 
       bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
@@ -123,7 +140,7 @@ namespace eosiosystem {
       const auto curr_block_num = current_block_num();
 
       const auto newest_voteage =
-            static_cast<int128_t>(vts.voteage + vts.staked.amount / 10000 * (curr_block_num - vts.voteage_update_height));
+            static_cast<int128_t>(vts.voteage + vts.vote.amount / 10000 * (curr_block_num - vts.voteage_update_height));
       const auto newest_total_voteage =
             static_cast<int128_t>(bp.total_voteage + bp.total_staked * (curr_block_num - bp.voteage_update_height));
       eosio_assert(0 < newest_total_voteage, "claim is not available yet");

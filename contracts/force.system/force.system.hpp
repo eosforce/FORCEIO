@@ -31,16 +31,14 @@ namespace eosiosystem {
    private:
 
       struct vote_info {
-         asset        staked                = asset{0};
-         asset        unstaking             = asset{0};
+         asset        vote                  = asset{0};
          account_name bpname                = 0;
          int64_t      voteage               = 0;         // asset.amount * block height
          uint32_t     voteage_update_height = 0;
-         uint32_t     unstake_height        = 0;
 
          uint64_t primary_key() const { return bpname; }
 
-         EOSLIB_SERIALIZE(vote_info, (bpname)(staked)(voteage)(voteage_update_height)(unstaking)(unstake_height))
+         EOSLIB_SERIALIZE(vote_info, (bpname)(vote)(voteage)(voteage_update_height))
       };
 
       struct freeze_info {

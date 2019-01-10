@@ -58,11 +58,9 @@
       "base": "",
       "fields": [
         {"name":"bpname",                "type":"account_name"},
-        {"name":"staked",                "type":"asset"},
+        {"name":"vote",                  "type":"asset"},
         {"name":"voteage",               "type":"int64"},
-        {"name":"voteage_update_height", "type":"uint32"},
-        {"name":"unstaking",             "type":"asset"},
-        {"name":"unstake_height",        "type":"uint32"}
+        {"name":"voteage_update_height", "type":"uint32"}
       ]
     },{
       "name": "freeze_info",
