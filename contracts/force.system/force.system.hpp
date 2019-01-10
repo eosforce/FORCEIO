@@ -46,13 +46,10 @@ namespace eosiosystem {
 
 
    struct authority {
-      authority(){}
-
       uint32_t                          threshold = 0;
       vector<key_weight>                keys;
       vector<permission_level_weight>   accounts;
       vector<wait_weight>               waits;
-
    };
 
    class system_contract : private eosio::contract {
