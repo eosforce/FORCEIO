@@ -41,6 +41,7 @@ using controller_index_set = index_set<
    account_index,
    account_sequence_index,
    global_property_multi_index,
+   force_property_multi_index,
    dynamic_global_property_multi_index,
    block_summary_multi_index,
    transaction_multi_index,
@@ -426,7 +427,9 @@ struct controller_impl {
          const auto hash = calculate_integrity_hash();
          ilog( "database initialized with hash: ${hash}", ("hash", hash) );
       }
-
+      sync_name_list(list_type::actor_blacklist_type,true);
+      sync_name_list(list_type::contract_blacklist_type,true);
+      sync_name_list(list_type::resource_greylist_type,true);
    }
 
    ~controller_impl() {
@@ -811,6 +814,9 @@ struct controller_impl {
         gpo.configuration = conf.genesis.initial_configuration;
       });
       db.create<dynamic_global_property_object>([](auto&){});
+
+      //force_property_object    创建内存表的地方
+      db.create<force_property_object>([&](force_property_object&){});
 
       authorization.initialize_database();
       resource_limits.initialize_database();
@@ -1198,7 +1204,42 @@ struct controller_impl {
          lo = results;
       }
 
-      //sync_name_list(list);
+      sync_name_list(list);
+   }
+
+   void sync_name_list(list_type list,bool isMerge=false)
+   {
+      const auto &force_property = db.get<force_property_object>();
+      db.modify(force_property, [&](auto &forceps) {
+         sync_list_and_db(list,forceps,isMerge);
+      });
+   }
+
+   void sync_list_and_db(list_type list, force_property_object &forceps,bool isMerge=false)
+   {
+      int64_t lst = static_cast<int64_t>(list);
+      EOS_ASSERT( list >= list_type::actor_blacklist_type && list < list_type::list_type_count, transaction_exception, "unknown list type : ${l}, ismerge: ${n}", ("l", static_cast<int64_t>(list))("n", isMerge));
+      vector<shared_vector<account_name> *> lists = {&forceps.clfg.actor_blacklist, &forceps.clfg.contract_blacklist, &forceps.clfg.resource_greylist};
+      vector<flat_set<account_name> *> conflists = {&conf.actor_blacklist, &conf.contract_blacklist, &conf.resource_greylist};
+      EOS_ASSERT(lists.size() == static_cast<int64_t>(list_type::list_type_count) - 1, transaction_exception, " list size wrong : ${l}, ismerge: ${n}", ("l", static_cast<int64_t>(list))("n", isMerge));
+      shared_vector<account_name> &lo = *lists[lst - 1];
+      flat_set<account_name> &clo = *conflists[lst - 1];
+
+      if (isMerge)
+      {
+         //initialize,  merge elements and deduplication between list and db.result save to  list
+         for (auto &a : lo)
+         {
+            clo.insert(a);
+         }
+      }
+
+      //clear list from db and save merge result to db  object
+      lo.clear();
+      for (auto &a : clo)
+      {
+         lo.push_back(a);
+      }
    }
 
    /**
@@ -2453,6 +2494,10 @@ const flat_set<account_name> &controller::get_resource_greylist() const {
 
 void controller::set_name_list(list_type list, list_action_type action, std::vector<account_name> name_list) {
    my->set_name_list(list,action,name_list);
+}
+
+const force_property_object& controller::get_force_property()const {
+   return my->db.get<force_property_object>();
 }
 
 } } /// eosio::chain

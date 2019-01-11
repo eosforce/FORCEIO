@@ -36,13 +36,11 @@ namespace eosio { namespace chain {
 
    class force_property_object : public chainbase::object<force_property_object_type, force_property_object>
    {
-      OBJECT_CTOR(force_property_object, (configuration))
+      OBJECT_CTOR(force_property_object, (clfg))
 
       id_type                           id;
-      chain_list_config                 configuration;
+      chain_list_config                 clfg;
    };
-
-
 
    /**
     * @class dynamic_global_property_object
@@ -70,6 +68,15 @@ namespace eosio { namespace chain {
       >
    >;
 
+   using force_property_multi_index = chainbase::shared_multi_index_container<
+      force_property_object,
+      indexed_by<
+         ordered_unique<tag<by_id>,
+            BOOST_MULTI_INDEX_MEMBER(force_property_object, force_property_object::id_type, id)
+         >
+      >
+   >;
+
    using dynamic_global_property_multi_index = chainbase::shared_multi_index_container<
       dynamic_global_property_object,
       indexed_by<
@@ -85,6 +92,8 @@ CHAINBASE_SET_INDEX_TYPE(eosio::chain::global_property_object, eosio::chain::glo
 CHAINBASE_SET_INDEX_TYPE(eosio::chain::dynamic_global_property_object,
                          eosio::chain::dynamic_global_property_multi_index)
 
+CHAINBASE_SET_INDEX_TYPE(eosio::chain::force_property_object, eosio::chain::force_property_multi_index)                        
+
 FC_REFLECT(eosio::chain::dynamic_global_property_object,
            (global_action_sequence)
           )
@@ -92,3 +101,9 @@ FC_REFLECT(eosio::chain::dynamic_global_property_object,
 FC_REFLECT(eosio::chain::global_property_object,
            (proposed_schedule_block_num)(proposed_schedule)(configuration)
           )
+
+FC_REFLECT(eosio::chain::force_property_object,
+           (clfg)
+          )  
+
+        

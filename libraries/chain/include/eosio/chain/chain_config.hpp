@@ -114,6 +114,25 @@ struct chain_list_config {
    shared_vector<name>  resource_greylist;
 
    void validate()const;
+
+   chain_list_config& operator=( const chain_list_config& a ) {
+      actor_blacklist.clear();
+      actor_blacklist.reserve( a.actor_blacklist.size() );
+      for( const auto& p : a.actor_blacklist )
+         actor_blacklist.push_back(p);
+
+      contract_blacklist.clear();
+      contract_blacklist.reserve( a.contract_blacklist.size() );
+      for( const auto& p : a.contract_blacklist )
+         contract_blacklist.push_back(p);
+
+      resource_greylist.clear();
+      resource_greylist.reserve( a.resource_greylist.size() );
+      for( const auto& p : a.resource_greylist )
+         resource_greylist.push_back(p);
+
+      return *this;
+   }
 };
 
 } } // namespace eosio::chain

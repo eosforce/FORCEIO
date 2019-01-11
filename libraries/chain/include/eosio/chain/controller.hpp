@@ -28,6 +28,7 @@ namespace eosio { namespace chain {
 
    class dynamic_global_property_object;
    class global_property_object;
+   class force_property_object;
    class permission_object;
    class account_object;
    using resource_limits::resource_limits_manager;
@@ -245,8 +246,9 @@ namespace eosio { namespace chain {
          void validate_tapos( const transaction& t )const;
          void validate_db_available_size() const;
          void validate_reversible_available_size() const;
-
+         //black list
          void set_name_list(list_type list, list_action_type action, std::vector<account_name> name_list);
+         const force_property_object&        get_force_property()const;
 
          bool is_known_unexpired_transaction( const transaction_id_type& id) const;
 
