@@ -34,6 +34,14 @@ namespace eosio { namespace chain {
       chain_config                      configuration;
    };
 
+   class force_property_object : public chainbase::object<force_property_object_type, force_property_object>
+   {
+      OBJECT_CTOR(force_property_object, (configuration))
+
+      id_type                           id;
+      chain_list_config                 configuration;
+   };
+
 
 
    /**
