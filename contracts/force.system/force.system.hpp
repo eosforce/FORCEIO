@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <eosiolib/dispatcher.hpp>
@@ -174,14 +173,16 @@ namespace eosiosystem {
       void onfee();
 
    };
+};
 
-   EOSIO_ABI(system_contract,(updatebp)
-                   (freeze)(vote)(unfreeze)
-                   (vote4ram)(unfreezeram)
-                   (claim)
-                   (onblock)
-                   (setparams)(removebp)
-                   (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)(onfee)
-                 )
-} /// eosiosystem (onfee)
-//  (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)
+EOSIO_ABI( eosiosystem::system_contract,
+      (updatebp)
+      (freeze)(vote)(unfreeze)
+      (vote4ram)(unfreezeram)
+      (claim)
+      (onblock)
+      (setparams)(removebp)
+      (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)
+      (onerror)
+      (setconfig)(setcode)(setfee)(setabi)(onfee)
+)
