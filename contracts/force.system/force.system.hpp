@@ -26,7 +26,6 @@ namespace eosiosystem {
    static constexpr int BLOCK_REWARDS_BP = CONTRACT_BLOCK_REWARDS_BP;
    static constexpr uint32_t UPDATE_CYCLE = CONTRACT_UPDATE_CYCLE;//100; //every 100 blocks update
 
-
    struct permission_level_weight {
       permission_level  permission;
       weight_type       weight;
@@ -204,7 +203,7 @@ namespace eosiosystem {
       // @abi action
       void setabi(account_name account,bytes abi);
 
-
+#if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
       // @abi action
       void delegatebw( account_name from, account_name receiver,
                      asset stake_net_quantity, asset stake_cpu_quantity, bool transfer );
@@ -213,6 +212,8 @@ namespace eosiosystem {
                        asset unstake_net_quantity, asset unstake_cpu_quantity );
       // @abi action
       void refund( account_name owner );
+#endif
+
    };
 };
 
@@ -226,5 +227,7 @@ EOSIO_ABI( eosiosystem::system_contract,
       (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)
       (onerror)
       (setconfig)(setcode)(setfee)(setabi)
+#if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
       (delegatebw)(undelegatebw)(refund)
+#endif
 )

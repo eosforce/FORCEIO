@@ -5,7 +5,10 @@
 #include "producer.cpp"
 #include "voting.cpp"
 #include "vote4ram.cpp"
+
+#if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
 #include "delegate_bandwidth.cpp"
+#endif
 
 namespace eosiosystem {
    void system_contract::setparams( const eosio::blockchain_parameters& params ) {

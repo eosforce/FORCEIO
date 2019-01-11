@@ -2,6 +2,9 @@
  *  @file
  *  @copyright defined in eos/LICENSE.txt
  */
+
+#if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
+
 #include "force.system.hpp"
 
 #include <eosiolib/eosio.hpp>
@@ -256,3 +259,4 @@ namespace eosiosystem {
 
 
 } //namespace eosiosystem
+#endif

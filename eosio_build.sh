@@ -53,7 +53,7 @@
    MAX_PRODUCERS=23
    BLOCK_INTERVAL_MS=3000
    PRODUCER_REPETITIONS=1
-   RESOURCE_MODEL=Fee
+   RESOURCE_MODEL=1
    # Use current directory's tmp directory if noexec is enabled for /tmp
    if (mount | grep "/tmp " | grep --quiet noexec); then
         mkdir -p $SOURCE_DIR/tmp
@@ -101,7 +101,15 @@
             r )
                options=( "Fee" "Delegate" "Unlimit" )
                if [[ "${options[*]}" =~ "${OPTARG}" ]]; then
-                  RESOURCE_MODEL="${OPTARG}"
+                  if [[ "${OPTARG}" == "Fee" ]]; then
+                    RESOURCE_MODEL=1
+                  fi
+                  if [[ "${OPTARG}" == "Delegate" ]]; then
+                    RESOURCE_MODEL=2
+                  fi
+                  if [[ "${OPTARG}" == "Unlimit" ]]; then
+                    RESOURCE_MODEL=3
+                  fi
                else
                   printf "\\n\\tInvalid argument: %s\\n" "${OPTARG}" 1>&2
                   usage
