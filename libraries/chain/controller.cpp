@@ -33,6 +33,8 @@
 #include <eosio/chain/config.hpp>
 #include <eosio/chain/eosio_contract.hpp>
 
+#include <eosio/chain/native-contract/native_contracts.hpp>
+
 namespace eosio { namespace chain {
 
 using resource_limits::resource_limits_manager;
@@ -644,6 +646,8 @@ struct controller_impl {
 
          if( name == config::system_account_name ) {
             a.set_abi(eosio_contract_abi(abi_def()));
+         } else if( name == config::native_account_name ) {
+            a.set_abi(native_contract_abi(abi_def()));
          }
       });
       db.create<account_sequence_object>([&](auto & a) {
@@ -817,6 +821,9 @@ struct controller_impl {
 
       authority system_auth(conf.genesis.initial_key);
       create_native_account( config::system_account_name, system_auth, system_auth, true );
+
+      // for native contracts
+      create_native_account( config::native_account_name, system_auth, system_auth, true );
 
       initialize_database_force();
 

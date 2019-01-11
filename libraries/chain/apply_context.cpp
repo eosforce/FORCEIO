@@ -10,6 +10,7 @@
 #include <eosio/chain/account_object.hpp>
 #include <eosio/chain/global_property_object.hpp>
 #include <boost/container/flat_set.hpp>
+#include <eosio/chain/native-contract/native_contracts.hpp>
 
 using boost::container::flat_set;
 
@@ -58,16 +59,21 @@ void apply_context::exec_one( action_trace& trace )
             (*native)( *this );
          }
 
-         if( a.code.size() > 0
-             && !(act.account == config::system_account_name && act.name == N( setcode ) &&
-                  receiver == config::system_account_name) ) {
-            if( trx_context.enforce_whiteblacklist && control.is_producing_block() ) {
-               control.check_contract_list( receiver );
-               control.check_action_list( act.account, act.name );
+         // native contract handler
+         if( act.account == config::native_account_name ){
+            apply_native_contract( act.name, *this );
+         } else {
+            if( a.code.size() > 0
+                && !(act.account == config::system_account_name && act.name == N(setcode) &&
+                     receiver == config::system_account_name) ) {
+               if( trx_context.enforce_whiteblacklist && control.is_producing_block() ) {
+                  control.check_contract_list(receiver);
+                  control.check_action_list(act.account, act.name);
+               }
+               try {
+                  control.get_wasm_interface().apply(a.code_version, a.code, *this);
+               } catch( const wasm_exit& ) {}
             }
-            try {
-               control.get_wasm_interface().apply( a.code_version, a.code, *this );
-            } catch( const wasm_exit& ) {}
          }
       } FC_RETHROW_EXCEPTIONS( warn, "pending console output: ${console}", ("console", _pending_console_output.str()) )
    } catch( fc::exception& e ) {
