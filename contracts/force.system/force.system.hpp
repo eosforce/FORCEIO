@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <eosiolib/dispatcher.hpp>
@@ -22,7 +21,7 @@ namespace eosiosystem {
    using eosio::permission_level;
    using std::vector;
 
-   static constexpr uint32_t FROZEN_DELAY = CONTRACT_FROZEN_DELAY; // 3 * 24 * 60 * 20; //3*24*60*20*3s;
+   static constexpr uint32_t FROZEN_DELAY = 15 /*CONTRACT_FROZEN_DELAY*/; // 3 * 24 * 60 * 20; //3*24*60*20*3s;
    static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
    static constexpr int BLOCK_REWARDS_BP = CONTRACT_BLOCK_REWARDS_BP;
    static constexpr uint32_t UPDATE_CYCLE = CONTRACT_UPDATE_CYCLE;//100; //every 100 blocks update
@@ -59,21 +58,31 @@ namespace eosiosystem {
    private:
 
       struct vote_info {
-         account_name bpname;
-         asset staked = asset(0);
-         uint32_t voteage_update_height = current_block_num();
-         int64_t voteage = 0; // asset.amount * block height
-         asset unstaking = asset(0);
-         uint32_t unstake_height = current_block_num();
+         asset        vote                  = asset{0};
+         account_name bpname                = 0;
+         int64_t      voteage               = 0;         // asset.amount * block height
+         uint32_t     voteage_update_height = 0;
 
          uint64_t primary_key() const { return bpname; }
 
-         EOSLIB_SERIALIZE(vote_info, ( bpname )(staked)(voteage)(voteage_update_height)(unstaking)(unstake_height))
+         EOSLIB_SERIALIZE(vote_info, (bpname)(vote)(voteage)(voteage_update_height))
+      };
+
+      struct freeze_info {
+         asset        staked         = asset{0};
+         asset        unstaking      = asset{0};
+         account_name voter          = 0;
+         uint32_t     unstake_height = 0;
+
+         uint64_t primary_key() const { return voter; }
+
+         EOSLIB_SERIALIZE(freeze_info, (staked)(unstaking)(voter)(unstake_height))
       };
 
       struct vote4ram_info {
-         account_name voter;
-         asset staked = asset(0);
+         account_name voter  = 0;
+         asset        staked = asset(0);
+
          uint64_t primary_key() const { return voter; }
 
          EOSLIB_SERIALIZE(vote4ram_info, (voter)(staked))
@@ -81,14 +90,15 @@ namespace eosiosystem {
 
       struct bp_info {
          account_name name;
-         public_key block_signing_key;
-         uint32_t commission_rate = 0; // 0 - 10000 for 0% - 100%
-         int64_t total_staked = 0;
-         asset rewards_pool = asset(0);
-         asset rewards_block = asset(0);
-         int64_t total_voteage = 0; // asset.amount * block height
-         uint32_t voteage_update_height = current_block_num();
-         std::string url;
+         public_key   block_signing_key;
+         uint32_t     commission_rate = 0; // 0 - 10000 for 0% - 100%
+         int64_t      total_staked    = 0;
+         asset        rewards_pool    = asset(0);
+         asset        rewards_block   = asset(0);
+         int64_t      total_voteage   = 0; // asset.amount * block height
+         uint32_t     voteage_update_height = current_block_num();
+         std::string  url;
+
          bool emergency = false;
          bool isactive = true;
 
@@ -119,11 +129,12 @@ namespace eosiosystem {
          EOSLIB_SERIALIZE(schedule_info, ( version )(block_height)(producers))
       };
 
-      typedef eosio::multi_index<N(votes), vote_info> votes_table;
-      typedef eosio::multi_index<N(votes4ram), vote_info> votes4ram_table;
+      typedef eosio::multi_index<N(freezed),     freeze_info>   freeze_table;
+      typedef eosio::multi_index<N(votes),       vote_info>     votes_table;
+      typedef eosio::multi_index<N(votes4ram),   vote_info>     votes4ram_table;
       typedef eosio::multi_index<N(vote4ramsum), vote4ram_info> vote4ramsum_table;
-      typedef eosio::multi_index<N(bps), bp_info> bps_table;
-      typedef eosio::multi_index<N(schedules), schedule_info> schedules_table;
+      typedef eosio::multi_index<N(bps),         bp_info>       bps_table;
+      typedef eosio::multi_index<N(schedules),   schedule_info> schedules_table;
 
       void update_elected_bps();
 
@@ -141,10 +152,13 @@ namespace eosiosystem {
                      const uint32_t commission_rate, const std::string& url );
 
       // @abi action
+      void freeze( const account_name voter, const asset stake );
+
+      // @abi action
       void vote( const account_name voter, const account_name bpname, const asset stake );
 
       // @abi action
-      void unfreeze( const account_name voter, const account_name bpname );
+      void unfreeze( const account_name voter );
 
       // @abi action
       void vote4ram( const account_name voter, const account_name bpname, const asset stake );
@@ -200,15 +214,17 @@ namespace eosiosystem {
       // @abi action
       void refund( account_name owner );
    };
+};
 
-   EOSIO_ABI(system_contract,(updatebp)
-                   (vote)(unfreeze)
-                   (vote4ram)(unfreezeram)
-                   (claim)
-                   (onblock)
-                   (setparams)(removebp)
-                   (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)
-                   (delegatebw)(undelegatebw)(refund)
-                 )
-} /// eosiosystem (onfee)
-//  (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)(onerror)(setconfig)(setcode)(setfee)(setabi)(delegatebw)(undelegatebw)(refund)
+EOSIO_ABI( eosiosystem::system_contract,
+      (updatebp)
+      (freeze)(vote)(unfreeze)
+      (vote4ram)(unfreezeram)
+      (claim)
+      (onblock)
+      (setparams)(removebp)
+      (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)
+      (onerror)
+      (setconfig)(setcode)(setfee)(setabi)
+      (delegatebw)(undelegatebw)(refund)
+)

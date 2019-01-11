@@ -29,8 +29,7 @@
       "name": "unfreeze",
       "base": "",
       "fields": [
-      {"name":"voter",      "type":"account_name"},
-      {"name":"bpname",     "type":"account_name"}
+         {"name":"voter",      "type":"account_name"}
       ]
     },{
       "name": "claim",
@@ -38,6 +37,13 @@
       "fields": [
         {"name":"voter",      "type":"account_name"},
         {"name":"bpname",     "type":"account_name"}
+      ]
+    },{
+      "name": "freeze",
+      "base": "",
+      "fields": [
+        {"name":"voter",     "type":"account_name"},
+        {"name":"stake",     "type":"asset"}
       ]
     },{
       "name": "vote",
@@ -52,11 +58,18 @@
       "base": "",
       "fields": [
         {"name":"bpname",                "type":"account_name"},
-        {"name":"staked",                "type":"asset"},
+        {"name":"vote",                  "type":"asset"},
         {"name":"voteage",               "type":"int64"},
-        {"name":"voteage_update_height", "type":"uint32"},
-        {"name":"unstaking",             "type":"asset"},
-        {"name":"unstake_height",        "type":"uint32"}
+        {"name":"voteage_update_height", "type":"uint32"}
+      ]
+    },{
+      "name": "freeze_info",
+      "base": "",
+      "fields": [
+        {"name":"staked",         "type":"asset"},
+        {"name":"unstaking",      "type":"asset"},
+        {"name":"voter",          "type":"account_name"},
+        {"name":"unstake_height", "type":"uint32"}
       ]
     },{
       "name": "bp_info",
@@ -318,6 +331,10 @@
       "type": "updatebp",
       "ricardian_contract": ""
     },{
+      "name": "freeze",
+      "type": "freeze",
+      "ricardian_contract": ""
+    },{
       "name": "vote",
       "type": "vote",
       "ricardian_contract": ""
@@ -405,6 +422,12 @@
           "type":"bp_info",
           "index_type":"i64",
           "key_names": ["name"],
+          "key_types": ["account_name"]
+       },{
+          "name":"freezed",
+          "type":"freeze_info",
+          "index_type":"i64",
+          "key_names": ["voter"],
           "key_types": ["account_name"]
        },{
           "name":"votes",
