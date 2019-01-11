@@ -20,10 +20,10 @@ namespace eosiosystem {
     void system_contract::newaccount(account_name creator,account_name name,authority owner,authority active) {
 #if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
 
-       user_resources_table  userres( _self, newact);
+       user_resources_table  userres( _self, name);
 
-       userres.emplace( newact, [&]( auto& res ) {
-           res.owner = newact;
+       userres.emplace( name, [&]( auto& res ) {
+           res.owner = name;
        });
 
        set_resource_limits( newact, 0, 0, 0 );
