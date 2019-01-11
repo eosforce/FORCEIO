@@ -32,15 +32,15 @@ namespace eosiosystem {
             if( change < asset{} ) {
                auto fts = freeze_tbl.find(voter);
                if( fts == freeze_tbl.end() ) {
-                  freeze_tbl.emplace(voter, [&]( freeze_info& v ) {
-                     v.voter          = voter;
-                     v.staked         = (-change);
-                     v.unstake_height = curr_block_num;
+                  freeze_tbl.emplace(voter, [&]( freeze_info& f ) {
+                     f.voter          = voter;
+                     f.staked         = (-change);
+                     f.unstake_height = curr_block_num;
                   });
                } else {
-                  freeze_tbl.modify(fts, 0, [&]( freeze_info& v ) {
-                     v.staked += (-change);
-                     v.unstake_height =  curr_block_num;
+                  freeze_tbl.modify(fts, 0, [&]( freeze_info& f ) {
+                     f.staked += (-change);
+                     f.unstake_height =  curr_block_num;
                   });
                }
             }
@@ -82,9 +82,6 @@ namespace eosiosystem {
 
    void system_contract::unfreezeram( const account_name voter, const account_name bpname ) {
       require_auth(voter);
-
-      votes4ram_table votes_tbl(_self, voter);
-      const auto& vts = votes_tbl.get(bpname, "voter have not add votes to the the producer yet");
    }
 
 }
