@@ -38,8 +38,10 @@ namespace eosio { namespace chain {
 
          void init_for_deferred_trx( fc::time_point published );
 
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
          // set_fee_data insert onfee act in trx
          void set_fee_data( const asset& require_fee = asset{0} );
+#endif
 
          void exec();
          void finalize();
@@ -65,10 +67,11 @@ namespace eosio { namespace chain {
 
          friend struct controller_impl;
          friend class apply_context;
-
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
          void process_fee( const action& act );
          void dispatch_fee_action( vector<action_trace>& trace );
          void add_limit_by_fee( const action &act );
+#endif
 
          void add_ram_usage( account_name account, int64_t ram_delta );
 

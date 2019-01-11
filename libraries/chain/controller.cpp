@@ -1048,11 +1048,11 @@ struct controller_impl {
          //action check
          check_action(dtrx.actions);
          trx_context.init_for_deferred_trx( gtrx.published );
-
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
          if( is_func_has_open(self, config::func_typ::onfee_action) ) {
             trx_context.set_fee_data();
          }
-
+#endif
          if( trx_context.enforce_whiteblacklist && pending->_block_status == controller::block_status::incomplete ) {
             check_actor_list( trx_context.bill_to_accounts ); // Assumes bill_to_accounts is the set of actors authorizing the transaction
          }
@@ -1226,9 +1226,11 @@ struct controller_impl {
                        false
                );
             }
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
             if( !trx->implicit && is_func_has_open(self, config::func_typ::onfee_action)) {
                trx_context.set_fee_data();
             }
+#endif
             trx_context.exec();
             trx_context.finalize(); // Automatically rounds up network and CPU usage in trace and bills payers if successful
 

@@ -34,7 +34,7 @@
 
    function usage()
    {
-      printf "\\tUsage: %s \\n\\t[Build Option -o <Debug|Release|RelWithDebInfo|MinSizeRel>] \\n\\t[CodeCoverage -c] \\n\\t[Doxygen -d] \\n\\t[CoreSymbolName -s <1-7 characters>] \\n\\t[ResourceModel -r <Fee|Delegate|Unlimit>] \\n\\t[Avoid Compiling -a]\\n\\n" "$0" 1>&2
+      printf "\\tUsage: %s \\n\\t[Build Option -o <Debug|Release|RelWithDebInfo|MinSizeRel>] \\n\\t[CodeCoverage -c] \\n\\t[Doxygen -d] \\n\\t[CoreSymbolName -s <1-7 characters>] \\n\\t[ResourceModel -r <Unlimit|Fee|Delegate>] \\n\\t[Avoid Compiling -a]\\n\\n" "$0" 1>&2
       exit 1
    }
 
@@ -99,16 +99,16 @@
                fi
             ;;
             r )
-               options=( "Fee" "Delegate" "Unlimit" )
+               options=( "Unlimit" "Fee" "Delegate" )
                if [[ "${options[*]}" =~ "${OPTARG}" ]]; then
+                  if [[ "${OPTARG}" == "Unlimit" ]]; then
+                    RESOURCE_MODEL=0
+                  fi
                   if [[ "${OPTARG}" == "Fee" ]]; then
                     RESOURCE_MODEL=1
                   fi
                   if [[ "${OPTARG}" == "Delegate" ]]; then
                     RESOURCE_MODEL=2
-                  fi
-                  if [[ "${OPTARG}" == "Unlimit" ]]; then
-                    RESOURCE_MODEL=3
                   fi
                else
                   printf "\\n\\tInvalid argument: %s\\n" "${OPTARG}" 1>&2
