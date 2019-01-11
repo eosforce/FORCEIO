@@ -710,6 +710,9 @@ struct controller_impl {
                memory_db::token_account{ account.asset });
          const authority auth(public_key);
          create_native_account(account.name, auth, auth, false);
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
+         resource_limits.set_account_limits(account.name, 0, 0, 0);
+#endif
       }
    }
 
