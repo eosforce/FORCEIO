@@ -26,7 +26,7 @@ namespace eosiosystem {
            res.owner = name;
        });
 
-       set_resource_limits( newact, 0, 0, 0 );
+       set_resource_limits( name, 0, 0, 0 );
 #endif
     }
 }
