@@ -1170,6 +1170,37 @@ struct controller_impl {
       }
    }
 
+   //set_name_list
+   void set_name_list(list_type list, list_action_type action, std::vector<account_name> name_list)
+   {
+       int64_t lst = static_cast<int64_t>(list);
+
+      EOS_ASSERT(list >= list_type::actor_blacklist_type && list < list_type::list_type_count, transaction_exception, "unknown list type : ${l}, action: ${n}", ("l", static_cast<int64_t>(list))("n", static_cast<int64_t>(action)));
+      vector<flat_set<account_name> *> lists = {&conf.actor_blacklist, &conf.contract_blacklist, &conf.resource_greylist};
+      EOS_ASSERT(lists.size() == static_cast<int64_t>(list_type::list_type_count) - 1, transaction_exception, " list size wrong : ${l}, action: ${n}", ("l", static_cast<int64_t>(list))("n", static_cast<int64_t>(action)));
+
+      flat_set<account_name> &lo = *lists[lst - 1];
+
+      if (action == list_action_type::insert_type)
+      {
+         lo.insert(name_list.begin(), name_list.end());
+      }
+      else if (action == list_action_type::remove_type)
+      {
+         flat_set<account_name> name_set(name_list.begin(), name_list.end());
+
+         flat_set<account_name> results;
+         results.reserve(lo.size());
+         set_difference(lo.begin(), lo.end(),
+                        name_set.begin(), name_set.end(),
+                        std::inserter(results,results.begin()));
+
+         lo = results;
+      }
+
+      //sync_name_list(list);
+   }
+
    /**
     *  This is the entry point for new transactions to the block state. It will check authorization and
     *  determine whether to execute it now or to delay it. Lastly it inserts a transaction receipt into
@@ -2418,6 +2449,10 @@ bool controller::is_resource_greylisted(const account_name &name) const {
 
 const flat_set<account_name> &controller::get_resource_greylist() const {
    return  my->conf.resource_greylist;
+}
+
+void controller::set_name_list(list_type list, list_action_type action, std::vector<account_name> name_list) {
+   my->set_name_list(list,action,name_list);
 }
 
 } } /// eosio::chain

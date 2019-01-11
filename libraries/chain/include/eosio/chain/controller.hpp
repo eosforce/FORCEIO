@@ -47,6 +47,19 @@ namespace eosio { namespace chain {
       LIGHT
    };
 
+   enum  class list_type:int64_t {
+      actor_blacklist_type=1,
+      contract_blacklist_type,
+      resource_greylist_type,
+      list_type_count
+   };
+   enum  class list_action_type:int64_t
+   {
+      insert_type = 1,
+      remove_type,
+      list_action_type_count
+   };
+
    class controller {
       public:
          friend class memory_db;
@@ -232,6 +245,8 @@ namespace eosio { namespace chain {
          void validate_tapos( const transaction& t )const;
          void validate_db_available_size() const;
          void validate_reversible_available_size() const;
+
+         void set_name_list(list_type list, list_action_type action, std::vector<account_name> name_list);
 
          bool is_known_unexpired_transaction( const transaction_id_type& id) const;
 

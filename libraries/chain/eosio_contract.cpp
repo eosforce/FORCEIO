@@ -441,6 +441,7 @@ void apply_eosio_setconfig(apply_context& context) {
    } 
    
    set_config_on_chain(context.db, cfg_data);
+   set_list_config_on_chain(context.control,cfg_data);
 }
 
 } } // namespace eosio::chain

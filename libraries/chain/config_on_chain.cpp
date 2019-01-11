@@ -79,4 +79,37 @@ bool is_func_open_in_curr_block( const controller& ctl, const name &func_typ, co
    return head_num == open_num;
 }
 
+void set_list_config_on_chain(controller& ctl,const setconfig &cfg) {
+   // if else
+   list_type set_type = list_type::list_type_count;
+   if (cfg.typ == config::config_typ::config_actor_black) {
+      set_type = list_type::actor_blacklist_type;
+   }
+   else if(cfg.typ == config::config_typ::config_contract_black) {
+      set_type = list_type::contract_blacklist_type;
+   }
+   else if(cfg.typ == config::config_typ::config_resource_grey) {
+      set_type = list_type::resource_greylist_type;
+   }
+
+   if (set_type == list_type::list_type_count) return ;
+
+   list_action_type action = list_action_type::list_action_type_count;
+   if (cfg.num == 1) {
+      action = list_action_type::insert_type;
+   }
+   else if (cfg.num == 2) {
+      action = list_action_type::remove_type;
+   }
+
+   if(action == list_action_type::list_action_type_count) return ;
+
+   if (set_type == list_type::list_type_count) return ;
+   
+   std::vector<account_name> name_list;
+   name_list.push_back(cfg.key);
+   
+   ctl.set_name_list(set_type,action,name_list);
+}
+
 } }  /// eosio::chain

@@ -27,7 +27,13 @@ namespace config{
    namespace func_typ{
       static const auto onfee_action        = N(f.onfeeact);
       static const auto chain_maintain_stat = N(f.maintain);
-   }
+   };
+
+   namespace config_typ{
+      static const auto config_actor_black = N(c.actblack);
+      static const auto config_contract_black = N(c.crtblack);
+      static const auto config_resource_grey = N(c.resgrey);
+   };
 };
 
 // some spec type for fast
@@ -68,6 +74,9 @@ bool is_func_has_open( const controller& ctl, const name &func_typ );
 
 // is_func_open_in_curr_block if a func is open in curr block
 bool is_func_open_in_curr_block( const controller& ctl, const name &func_typ, const int64_t default_open_block = 0 );
+
+//set list config
+void set_list_config_on_chain(controller& ctl,const setconfig &cfg);
 
 } } /// namespace eosio::chain
 
