@@ -6,6 +6,7 @@
 #include "voting.cpp"
 #include "vote4ram.cpp"
 #include "delegate_bandwidth.cpp"
+#include "multiple_vote.cpp"
 
 namespace eosiosystem {
    void system_contract::setparams( const eosio::blockchain_parameters& params ) {
