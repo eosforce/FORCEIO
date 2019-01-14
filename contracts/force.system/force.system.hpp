@@ -155,16 +155,13 @@ namespace eosiosystem {
       void freeze( const account_name voter, const asset stake );
 
       // @abi action
-      void vote( const account_name voter, const account_name bpname, const asset stake );
-
-      // @abi action
       void unfreeze( const account_name voter );
 
       // @abi action
-      void vote4ram( const account_name voter, const account_name bpname, const asset stake );
+      void vote( const account_name voter, const account_name bpname, const asset stake );
 
       // @abi action
-      void unfreezeram( const account_name voter, const account_name bpname );
+      void vote4ram( const account_name voter, const account_name bpname, const asset stake );
 
       // @abi action
       void claim( const account_name voter, const account_name bpname );
@@ -219,7 +216,7 @@ namespace eosiosystem {
 EOSIO_ABI( eosiosystem::system_contract,
       (updatebp)
       (freeze)(vote)(unfreeze)
-      (vote4ram)(unfreezeram)
+      (vote4ram)
       (claim)
       (onblock)
       (setparams)(removebp)

@@ -347,10 +347,6 @@
       "type": "vote",
       "ricardian_contract": ""
     },{
-      "name": "unfreezeram",
-      "type": "unfreeze",
-      "ricardian_contract": ""
-    },{
       "name": "claim",
       "type": "claim",
       "ricardian_contract": ""
