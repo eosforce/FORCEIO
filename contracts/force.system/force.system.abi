@@ -29,8 +29,7 @@
       "name": "unfreeze",
       "base": "",
       "fields": [
-      {"name":"voter",      "type":"account_name"},
-      {"name":"bpname",     "type":"account_name"}
+         {"name":"voter",      "type":"account_name"}
       ]
     },{
       "name": "claim",
@@ -38,6 +37,13 @@
       "fields": [
         {"name":"voter",      "type":"account_name"},
         {"name":"bpname",     "type":"account_name"}
+      ]
+    },{
+      "name": "freeze",
+      "base": "",
+      "fields": [
+        {"name":"voter",     "type":"account_name"},
+        {"name":"stake",     "type":"asset"}
       ]
     },{
       "name": "vote",
@@ -52,11 +58,18 @@
       "base": "",
       "fields": [
         {"name":"bpname",                "type":"account_name"},
-        {"name":"staked",                "type":"asset"},
+        {"name":"vote",                  "type":"asset"},
         {"name":"voteage",               "type":"int64"},
-        {"name":"voteage_update_height", "type":"uint32"},
-        {"name":"unstaking",             "type":"asset"},
-        {"name":"unstake_height",        "type":"uint32"}
+        {"name":"voteage_update_height", "type":"uint32"}
+      ]
+    },{
+      "name": "freeze_info",
+      "base": "",
+      "fields": [
+        {"name":"staked",         "type":"asset"},
+        {"name":"unstaking",      "type":"asset"},
+        {"name":"voter",          "type":"account_name"},
+        {"name":"unstake_height", "type":"uint32"}
       ]
     },{
       "name": "bp_info",
@@ -250,11 +263,76 @@
        "fields": [
          {"name":"bpname",  "type":"account_name"}
        ]
-     }
+     },{
+         "name": "delegatebw",
+         "base": "",
+         "fields": [
+            {"name":"from", "type":"account_name"},
+            {"name":"receiver", "type":"account_name"},
+            {"name":"stake_net_quantity", "type":"asset"},
+            {"name":"stake_cpu_quantity", "type":"asset"},
+            {"name":"transfer", "type":"bool"}
+         ]
+       },{
+         "name": "undelegatebw",
+         "base": "",
+         "fields": [
+            {"name":"from", "type":"account_name"},
+            {"name":"receiver", "type":"account_name"},
+            {"name":"unstake_net_quantity", "type":"asset"},
+            {"name":"unstake_cpu_quantity", "type":"asset"}
+         ]
+       },{
+         "name": "refund",
+         "base": "",
+         "fields": [
+            {"name":"owner", "type":"account_name"}
+         ]
+       },{
+         "name": "delegated_bandwidth",
+         "base": "",
+         "fields": [
+            {"name":"from", "type":"account_name"},
+            {"name":"to", "type":"account_name"},
+            {"name":"net_weight", "type":"asset"},
+            {"name":"cpu_weight", "type":"asset"}
+         ]
+       },{
+         "name": "user_resources",
+         "base": "",
+         "fields": [
+            {"name":"owner", "type":"account_name"},
+            {"name":"net_weight", "type":"asset"},
+            {"name":"cpu_weight", "type":"asset"},
+            {"name":"ram_bytes", "type":"uint64"}
+         ]
+       },{
+         "name": "total_resources",
+         "base": "",
+         "fields": [
+            {"name":"owner", "type":"account_name"},
+            {"name":"net_weight", "type":"asset"},
+            {"name":"cpu_weight", "type":"asset"},
+            {"name":"ram_bytes", "type":"uint64"}
+         ]
+       },{
+         "name": "refund_request",
+         "base": "",
+         "fields": [
+            {"name":"owner", "type":"account_name"},
+            {"name":"request_time", "type":"time_point_sec"},
+            {"name":"net_amount", "type":"asset"},
+            {"name":"cpu_amount", "type":"asset"}
+         ]
+       }
   ],
   "actions": [{
       "name": "updatebp",
       "type": "updatebp",
+      "ricardian_contract": ""
+    },{
+      "name": "freeze",
+      "type": "freeze",
       "ricardian_contract": ""
     },{
       "name": "vote",
@@ -324,7 +402,19 @@
        "name": "removebp",
        "type": "removebp",
        "ricardian_contract": ""
-     }
+     },{
+         "name": "delegatebw",
+         "type": "delegatebw",
+         "ricardian_contract": ""
+      },{
+         "name": "undelegatebw",
+         "type": "undelegatebw",
+         "ricardian_contract": ""
+      },{
+         "name": "refund",
+         "type": "refund",
+         "ricardian_contract": ""
+      }
   ],
   "tables": [
         {
@@ -332,6 +422,12 @@
           "type":"bp_info",
           "index_type":"i64",
           "key_names": ["name"],
+          "key_types": ["account_name"]
+       },{
+          "name":"freezed",
+          "type":"freeze_info",
+          "index_type":"i64",
+          "key_names": ["voter"],
           "key_types": ["account_name"]
        },{
           "name":"votes",
@@ -351,6 +447,24 @@
           "index_type":"i64",
           "key_names": ["version"],
           "key_types": ["uint64"]
+       },{
+           "name": "userres",
+           "type": "user_resources",
+           "index_type": "i64",
+           "key_names" : ["owner"],
+           "key_types" : ["uint64"]
+       },{
+           "name": "delband",
+           "type": "delegated_bandwidth",
+           "index_type": "i64",
+           "key_names" : ["to"],
+           "key_types" : ["uint64"]
+       },{
+            "name": "refunds",
+            "type": "refund_request",
+            "index_type": "i64",
+            "key_names" : ["owner"],
+            "key_types" : ["uint64"]
        }
   ],
   "ricardian_clauses": [],

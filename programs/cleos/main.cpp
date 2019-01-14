@@ -901,7 +901,7 @@ void ensure_keosd_running(CLI::App* app) {
     if (app->get_subcommand("create")->got_subcommand("key")) // create key does not require wallet
        return;
     if (auto* subapp = app->get_subcommand("system")) {
-       if (subapp->got_subcommand("listbps") /*|| subapp->got_subcommand("listbw")*/ /*|| subapp->got_subcommand("bidnameinfo")*/) // system list* do not require wallet
+       if (subapp->got_subcommand("listbps") || subapp->got_subcommand("listbw") /*|| subapp->got_subcommand("bidnameinfo")*/) // system list* do not require wallet
          return;
     }
     if (wallet_url != default_wallet_url)
@@ -3450,6 +3450,10 @@ int main( int argc, char** argv ) {
    cancleemergency->set_callback([&] { set_or_cancle_emergency(false); });
 
    auto listbps = list_bp_subcommand(system);
+
+   auto delegateBandWidth = delegate_bandwidth_subcommand(system);
+   auto undelegateBandWidth = undelegate_bandwidth_subcommand(system);
+   auto listBandWidth = list_bw_subcommand(system);
 
    //auto regProxy = regproxy_subcommand(system);
    //auto unregProxy = unregproxy_subcommand(system);

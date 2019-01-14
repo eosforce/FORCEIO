@@ -151,5 +151,4 @@ extern "C" { \
 
    void dispatch( account_name code, account_name action, 
    */
-
 }
