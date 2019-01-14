@@ -820,8 +820,11 @@ struct controller_impl {
       db.create<dynamic_global_property_object>([](auto&){});
 
       //force_property_object    创建内存表的地方
-      db.create<force_property_object>([&](force_property_object&){});
-
+       db.create<force_property_object>([&](auto &fpo) {
+         fpo.gmr.cpu_us = config::default_gmr_cpu_limit;
+         fpo.gmr.net_byte = config::default_gmr_net_limit;
+         fpo.gmr.ram_byte = config::default_gmr_ram_limit;
+      });
       authorization.initialize_database();
       resource_limits.initialize_database();
 

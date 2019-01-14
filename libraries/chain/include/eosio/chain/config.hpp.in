@@ -62,6 +62,10 @@ const static int percent_1   = 100;
 #define RESOURCE_MODEL_DELEGATE 2
 #define RESOURCE_MODEL ${RESOURCE_MODEL}
 
+const static uint32_t   default_gmr_cpu_limit         = 200'000; /// free cpu usage in microseconds
+const static uint32_t   default_gmr_net_limit         = 10 * 1024;   // 10 KB
+const static uint32_t   default_gmr_ram_limit         = 8 * 1024;    // 8 KB
+
 static const uint32_t account_cpu_usage_average_window_ms  = 24*60*60*1000l;
 static const uint32_t account_net_usage_average_window_ms  = 24*60*60*1000l;
 static const uint32_t block_cpu_usage_average_window_ms    = 60*1000l;
