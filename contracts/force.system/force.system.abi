@@ -54,6 +54,14 @@
         {"name":"stake",     "type":"asset"}
       ]
     },{
+      "name": "voteproducer",
+      "base": "",
+      "fields": [
+        {"name":"voter",     "type":"account_name"},
+        {"name":"proxy",     "type":"account_name"},
+        {"name":"producers", "type":"account_name[]"}
+      ]
+    },{
       "name": "vote_info",
       "base": "",
       "fields": [
@@ -345,6 +353,10 @@
     },{
       "name": "vote4ram",
       "type": "vote",
+      "ricardian_contract": ""
+    },{
+      "name": "voteproducer",
+      "type": "voteproducer",
       "ricardian_contract": ""
     },{
       "name": "claim",
