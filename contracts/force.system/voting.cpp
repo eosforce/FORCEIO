@@ -92,10 +92,8 @@ namespace eosiosystem {
       if( change > asset{} ) {
          auto fts = freeze_tbl.find(voter);
          eosio_assert( fts != freeze_tbl.end() && fts->staked >= change, "voter freeze token < vote token" );
-         print("cost freeze ", change);
          freeze_tbl.modify( fts, 0, [&]( freeze_info& v ) {
             v.staked -= change;
-            print("stat ", v.staked);
          });
       }
 
