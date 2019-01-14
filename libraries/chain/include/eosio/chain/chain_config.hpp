@@ -135,6 +135,12 @@ struct chain_list_config {
    }
 };
 
+struct guaranteed_minimum_resources {
+   uint64_t ram_byte;
+   uint64_t cpu_us;
+   uint64_t net_byte;
+};
+
 } } // namespace eosio::chain
 
 FC_REFLECT(eosio::chain::chain_config,
@@ -151,3 +157,5 @@ FC_REFLECT(eosio::chain::chain_config,
 )
 
 FC_REFLECT( eosio::chain::chain_list_config, (actor_blacklist)(contract_blacklist)(resource_greylist) )
+
+FC_REFLECT( eosio::chain::guaranteed_minimum_resources, (ram_byte)(cpu_us)(net_byte) )

@@ -40,6 +40,7 @@ namespace eosio { namespace chain {
 
       id_type                           id;
       chain_list_config                 clfg;
+      guaranteed_minimum_resources      gmr;
    };
 
    /**
