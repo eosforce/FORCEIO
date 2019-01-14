@@ -35,6 +35,14 @@ namespace eosio { namespace chain { namespace resource_limits {
       int64_t max = 0; ///< max per window under current congestion
    };
 
+   struct gmr_parameters {
+   uint64_t ram_byte;
+   uint64_t cpu_us;
+   uint64_t net_byte;
+
+      void validate()const; // throws if the parameters do not satisfy basic sanity checks
+   };
+
    class resource_limits_manager {
       public:
          explicit resource_limits_manager(chainbase::database& db)
@@ -86,3 +94,5 @@ namespace eosio { namespace chain { namespace resource_limits {
 FC_REFLECT( eosio::chain::resource_limits::account_resource_limit, (used)(available)(max) )
 FC_REFLECT( eosio::chain::resource_limits::ratio, (numerator)(denominator))
 FC_REFLECT( eosio::chain::resource_limits::elastic_limit_parameters, (target)(max)(periods)(max_multiplier)(contract_rate)(expand_rate))
+
+FC_REFLECT( eosio::chain::resource_limits::gmr_parameters, (ram_byte)(cpu_us)(net_byte))

@@ -38,6 +38,12 @@ void elastic_limit_parameters::validate()const {
    EOS_ASSERT( expand_rate.denominator > 0, resource_limit_exception, "elastic limit parameter 'expand_rate' is not a well-defined ratio" );
 }
 
+void gmr_parameters::validate()const {
+   
+   EOS_ASSERT( cpu_us > 0, resource_limit_exception, "guaranteed minmum resources parameter 'cpu_us' cannot be zero" );
+   EOS_ASSERT( net_byte > 0, resource_limit_exception, "guaranteed minmum resources parameter 'net_byte' cannot be zero" );
+   EOS_ASSERT( ram_byte >= 0, resource_limit_exception, "guaranteed minmum resources parameter'ram_byte' cannot be less than zero" );
+}
 
 void resource_limits_state_object::update_virtual_cpu_limit( const resource_limits_config_object& cfg ) {
    //idump((average_block_cpu_usage.average()));
@@ -276,7 +282,6 @@ inline int64_t get_account_ram_limit( database& db, const account_name& name ) {
       #ifdef FREE_RESOUSE
          return -1;
       #endif //FREE_RESOUSE
-
    // every account can use 8k ram free default
    const int64_t init_ram_size = get_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8*1024);
    // if is account by system use ram unlimit,
