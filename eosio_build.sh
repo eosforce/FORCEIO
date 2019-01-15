@@ -58,6 +58,9 @@
    # if chain use mutiple vote
    # USE_MULTIPLE_VOTE=1
 
+   # if chain use bonus to vote
+   USE_BONUS_TO_VOTE=1
+
    # Use current directory's tmp directory if noexec is enabled for /tmp
    if (mount | grep "/tmp " | grep --quiet noexec); then
         mkdir -p $SOURCE_DIR/tmp

@@ -139,6 +139,10 @@ namespace eosiosystem {
    void system_contract::claim( const account_name voter, const account_name bpname ) {
       require_auth(voter);
 
+#if !IS_ACTIVE_BONUS_TO_VOTE
+      eosio_assert(false, "curr chain no bonus to account who vote");
+#endif
+
       bps_table bps_tbl(_self, _self);
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
 

@@ -285,6 +285,14 @@ else()
     set(IS_ACTIVE_MULTIPLE_VOTE 0)
 endif(USE_MULTIPLE_VOTE)
 
+# is chain active bonus to vote
+if(USE_BONUS_TO_VOTE)
+    message( STATUS "Using bonus to vote for chain" )
+    set(IS_ACTIVE_BONUS_TO_VOTE 1)
+else()
+    set(IS_ACTIVE_BONUS_TO_VOTE 0)
+endif(USE_BONUS_TO_VOTE)
+
 include(wasm)
 add_subdirectory( libraries )
 add_subdirectory( contracts )
