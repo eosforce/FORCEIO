@@ -104,6 +104,8 @@ namespace eosiosystem {
       set_proposed_producers(packed_schedule.data(), packed_schedule.size());
    }
 
+   // TODO it need change if no bonus to accounts
+
    void system_contract::reward_bps( account_name block_producers[] ) {
       bps_table bps_tbl(_self, _self);
       schedules_table schs_tbl(_self, _self);

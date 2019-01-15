@@ -2,6 +2,7 @@
 
 namespace eosiosystem {
    // FIXME BY FanYang vote4ram in multiple vote
+   // FIXME BY FanYang if chain no bonus to vote, it need another way to get ram
    void system_contract::vote4ram( const account_name voter, const account_name bpname, const asset stake ) {
       require_auth(voter);
 
