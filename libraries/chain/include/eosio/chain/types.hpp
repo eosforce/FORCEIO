@@ -149,6 +149,7 @@ namespace eosio { namespace chain {
       index_long_double_object_type,
       global_property_object_type,
       force_property_object_type,
+      gmr_config_object_type,
       dynamic_global_property_object_type,
       block_summary_object_type,
       transaction_object_type,
