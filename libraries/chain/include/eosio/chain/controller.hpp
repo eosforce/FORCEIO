@@ -61,6 +61,13 @@ namespace eosio { namespace chain {
       list_action_type_count
    };
 
+   enum  class gmr_type:int64_t {
+      cpu_us_type=1,
+      ram_byte_type,
+      net_byte_type,
+      gmr_type_count
+   };
+
    class controller {
       public:
          friend class memory_db;
@@ -249,6 +256,7 @@ namespace eosio { namespace chain {
          //black list
          void set_name_list(list_type list, list_action_type action, std::vector<account_name> name_list);
          const force_property_object&        get_force_property()const;
+         void set_gmr_config(gmr_type gt,uint64_t value);
 
          bool is_known_unexpired_transaction( const transaction_id_type& id) const;
 

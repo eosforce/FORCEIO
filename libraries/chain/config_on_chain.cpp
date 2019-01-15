@@ -82,17 +82,20 @@ bool is_func_open_in_curr_block( const controller& ctl, const name &func_typ, co
 void set_list_config_on_chain(controller& ctl,const setconfig &cfg) {
    // if else
    list_type set_type = list_type::list_type_count;
-   if (cfg.typ == config::config_typ::config_actor_black) {
+   if (cfg.typ == config::list_typ::list_actor_black) {
       set_type = list_type::actor_blacklist_type;
    }
-   else if(cfg.typ == config::config_typ::config_contract_black) {
+   else if(cfg.typ == config::list_typ::list_contract_black) {
       set_type = list_type::contract_blacklist_type;
    }
-   else if(cfg.typ == config::config_typ::config_resource_grey) {
+   else if(cfg.typ == config::list_typ::list_resource_grey) {
       set_type = list_type::resource_greylist_type;
    }
+   else {
+      return ;
+   }
 
-   if (set_type == list_type::list_type_count) return ;
+  // if (set_type == list_type::list_type_count) return ;
 
    list_action_type action = list_action_type::list_action_type_count;
    if (cfg.num == 1) {
@@ -101,8 +104,11 @@ void set_list_config_on_chain(controller& ctl,const setconfig &cfg) {
    else if (cfg.num == 2) {
       action = list_action_type::remove_type;
    }
+   else {
+      return ;
+   }
 
-   if(action == list_action_type::list_action_type_count) return ;
+//   if(action == list_action_type::list_action_type_count) return ;
 
    if (set_type == list_type::list_type_count) return ;
    
@@ -110,6 +116,24 @@ void set_list_config_on_chain(controller& ctl,const setconfig &cfg) {
    name_list.push_back(cfg.key);
    
    ctl.set_name_list(set_type,action,name_list);
+}
+
+void set_guaranteed_minimum_config(controller& ctl,const setconfig &cfg) {
+   gmr_type set_gmr = gmr_type::gmr_type_count;
+   if(cfg.typ == config::gmr_typ::gmr_cpu) {
+      set_gmr = gmr_type::cpu_us_type;
+   }
+   else if(cfg.typ == config::gmr_typ::gmr_ram) {
+      set_gmr = gmr_type::ram_byte_type;
+   }
+   else if(cfg.typ == config::gmr_typ::gmr_net) {
+      set_gmr = gmr_type::net_byte_type;
+   }
+   else {
+      return ;
+   }
+
+   ctl.set_gmr_config(set_gmr,cfg.num);
 }
 
 } }  /// eosio::chain

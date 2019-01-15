@@ -29,11 +29,18 @@ namespace config{
       static const auto chain_maintain_stat = N(f.maintain);
    };
 
-   namespace config_typ{
-      static const auto config_actor_black = N(c.actblack);
-      static const auto config_contract_black = N(c.crtblack);
-      static const auto config_resource_grey = N(c.resgrey);
+   namespace list_typ{
+      static const auto list_actor_black = N(l.actblack);
+      static const auto list_contract_black = N(l.crtblack);
+      static const auto list_resource_grey = N(l.resgrey);
    };
+
+   namespace gmr_typ{
+      static const auto gmr_cpu= N(gmr.cpu);
+      static const auto gmr_ram = N(gmr.ram);
+      static const auto gmr_net = N(gmr.net);
+   }
+
 };
 
 // some spec type for fast
@@ -77,6 +84,8 @@ bool is_func_open_in_curr_block( const controller& ctl, const name &func_typ, co
 
 //set list config
 void set_list_config_on_chain(controller& ctl,const setconfig &cfg);
+
+void set_guaranteed_minimum_config(controller& ctl,const setconfig &cfg);
 
 } } /// namespace eosio::chain
 

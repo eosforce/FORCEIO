@@ -820,13 +820,20 @@ struct controller_impl {
       db.create<dynamic_global_property_object>([](auto&){});
 
       //force_property_object    创建内存表的地方
-       db.create<force_property_object>([&](auto &fpo) {
+      const auto fpo = db.create<force_property_object>([&](auto &fpo) {
          fpo.gmr.cpu_us = config::default_gmr_cpu_limit;
          fpo.gmr.net_byte = config::default_gmr_net_limit;
          fpo.gmr.ram_byte = config::default_gmr_ram_limit;
       });
+   
+
       authorization.initialize_database();
       resource_limits.initialize_database();
+
+         //初始化  resource_limits
+      resource_limits.set_gmr_parameters(
+         {  fpo.gmr.ram_byte, fpo.gmr.cpu_us,fpo.gmr.net_byte}
+      );
 
       authority system_auth(conf.genesis.initial_key);
       create_native_account( config::system_account_name, system_auth, system_auth, true );
@@ -855,7 +862,12 @@ struct controller_impl {
                                                                              conf.genesis.initial_timestamp );
    }
 
-
+   void set_resource_gmr() {
+      const auto &gmr = db.get<force_property_object>().gmr;
+      resource_limits.set_gmr_parameters(
+         {  gmr.ram_byte, gmr.cpu_us,gmr.net_byte}
+      );
+   }
 
    /**
     * @post regardless of the success of commit block there is no active pending block
@@ -1223,6 +1235,24 @@ struct controller_impl {
       db.modify(force_property, [&](auto &forceps) {
          sync_list_and_db(list,forceps,isMerge);
       });
+   }
+
+   void set_gmr_config(gmr_type gt,uint64_t value) {
+      const auto &force_property = db.get<force_property_object>();
+      db.modify(force_property, [&](auto &forceps) {
+         sync_fpo_and_resource(gt,value,forceps);
+      });
+
+      resource_limits.set_gmr_parameters(
+         {  force_property.gmr.ram_byte, force_property.gmr.cpu_us,force_property.gmr.net_byte}
+      );
+   }
+
+   void sync_fpo_and_resource(gmr_type gt,uint64_t value,force_property_object &forceps) {
+      int64_t grt = static_cast<int64_t>(gt);
+      vector<uint64_t *> gmr_value = {&forceps.gmr.cpu_us,&forceps.gmr.ram_byte,&forceps.gmr.net_byte};
+      uint64_t &change_value = *gmr_value[grt - 1];
+      change_value = value; 
    }
 
    void sync_list_and_db(list_type list, force_property_object &forceps,bool isMerge=false)
@@ -2513,6 +2543,10 @@ void controller::set_name_list(list_type list, list_action_type action, std::vec
 
 const force_property_object& controller::get_force_property()const {
    return my->db.get<force_property_object>();
+}
+
+void controller::set_gmr_config(gmr_type gt,uint64_t value) {
+   my->set_gmr_config(gt,value);
 }
 
 } } /// eosio::chain
