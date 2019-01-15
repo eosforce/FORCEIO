@@ -12,6 +12,11 @@ namespace eosiosystem {
    };
 
    void system_contract::update_votes( const account_name voter_name, const std::vector<account_name>& producers, bool voting ) {
+      // check is multiple vote is active
+#if !IS_ACTIVE_MULTIPLE_VOTE
+      eosio_assert(false, "curr chain multiple vote is not active");
+#endif
+
       //validate input
       eosio_assert(producers.size() <= 30, "attempt to vote for too many producers");
       for( size_t i = 1; i < producers.size(); ++i ) {

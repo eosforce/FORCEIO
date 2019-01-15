@@ -48,6 +48,10 @@ namespace eosiosystem {
    void system_contract::vote( const account_name voter, const account_name bpname, const asset stake ) {
       require_auth(voter);
 
+#if IS_ACTIVE_MULTIPLE_VOTE
+      eosio_assert(false, "curr chain is active mutiple vote, no allow vote to simple bp");
+#endif
+
       bps_table bps_tbl(_self, _self);
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
 
