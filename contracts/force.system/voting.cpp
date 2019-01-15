@@ -28,6 +28,12 @@ namespace eosiosystem {
                v.unstake_height =  curr_block_num;
             }
          });
+
+         // process multiple vote
+         auto mv = _voters.find(voter);
+         if((mv != _voters.end()) && (change != asset{})){
+            update_votes(voter, mv->producers, false);
+         }
       }
 
       if( change > asset{0} ) {

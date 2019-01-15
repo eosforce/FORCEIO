@@ -58,7 +58,6 @@
       "base": "",
       "fields": [
         {"name":"voter",     "type":"account_name"},
-        {"name":"proxy",     "type":"account_name"},
         {"name":"producers", "type":"account_name[]"}
       ]
     },{
@@ -69,6 +68,14 @@
         {"name":"vote",                  "type":"asset"},
         {"name":"voteage",               "type":"int64"},
         {"name":"voteage_update_height", "type":"uint32"}
+      ]
+    },{
+      "name": "votes_info",
+      "base": "",
+      "fields": [
+        {"name":"owner",     "type":"account_name"},
+        {"name":"producers", "type":"account_name[]"},
+        {"name":"staked",    "type":"asset"}
       ]
     },{
       "name": "freeze_info",
@@ -442,6 +449,12 @@
           "type":"vote_info",
           "index_type":"i64",
           "key_names": ["bpname"],
+          "key_types": ["account_name"]
+       },{
+          "name":"mvotes",
+          "type":"votes_info",
+          "index_type":"i64",
+          "key_names": ["owner"],
           "key_types": ["account_name"]
        },{
           "name":"votes4ram",
