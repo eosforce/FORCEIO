@@ -52,7 +52,9 @@ namespace eosiosystem {
 
    class system_contract : private eosio::contract {
    public:
-      system_contract( account_name self ) : contract(self) {}
+      system_contract( account_name self )
+         : contract(self)
+         , _voters(_self, _self) {}
 
    private:
 
@@ -65,6 +67,16 @@ namespace eosiosystem {
          uint64_t primary_key() const { return bpname; }
 
          EOSLIB_SERIALIZE(vote_info, (bpname)(vote)(voteage)(voteage_update_height))
+      };
+
+      struct votes_info {
+         account_name                owner = 0; /// the voter
+         std::vector<account_name>   producers; /// the producers approved by this voter
+         asset                       staked;    /// the staked to this producers
+
+         uint64_t primary_key()const { return owner; }
+
+         EOSLIB_SERIALIZE( votes_info, (owner)(producers)(staked) )
       };
 
       struct freeze_info {
@@ -130,10 +142,13 @@ namespace eosiosystem {
 
       typedef eosio::multi_index<N(freezed),     freeze_info>   freeze_table;
       typedef eosio::multi_index<N(votes),       vote_info>     votes_table;
+      typedef eosio::multi_index<N(mvotes),      votes_info>    mvotes_table;
       typedef eosio::multi_index<N(votes4ram),   vote_info>     votes4ram_table;
       typedef eosio::multi_index<N(vote4ramsum), vote4ram_info> vote4ramsum_table;
       typedef eosio::multi_index<N(bps),         bp_info>       bps_table;
       typedef eosio::multi_index<N(schedules),   schedule_info> schedules_table;
+
+      mvotes_table _voters;
 
       void update_elected_bps();
 
@@ -145,6 +160,8 @@ namespace eosiosystem {
       void changebw( account_name from, account_name receiver,
                       asset stake_net_quantity, asset stake_cpu_quantity, bool transfer );
 
+      void update_votes( const account_name voter, const std::vector<account_name>& producers, bool voting );
+
    public:
       // @abi action
       void updatebp( const account_name bpname, const public_key producer_key,
@@ -154,16 +171,13 @@ namespace eosiosystem {
       void freeze( const account_name voter, const asset stake );
 
       // @abi action
-      void vote( const account_name voter, const account_name bpname, const asset stake );
-
-      // @abi action
       void unfreeze( const account_name voter );
 
       // @abi action
-      void vote4ram( const account_name voter, const account_name bpname, const asset stake );
+      void vote( const account_name voter, const account_name bpname, const asset stake );
 
       // @abi action
-      void unfreezeram( const account_name voter, const account_name bpname );
+      void vote4ram( const account_name voter, const account_name bpname, const asset stake );
 
       // @abi action
       void claim( const account_name voter, const account_name bpname );
@@ -214,13 +228,16 @@ namespace eosiosystem {
       void refund( account_name owner );
 #endif
 
+
+      // @abi action
+      void voteproducer( const account_name voter, const std::vector<account_name>& producers );
    };
 };
 
 EOSIO_ABI( eosiosystem::system_contract,
       (updatebp)
-      (freeze)(vote)(unfreeze)
-      (vote4ram)(unfreezeram)
+      (freeze)(unfreeze)
+      (vote)(vote4ram)(voteproducer)
       (claim)
       (onblock)
       (setparams)(removebp)

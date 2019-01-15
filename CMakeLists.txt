@@ -277,6 +277,14 @@ if ("${RESOURCE_MODEL}" STREQUAL "")
   set( RESOURCE_MODEL "1" )
 endif()
 
+# is chain active multiple vote
+if(USE_MULTIPLE_VOTE)
+    message( STATUS "Using multiple vote for chain" )
+    set(IS_ACTIVE_MULTIPLE_VOTE 1)
+else()
+    set(IS_ACTIVE_MULTIPLE_VOTE 0)
+endif(USE_MULTIPLE_VOTE)
+
 include(wasm)
 add_subdirectory( libraries )
 add_subdirectory( contracts )
