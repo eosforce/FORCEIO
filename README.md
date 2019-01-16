@@ -36,3 +36,7 @@ FORCEIO is an open platform that supports EOSIO as well as the underlying blockc
 ### 6. Developer Tools
 
 FORCEIO offers a range of tools including the wallet, block explorer and developer framework. It is convenient for developers to develop, maintain and monitor blockchain in a more efficient way, and provide users with more convenient blockchain services.
+
+## Getting Start
+
+Read this Document to learn how to start a customize chain : [customize document](customize.md)
