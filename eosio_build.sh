@@ -320,20 +320,21 @@
 
    TIME_END=$(( $(date -u +%s) - ${TIME_BEGIN} ))
 
-   printf "\n\n${bldred}\t _______   ______    ______       ______  _______     _______ ______           ___       ___  ___   _______ \n"
-   printf "\t|   ____| /  __  \  |   _  \     /      ||   ____|   |   ____||   _  \        /   \     |   \/   | |   ____|\n"
-   printf "\t|  |__   |  |  |  | |  |_)  |   |  ,----'|  |__      |  |__   |  |_)  |      /  ^  \    |  \  /  | |  |__   \n"
-   printf "\t|   __|  |  |  |  | |      /    |  |     |   __|     |   __|  |      /      /  /_\  \   |  |\/|  | |   __|  \n"
-   printf "\t|  |     |  \`--\'  | |  |\  \----|  \`----.|  |____    |  |     |  |\  \----./  _____  \  |  |  |  | |  |____ \n"
-   printf "\t|__|      \______/  | _| \`._____|\______||_______|   |__|     | _| \`._____/__/     \__\ |__|  |__| |_______|\n${txtrst}"
-                                                                                                            
+   printf "\n\n${bldred}\t _______  _______  _______  _______  _______ _________ _______ \n"
+   printf "\t(  ____ \(  ___  )(  ____ )(  ____ \(  ____ \\__   __/(  ___  )\n"
+   printf "\t| (    \/| (   ) || (    )|| (    \/| (    \/   ) (   | (   ) |\n"
+   printf "\t| (__    | |   | || (____)|| |      | (__       | |   | |   | |\n"
+   printf "\t|  __)   | |   | ||     __)| |      |  __)      | |   | |   | |\n"
+   printf "\t| (      | |   | || (\ (   | |      | (         | |   | |   | |\n"
+   printf "\t| )      | (___) || ) \ \__| (____/\| (____/\___) (___| (___) |\n"
+   printf "\t|/       (_______)|/   \__/(_______/(_______/\_______/(_______)\n${txtrst}"
 
-   printf "\\n\\tEOSForce has been successfully built. %02d:%02d:%02d\\n\\n" $(($TIME_END/3600)) $(($TIME_END%3600/60)) $(($TIME_END%60))
+
+   printf "\\n\\tFORCEIO has been successfully built. %02d:%02d:%02d\\n\\n" $(($TIME_END/3600)) $(($TIME_END%3600/60)) $(($TIME_END%60))
    printf "\\tTo verify your installation run the following commands:\\n"
 
    print_instructions
 
    printf "\\tFor more information:\\n"
-   printf "\\tEOSForce website: https://www.eosforce.io\\n"
-   printf "\\tEOSForce Telegram channel @ https://t.me/eosforce_en\\n"
-   printf "\\tEOSForce wiki: https://eosforce.github.io/Documentation/\\n\\n\\n"
+   printf "\\tFORCEIO website: https://open.eosforce.io/#/en \\n"
+   printf "\\tFORCEIO Telegram channel @ https://t.me/forceio \\n"
