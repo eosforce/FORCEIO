@@ -398,7 +398,6 @@ namespace bacc = boost::accumulators;
 
    void transaction_context::dispatch_fee_action( vector<action_trace>& action_traces ) {
       // if fee_payer is nil, it is mean now is not pay fee by action
-      ilog("xuyapeng add for dispatch_fee_action ${res}",("res",RESOURCE_MODEL));
       if( fee_payer != name{} ) {
          action_traces.emplace_back();
          dispatch_action(action_traces.back(),
