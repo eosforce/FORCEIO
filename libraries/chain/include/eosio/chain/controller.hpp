@@ -28,6 +28,7 @@ namespace eosio { namespace chain {
 
    class dynamic_global_property_object;
    class global_property_object;
+   class force_property_object;
    class permission_object;
    class account_object;
    using resource_limits::resource_limits_manager;
@@ -45,6 +46,26 @@ namespace eosio { namespace chain {
    enum class validation_mode {
       FULL,
       LIGHT
+   };
+
+   enum  class list_type:int64_t {
+      actor_blacklist_type=1,
+      contract_blacklist_type,
+      resource_greylist_type,
+      list_type_count
+   };
+   enum  class list_action_type:int64_t
+   {
+      insert_type = 1,
+      remove_type,
+      list_action_type_count
+   };
+
+   enum  class gmr_type:int64_t {
+      cpu_us_type=1,
+      ram_byte_type,
+      net_byte_type,
+      gmr_type_count
    };
 
    class controller {
@@ -232,6 +253,10 @@ namespace eosio { namespace chain {
          void validate_tapos( const transaction& t )const;
          void validate_db_available_size() const;
          void validate_reversible_available_size() const;
+         //black list
+         void set_name_list(list_type list, list_action_type action, std::vector<account_name> name_list);
+         const force_property_object&        get_force_property()const;
+         void set_gmr_config(gmr_type gt,uint64_t value);
 
          bool is_known_unexpired_transaction( const transaction_id_type& id) const;
 

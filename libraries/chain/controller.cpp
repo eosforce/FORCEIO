@@ -43,6 +43,7 @@ using controller_index_set = index_set<
    account_index,
    account_sequence_index,
    global_property_multi_index,
+   force_property_multi_index,
    dynamic_global_property_multi_index,
    block_summary_multi_index,
    transaction_multi_index,
@@ -428,7 +429,9 @@ struct controller_impl {
          const auto hash = calculate_integrity_hash();
          ilog( "database initialized with hash: ${hash}", ("hash", hash) );
       }
-
+      sync_name_list(list_type::actor_blacklist_type,true);
+      sync_name_list(list_type::contract_blacklist_type,true);
+      sync_name_list(list_type::resource_greylist_type,true);
    }
 
    ~controller_impl() {
@@ -819,8 +822,21 @@ struct controller_impl {
       });
       db.create<dynamic_global_property_object>([](auto&){});
 
+      //force_property_object    创建内存表的地方
+      const auto fpo = db.create<force_property_object>([&](auto &fpo) {
+         fpo.gmr.cpu_us = config::default_gmr_cpu_limit;
+         fpo.gmr.net_byte = config::default_gmr_net_limit;
+         fpo.gmr.ram_byte = config::default_gmr_ram_limit;
+      });
+   
+
       authorization.initialize_database();
       resource_limits.initialize_database();
+
+         //初始化  resource_limits
+      resource_limits.set_gmr_parameters(
+         {  fpo.gmr.ram_byte, fpo.gmr.cpu_us,fpo.gmr.net_byte}
+      );
 
       authority system_auth(conf.genesis.initial_key);
       create_native_account( config::system_account_name, system_auth, system_auth, true );
@@ -849,7 +865,12 @@ struct controller_impl {
                                                                              conf.genesis.initial_timestamp );
    }
 
-
+   void set_resource_gmr() {
+      const auto &gmr = db.get<force_property_object>().gmr;
+      resource_limits.set_gmr_parameters(
+         {  gmr.ram_byte, gmr.cpu_us,gmr.net_byte}
+      );
+   }
 
    /**
     * @post regardless of the success of commit block there is no active pending block
@@ -1177,6 +1198,90 @@ struct controller_impl {
                                )),
                     invalid_action_args_exception,
                     "chain is in maintain now !");
+      }
+   }
+
+   //set_name_list
+   void set_name_list(list_type list, list_action_type action, std::vector<account_name> name_list)
+   {
+       int64_t lst = static_cast<int64_t>(list);
+
+      EOS_ASSERT(list >= list_type::actor_blacklist_type && list < list_type::list_type_count, transaction_exception, "unknown list type : ${l}, action: ${n}", ("l", static_cast<int64_t>(list))("n", static_cast<int64_t>(action)));
+      vector<flat_set<account_name> *> lists = {&conf.actor_blacklist, &conf.contract_blacklist, &conf.resource_greylist};
+      EOS_ASSERT(lists.size() == static_cast<int64_t>(list_type::list_type_count) - 1, transaction_exception, " list size wrong : ${l}, action: ${n}", ("l", static_cast<int64_t>(list))("n", static_cast<int64_t>(action)));
+
+      flat_set<account_name> &lo = *lists[lst - 1];
+
+      if (action == list_action_type::insert_type)
+      {
+         lo.insert(name_list.begin(), name_list.end());
+      }
+      else if (action == list_action_type::remove_type)
+      {
+         flat_set<account_name> name_set(name_list.begin(), name_list.end());
+
+         flat_set<account_name> results;
+         results.reserve(lo.size());
+         set_difference(lo.begin(), lo.end(),
+                        name_set.begin(), name_set.end(),
+                        std::inserter(results,results.begin()));
+
+         lo = results;
+      }
+
+      sync_name_list(list);
+   }
+
+   void sync_name_list(list_type list,bool isMerge=false)
+   {
+      const auto &force_property = db.get<force_property_object>();
+      db.modify(force_property, [&](auto &forceps) {
+         sync_list_and_db(list,forceps,isMerge);
+      });
+   }
+
+   void set_gmr_config(gmr_type gt,uint64_t value) {
+      const auto &force_property = db.get<force_property_object>();
+      db.modify(force_property, [&](auto &forceps) {
+         sync_fpo_and_resource(gt,value,forceps);
+      });
+
+      resource_limits.set_gmr_parameters(
+         {  force_property.gmr.ram_byte, force_property.gmr.cpu_us,force_property.gmr.net_byte}
+      );
+   }
+
+   void sync_fpo_and_resource(gmr_type gt,uint64_t value,force_property_object &forceps) {
+      int64_t grt = static_cast<int64_t>(gt);
+      vector<uint64_t *> gmr_value = {&forceps.gmr.cpu_us,&forceps.gmr.ram_byte,&forceps.gmr.net_byte};
+      uint64_t &change_value = *gmr_value[grt - 1];
+      change_value = value; 
+   }
+
+   void sync_list_and_db(list_type list, force_property_object &forceps,bool isMerge=false)
+   {
+      int64_t lst = static_cast<int64_t>(list);
+      EOS_ASSERT( list >= list_type::actor_blacklist_type && list < list_type::list_type_count, transaction_exception, "unknown list type : ${l}, ismerge: ${n}", ("l", static_cast<int64_t>(list))("n", isMerge));
+      vector<shared_vector<account_name> *> lists = {&forceps.clfg.actor_blacklist, &forceps.clfg.contract_blacklist, &forceps.clfg.resource_greylist};
+      vector<flat_set<account_name> *> conflists = {&conf.actor_blacklist, &conf.contract_blacklist, &conf.resource_greylist};
+      EOS_ASSERT(lists.size() == static_cast<int64_t>(list_type::list_type_count) - 1, transaction_exception, " list size wrong : ${l}, ismerge: ${n}", ("l", static_cast<int64_t>(list))("n", isMerge));
+      shared_vector<account_name> &lo = *lists[lst - 1];
+      flat_set<account_name> &clo = *conflists[lst - 1];
+
+      if (isMerge)
+      {
+         //initialize,  merge elements and deduplication between list and db.result save to  list
+         for (auto &a : lo)
+         {
+            clo.insert(a);
+         }
+      }
+
+      //clear list from db and save merge result to db  object
+      lo.clear();
+      for (auto &a : clo)
+      {
+         lo.push_back(a);
       }
    }
 
@@ -1663,6 +1768,11 @@ struct controller_impl {
          {EOS_PERCENT(chain_config.max_block_net_usage, chain_config.target_block_net_usage_pct), chain_config.max_block_net_usage, config::block_size_average_window_ms / config::block_interval_ms, max_virtual_mult, {99, 100}, {1000, 999}}
       );
       resource_limits.process_block_usage(pending->_pending_block_state->block_num);
+      //这个放在这里还有待考虑   xuyp
+      const auto& gmr = self.get_force_property().gmr;
+      resource_limits.set_gmr_parameters(
+         {  gmr.ram_byte, gmr.cpu_us,gmr.net_byte}
+      );
 
       set_action_merkle();
       set_trx_merkle();
@@ -2430,6 +2540,18 @@ bool controller::is_resource_greylisted(const account_name &name) const {
 
 const flat_set<account_name> &controller::get_resource_greylist() const {
    return  my->conf.resource_greylist;
+}
+
+void controller::set_name_list(list_type list, list_action_type action, std::vector<account_name> name_list) {
+   my->set_name_list(list,action,name_list);
+}
+
+const force_property_object& controller::get_force_property()const {
+   return my->db.get<force_property_object>();
+}
+
+void controller::set_gmr_config(gmr_type gt,uint64_t value) {
+   my->set_gmr_config(gt,value);
 }
 
 } } /// eosio::chain
