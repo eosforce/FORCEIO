@@ -28,13 +28,13 @@ include( SetupTargetMacros )
 include( InstallDirectoryPermissions )
 include( MASSigning )
 
-set( BLOCKCHAIN_NAME "EOSIO" )
+set( BLOCKCHAIN_NAME "FORCEIO" )
 set( CMAKE_CXX_STANDARD 14 )
 set( CMAKE_CXX_EXTENSIONS ON )
 set( CXX_STANDARD_REQUIRED ON)
 
-set(VERSION_MAJOR 1)
-set(VERSION_MINOR 3)
+set(VERSION_MAJOR 0)
+set(VERSION_MINOR 1)
 set(VERSION_PATCH 0)
 
 if(VERSION_SUFFIX)
