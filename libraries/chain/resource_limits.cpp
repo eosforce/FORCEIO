@@ -294,7 +294,7 @@ bool resource_limits_manager::set_account_limits( const account_name& account, i
 
 inline int64_t get_account_ram_limit( database& db, const account_name& name ) {
       // if free resouse model fees are no longer charged
-      #ifdef FREE_RESOUSE
+      #if RESOURCE_MODEL == RESOURCE_MODEL_UNLIMIT
          return -1;
       #endif //FREE_RESOUSE
    const auto& gmr = db.get<gmr_config_object>().res_parameters;
