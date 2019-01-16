@@ -19,9 +19,6 @@ namespace eosio { namespace chain {
 
          explicit txfee_manager();
 
-         bool check_transaction( const transaction& trx)const;
-
-         asset get_required_fee( const controller& ctl, const transaction& trx)const;
          asset get_required_fee( const controller& ctl, const action& act)const;
 
       private:
@@ -48,8 +45,7 @@ namespace eosio { namespace chain {
      public:
        account_name name;
        asset fee;
-       account_name producer;
-       fee_paramter(account_name name, asset fee, account_name producer) : name(name), fee(fee), producer(producer) {};
+       fee_paramter(account_name name, asset fee) : name(name), fee(fee) {};
    };
 
    // action fee info in db, for action exec by user def code
@@ -88,7 +84,7 @@ namespace eosio { namespace chain {
 
 } } /// namespace eosio::chain
 
-FC_REFLECT(eosio::chain::fee_paramter, (name)(fee)(producer))
+FC_REFLECT(eosio::chain::fee_paramter, (name)(fee))
 FC_REFLECT(eosio::chain::action_fee_object, (id)(account)(message_type)(fee))
 
 CHAINBASE_SET_INDEX_TYPE(eosio::chain::action_fee_object, eosio::chain::action_fee_object_index)

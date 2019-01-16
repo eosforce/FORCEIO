@@ -22,11 +22,10 @@
 #include <eosio/chain/wasm_interface.hpp>
 #include <eosio/chain/abi_serializer.hpp>
 
-#include <eosio/chain/config_on_chain.hpp>
-
 #include <eosio/chain/authorization_manager.hpp>
 #include <eosio/chain/resource_limits.hpp>
-// #include <eosio/chain/contract_table_objects.hpp>
+
+#include <eosio/chain/config_on_chain.hpp>
 #include <eosio/chain/config.hpp>
 #include <eosio/chain/txfee_manager.hpp>
 
@@ -117,12 +116,6 @@ void apply_eosio_newaccount(apply_context& context) {
       a.name = create.name;
    });
 
-   // accounts_table
-   memory_db(db).insert(
-         config::system_account_name, config::system_account_name, N(accounts),
-         create.name,
-         memory_db::account_info{create.name, asset(0)});
-
    for( const auto& auth : { create.owner, create.active } ){
       validate_authority_precondition( context, auth );
    }
@@ -195,42 +188,6 @@ void apply_eosio_setfee(apply_context& context) {
    auto act = context.act.data_as<setfee>();
 
    // need force.test
-   // TODO add power Invalid block number
-   // idump((context.act.authorization));
-
-   /*
-   * About Fee
-   *
-   * fee come from three mode:
-   *  - native, set in cpp
-   *  - set by eosio
-   *  - set by user
-   *
-   * and res limit can set a value or zero,
-   * all of this will make diff mode to calc res limit,
-   * support 1.0 EOS is for `C` cpu, `N` net and `R` ram,
-   * and cost fee by `f` EOS and extfee by `F` EOS
-   *
-   * then can give:
-   *  - native and no setfee : use native fee and unlimit res use
-   *  - eosio set fee {f, (c,n,r)}
-   *      (cpu_limit, net_limit, ram_limit) == (c + F*C, n + F*N, r + F*R)
-   *  - eosio set fee {f, (0,0,0)}
-   *      (cpu_limit, net_limit, ram_limit) == ((f+F)*C, (f+F)*N, (f+F)*R)
-   *  - user set fee {f, (0,0,0)}, user cannot set fee by c>0||n>0||r>0
-   *      (cpu_limit, net_limit, ram_limit) == ((f+F)*C, (f+F)*N, (f+F)*R)
-   *
-   *  so it can be check by:
-   *  if no setfee
-   *       if no native -> err
-   *       if native -> use native and unlimit res use
-   *  else
-   *       if res limit is (0,0,0) -> limit res by ((f+F)*C, (f+F)*N, (f+F)*R)
-   *       if res limit is (c,n,r) -> (c + F*C, n + F*N, r + F*R)
-   *
-   *  at the same time, eosio can set res limit > (0,0,0) and user cannot
-   *
-   * */
 
    if(   ( act.cpu_limit == 0 )
       && ( act.net_limit == 0 )
@@ -248,7 +205,7 @@ void apply_eosio_setfee(apply_context& context) {
 
    // a max will need check
    EOS_ASSERT(act.fee.get_amount() <= (200 * 10000),
-         invalid_action_args_exception, "fee can not too mush, more then 200.0000 EOS");
+         invalid_action_args_exception, "fee can not too mush, more then 200");
 
    // warning
    const auto key = boost::make_tuple(act.account, act.action);
@@ -484,40 +441,8 @@ void apply_eosio_setconfig(apply_context& context) {
    } 
    
    set_config_on_chain(context.db, cfg_data);
-}
-
-void apply_eosio_onfee( apply_context& context ) {
-   const auto data = context.act.data_as<onfee>();
-   const auto& fee = data.fee;
-
-   // fee is just can push by system auto, so it need less check
-   // need actor authorization
-   // context.require_authorization(data.actor);
-
-   // accounts_table
-   auto acnts_tbl = native_multi_index<N(accounts), memory_db::account_info>{
-         context, config::system_account_name, config::system_account_name
-   };
-   memory_db::account_info account_info_data;
-   acnts_tbl.get(data.actor, account_info_data, "account is not found in accounts table");
-   eosio_contract_assert(fee <= account_info_data.available, "overdrawn available balance");
-
-   acnts_tbl.modify(acnts_tbl.find_itr(data.actor), account_info_data, 0,
-                    [fee]( memory_db::account_info& a ) {
-                       a.available -= fee;
-                    });
-
-   if( data.bpname != name{} ) {
-      // bps_table
-      auto bps_tbl = native_multi_index<N(bps), memory_db::bp_info>{
-            context, config::system_account_name, config::system_account_name
-      };
-      memory_db::bp_info bp_info_data;
-      bps_tbl.get(data.bpname, bp_info_data, "bpname is not registered");
-      bps_tbl.modify(bps_tbl.find_itr(data.bpname), bp_info_data, 0, [fee](memory_db::bp_info& a) {
-         a.rewards_pool += fee;
-      });
-   }
+   set_list_config_on_chain(context.control,cfg_data);
+   set_guaranteed_minimum_config(context.control,cfg_data);
 }
 
 } } // namespace eosio::chain

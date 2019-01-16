@@ -6,7 +6,7 @@ namespace eosio { namespace chain {
 vector<type_def> common_type_defs() {
    vector<type_def> types;
 
-//   types.push_back( type_def{"account_name", "name"} );
+   types.push_back( type_def{"account_name", "name"} );
    types.push_back( type_def{"permission_name", "name"} );
    types.push_back( type_def{"action_name", "name"} );
    types.push_back( type_def{"table_name", "name"} );
@@ -46,9 +46,15 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
 
    eos_abi.structs.emplace_back( struct_def {
       "extension", "", {
-         {"type", "uint16"},
+         {"type", "uint64"},
          {"data", "bytes"}
       }
+   });
+
+   eos_abi.structs.emplace_back( struct_def {
+         "extensions", "", {
+            {"datas", "extension[]"}
+         }
    });
 
    eos_abi.structs.emplace_back( struct_def {
@@ -66,8 +72,7 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
       "transaction", "transaction_header", {
          {"context_free_actions", "action[]"},
          {"actions", "action[]"},
-         {"fee", "asset"},
-         {"transaction_extensions", "extension[]"}
+         {"transaction_extensions", "extensions"}
       }
    });
 
@@ -97,7 +102,7 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
          {"action_mroot", "checksum256"},
          {"schedule_version", "uint32"},
          {"new_producers", "producer_schedule?"},
-         {"header_extensions", "extension[]"}
+         {"header_extensions", "extensions"}
       }
    });
 
@@ -144,7 +149,7 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
          {"active", "authority"},
       }
    });
-   
+
    eos_abi.structs.emplace_back( struct_def {
       "setconfig", "", {
          {"typ", "name"},
@@ -222,14 +227,6 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
    });
 
    eos_abi.structs.emplace_back( struct_def {
-         "onfee", "", {
-               {"actor",  "account_name"},
-               {"fee",    "asset"},
-               {"bpname", "account_name"},
-         }
-   });
-
-   eos_abi.structs.emplace_back( struct_def {
          "onerror", "", {
             {"sender_id", "uint128"},
             {"sent_trx",  "bytes"}
@@ -254,7 +251,6 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
    eos_abi.actions.push_back( action_def{name("canceldelay"), "canceldelay",""} );
    eos_abi.actions.push_back( action_def{name("onerror"), "onerror",""} );
    eos_abi.actions.push_back( action_def{name("onblock"), "onblock",""} );
-   eos_abi.actions.push_back( action_def{name("onfee"), "onfee",""} );
 
    return eos_abi;
 }

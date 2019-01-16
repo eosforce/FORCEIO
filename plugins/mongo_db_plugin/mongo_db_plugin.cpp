@@ -114,7 +114,6 @@ public:
 
    void insert_default_abi();
    bool b_insert_default_abi = false;
-   bool b_use_system01 = false;
 
    /// @return true if act should be added to mongodb, false to skip it
    bool filter_include( const account_name& receiver, const action_name& act_name,
@@ -1442,14 +1441,8 @@ void mongo_db_plugin_impl::insert_default_abi()
       name_account = N(eosio);
       {
          abi_cache_index.erase( name_account );
-         //std::string strContract01("System01");
-         //std::string strContract("System");   
          auto account = find_account( _accounts, name_account );
-         fc::path abiPath;
-         if(b_use_system01)
-         { abiPath = app().config_dir() / "System01" += ".abi"; }
-         else
-         { abiPath = app().config_dir() / "System" += ".abi"; }
+         fc::path abiPath = app().config_dir() / "force.system" += ".abi";
          
          FC_ASSERT( fc::exists( abiPath ), "no abi file found ");
          auto abijson = fc::json::from_file(abiPath).as<abi_def>();

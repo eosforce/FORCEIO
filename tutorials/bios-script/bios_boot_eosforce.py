@@ -49,6 +49,21 @@ def sleep(t):
     time.sleep(t)
     print('resume')
 
+def replaceFile(file, old, new):
+    try:
+        f = open(file,'r+')
+        all_lines = f.readlines()
+        f.seek(0)
+        f.truncate()
+        for line in all_lines:
+            line = line.replace(old, new)
+            f.write(line)
+        f.close()
+    except Exception,e:
+        print('bios-boot-eosforce.py: replace %s frome %s to %s err by ' % (file, old, new))
+        print(e)
+        sys.exit(1)
+
 def importKeys():
     keys = {}
     for a in datas["initAccountsKeys"]:
@@ -56,6 +71,9 @@ def importKeys():
         if not key in keys:
             keys[key] = True
             run(args.cleos + 'wallet import --private-key ' + key)
+
+def intToCurrency(i):
+    return '%d.%04d %s' % (i // 10000, i % 10000, args.symbol)
 
 def createNodeDir(nodeIndex, bpaccount, key):
     dir = args.nodes_dir + ('%02d-' % nodeIndex) + bpaccount['name'] + '/'
@@ -68,11 +86,12 @@ def createNodeDirs(inits, keys):
 
 def startNode(nodeIndex, bpaccount, key):
     dir = args.nodes_dir + ('%02d-' % nodeIndex) + bpaccount['name'] + '/'
-    otherOpts = ''.join(list(map(lambda i: '    --p2p-peer-address 127.0.0.1:' + str(9001 + i), range(24 - 1))))
+    otherOpts = ''.join(list(map(lambda i: '    --p2p-peer-address 127.0.0.1:' + str(9001 + i), range(nodeIndex - 1))))
     if not nodeIndex: otherOpts += (
         '    --plugin eosio::history_plugin'
         '    --plugin eosio::history_api_plugin'
     )
+
 
     print('bpaccount ', bpaccount)
     print('key ', key, ' ', key[1])
@@ -121,7 +140,7 @@ def stepCreateWallet():
 
 def stepStartProducers():
     startProducers(datas["initProducers"], datas["initProducerSigKeys"])
-    sleep(3)
+    sleep(7)
     stepSetFuncs()
 
 def stepCreateNodeDirs():
@@ -154,48 +173,45 @@ def stepMakeGenesis():
 
     run('cp ' + args.contracts_dir + '/eosio.token/eosio.token.abi ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/eosio.token/eosio.token.wasm ' + os.path.abspath(args.config_dir))
-    run('cp ' + args.contracts_dir + '/System02/System02.abi ' + os.path.abspath(args.config_dir))
-    run('cp ' + args.contracts_dir + '/System02/System02.wasm ' + os.path.abspath(args.config_dir))
+    run('cp ' + args.contracts_dir + '/force.system/force.system.abi ' + os.path.abspath(args.config_dir))
+    run('cp ' + args.contracts_dir + '/force.system/force.system.wasm ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/eosio.bios/eosio.bios.abi ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/eosio.bios/eosio.bios.wasm ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/eosio.msig/eosio.msig.abi ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/eosio.msig/eosio.msig.wasm ' + os.path.abspath(args.config_dir))
-    run('cp ' + args.contracts_dir + '/eosio.lock/eosio.lock.abi ' + os.path.abspath(args.config_dir))
-    run('cp ' + args.contracts_dir + '/eosio.lock/eosio.lock.wasm ' + os.path.abspath(args.config_dir))
 
-    # testnet will use new System contract from start
-    run('cp ' + args.contracts_dir + '/System02/System02.abi ' + os.path.abspath(args.config_dir) + "/System01.abi")
-    run('cp ' + args.contracts_dir + '/System02/System02.wasm ' + os.path.abspath(args.config_dir) + "/System01.wasm")
-
-    # testnet will use new System contract from start
-    run('cp ' + args.contracts_dir + '/System02/System02.abi ' + os.path.abspath(args.config_dir) + "/System.abi")
-    run('cp ' + args.contracts_dir + '/System02/System02.wasm ' + os.path.abspath(args.config_dir) + "/System.wasm")
-
+    #run('cp ./genesis-data/genesis.json ' + os.path.abspath(args.config_dir))
+    #replaceFile(os.path.abspath(args.config_dir) + "/genesis.json", "#CORE_SYMBOL#", args.symbol)
+    #replaceFile(os.path.abspath(args.config_dir) + "/genesis.json", "#PUB#", args.pr)
+    #run('cp ./genesis-data/key.json ' + os.path.abspath(args.config_dir) + '/keys/')
+    #run('cp ./genesis-data/sigkey.json ' + os.path.abspath(args.config_dir) + '/keys/')
+    run('echo "" > ' + os.path.abspath(args.config_dir) + '/config.ini')
+        
     run(args.root + 'build/programs/genesis/genesis')
     run('mv ./genesis.json ' + os.path.abspath(args.config_dir))
-
+    run('mv ./activeacc.json ' + os.path.abspath(args.config_dir))
+    
     run('mv ./key.json ' + os.path.abspath(args.config_dir) + '/keys/')
     run('mv ./sigkey.json ' + os.path.abspath(args.config_dir) + '/keys/')
-
-    run('echo "[]" >> ' + os.path.abspath(args.config_dir) + '/activeacc.json')
 
 def setFuncStartBlock(func_typ, num):
     run(args.cleos +
         'push action eosio setconfig ' +
-        ('\'{"typ":"%s","num":%s,"key":"","fee":"0.0000 EOS"}\' ' % (func_typ, num)) +
+        ('\'{"typ":"%s","num":%s,"key":"","fee":"%s"}\' ' % (func_typ, num, intToCurrency(0))) +
         '-p force.config' )
 
 def setFee(account, act, fee, cpu, net, ram):
     run(args.cleos +
         'set setfee ' +
         ('%s %s ' % (account, act)) +
-        ('"%s EOS" %d %d %d' % (fee, cpu, net, ram)))
+        '"' + intToCurrency(fee) + '" ' +
+        ('%d %d %d' % (cpu, net, ram)))
 
 def stepSetFuncs():
     # we need set some func start block num
-    setFee('eosio', 'setconfig', '0.0100', 100000, 1000000, 1000)
-    setFuncStartBlock('f.ram4vote', 10)
-    setFuncStartBlock('f.onfeeact', 15)
+    setFee('eosio', 'setconfig', 100, 100000, 1000000, 1000)
+
+    # some config to set
 
 def clearData():
     stepKillAll()
@@ -242,6 +258,8 @@ parser.add_argument('--keosd', metavar='', help="Path to keosd binary", default=
 parser.add_argument('--log-path', metavar='', help="Path to log file", default='./output.log')
 parser.add_argument('--wallet-dir', metavar='', help="Path to wallet directory", default='./wallet/')
 parser.add_argument('--config-dir', metavar='', help="Path to config directory", default='./config')
+parser.add_argument('--symbol', metavar='', help="The core symbol", default='SYS')
+parser.add_argument('--pr', metavar='', help="The Public Key Start Symbol", default='FOSC')
 parser.add_argument('-a', '--all', action='store_true', help="Do everything marked with (*)")
 
 for (flag, command, function, inAll, help) in commands:

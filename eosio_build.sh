@@ -34,7 +34,7 @@
 
    function usage()
    {
-      printf "\\tUsage: %s \\n\\t[Build Option -o <Debug|Release|RelWithDebInfo|MinSizeRel>] \\n\\t[CodeCoverage -c] \\n\\t[Doxygen -d] \\n\\t[CoreSymbolName -s <1-7 characters>] \\n\\t[Avoid Compiling -a]\\n\\n" "$0" 1>&2
+      printf "\\tUsage: %s \\n\\t[Build Option -o <Debug|Release|RelWithDebInfo|MinSizeRel>] \\n\\t[CodeCoverage -c] \\n\\t[Doxygen -d] \\n\\t[CoreSymbolName -s <1-7 characters>] \\n\\t[ResourceModel -r <Unlimit|Fee|Delegate>] \\n\\t[Avoid Compiling -a]\\n\\n" "$0" 1>&2
       exit 1
    }
 
@@ -45,10 +45,22 @@
       BUILD_DIR="${PWD}"
    fi
    CMAKE_BUILD_TYPE=Release
-   DISK_MIN=20
+   DISK_MIN=10
    DOXYGEN=false
    ENABLE_COVERAGE_TESTING=false
-   CORE_SYMBOL_NAME="EOS"
+   CORE_SYMBOL_NAME="SYS"
+   USE_PUB_KEY_LEGACY_PREFIX=1
+   MAX_PRODUCERS=23
+   BLOCK_INTERVAL_MS=3000
+   PRODUCER_REPETITIONS=1
+   RESOURCE_MODEL=1
+
+   # if chain use mutiple vote
+   # USE_MULTIPLE_VOTE=1
+
+   # if chain use bonus to vote
+   USE_BONUS_TO_VOTE=1
+
    # Use current directory's tmp directory if noexec is enabled for /tmp
    if (mount | grep "/tmp " | grep --quiet noexec); then
         mkdir -p $SOURCE_DIR/tmp
@@ -66,7 +78,7 @@
    txtrst=$(tput sgr0)
 
    if [ $# -ne 0 ]; then
-      while getopts ":cdo:s:ah" opt; do
+      while getopts ":cdo:s:r:ah" opt; do
          case "${opt}" in
             o )
                options=( "Debug" "Release" "RelWithDebInfo" "MinSizeRel" )
@@ -91,6 +103,24 @@
                   exit 1
                else
                   CORE_SYMBOL_NAME="${OPTARG}"
+               fi
+            ;;
+            r )
+               options=( "Unlimit" "Fee" "Delegate" )
+               if [[ "${options[*]}" =~ "${OPTARG}" ]]; then
+                  if [[ "${OPTARG}" == "Unlimit" ]]; then
+                    RESOURCE_MODEL=0
+                  fi
+                  if [[ "${OPTARG}" == "Fee" ]]; then
+                    RESOURCE_MODEL=1
+                  fi
+                  if [[ "${OPTARG}" == "Delegate" ]]; then
+                    RESOURCE_MODEL=2
+                  fi
+               else
+                  printf "\\n\\tInvalid argument: %s\\n" "${OPTARG}" 1>&2
+                  usage
+                  exit 1
                fi
             ;;
             a)
@@ -241,7 +271,8 @@
    printf "\\n\\n>>>>>>>> ALL dependencies sucessfully found or installed . Installing EOSIO\\n\\n"
    printf ">>>>>>>> CMAKE_BUILD_TYPE=%s\\n" "${CMAKE_BUILD_TYPE}"
    printf ">>>>>>>> ENABLE_COVERAGE_TESTING=%s\\n" "${ENABLE_COVERAGE_TESTING}"
-   printf ">>>>>>>> DOXYGEN=%s\\n\\n" "${DOXYGEN}"
+   printf ">>>>>>>> DOXYGEN=%s\\n" "${DOXYGEN}"
+   printf ">>>>>>>> RESOURCE_MODEL=%s\\n\\n" "${RESOURCE_MODEL}"
 
    if [ ! -d "${BUILD_DIR}" ]; then
       if ! mkdir -p "${BUILD_DIR}"
@@ -263,6 +294,10 @@
 
    if ! "${CMAKE}" -DCMAKE_BUILD_TYPE="${CMAKE_BUILD_TYPE}" -DCMAKE_CXX_COMPILER="${CXX_COMPILER}" \
       -DCMAKE_C_COMPILER="${C_COMPILER}" -DWASM_ROOT="${WASM_ROOT}" -DCORE_SYMBOL_NAME="${CORE_SYMBOL_NAME}" \
+      -DUSE_PUB_KEY_LEGACY_PREFIX=${USE_PUB_KEY_LEGACY_PREFIX} \
+      -DUSE_MULTIPLE_VOTE=${USE_MULTIPLE_VOTE} \
+      -DMAX_PRODUCERS="${MAX_PRODUCERS}" -DBLOCK_INTERVAL_MS="${BLOCK_INTERVAL_MS}" -DPRODUCER_REPETITIONS="${PRODUCER_REPETITIONS}" \
+      -DRESOURCE_MODEL=${RESOURCE_MODEL} \
       -DOPENSSL_ROOT_DIR="${OPENSSL_ROOT_DIR}" -DBUILD_MONGO_DB_PLUGIN=true \
       -DENABLE_COVERAGE_TESTING="${ENABLE_COVERAGE_TESTING}" -DBUILD_DOXYGEN="${DOXYGEN}" \
       -DCMAKE_INSTALL_PREFIX="/usr/local/eosio" ${LOCAL_CMAKE_FLAGS} "${SOURCE_DIR}"
@@ -285,21 +320,21 @@
 
    TIME_END=$(( $(date -u +%s) - ${TIME_BEGIN} ))
 
-   printf "\n\n${bldred}\t _______  _______  _______  _______  _______  _______  _______  _______ \n"
-   printf '\t(  ____ \(  ___  )(  ____ \(  ____ \(  ___  )(  ____ )(  ____ \(  ____ \ \n'
-   printf "\t| (    \/| (   ) || (    \/| (    \/| (   ) || (    )|| (    \/| (    \/ \n"
-   printf "\t| (__    | |   | || (_____ | (__    | |   | || (____)|| |      | (__     \n"
-   printf "\t|  __)   | |   | |(_____  )|  __)   | |   | ||     __)| |      |  __)    \n"
-   printf "\t| (      | |   | |      ) || (      | |   | || (\ (   | |      | (       \n"
-   printf "\t| (____/\| (___) |/\____) || )      | (___) || ) \ \__| (____/\| (____/\ \n"
-   printf "\t(_______/(_______)\_______)|/       (_______)|/   \__/(_______/(_______/ \n${txtrst}"
+   printf "\n\n${bldred}\t _______  _______  _______  _______  _______ _________ _______ \n"
+   printf "\t(  ____ \(  ___  )(  ____ )(  ____ \(  ____ \\__   __/(  ___  )\n"
+   printf "\t| (    \/| (   ) || (    )|| (    \/| (    \/   ) (   | (   ) |\n"
+   printf "\t| (__    | |   | || (____)|| |      | (__       | |   | |   | |\n"
+   printf "\t|  __)   | |   | ||     __)| |      |  __)      | |   | |   | |\n"
+   printf "\t| (      | |   | || (\ (   | |      | (         | |   | |   | |\n"
+   printf "\t| )      | (___) || ) \ \__| (____/\| (____/\___) (___| (___) |\n"
+   printf "\t|/       (_______)|/   \__/(_______/(_______/\_______/(_______)\n${txtrst}"
 
-   printf "\\n\\tEOSForce has been successfully built. %02d:%02d:%02d\\n\\n" $(($TIME_END/3600)) $(($TIME_END%3600/60)) $(($TIME_END%60))
+
+   printf "\\n\\tFORCEIO has been successfully built. %02d:%02d:%02d\\n\\n" $(($TIME_END/3600)) $(($TIME_END%3600/60)) $(($TIME_END%60))
    printf "\\tTo verify your installation run the following commands:\\n"
 
    print_instructions
 
    printf "\\tFor more information:\\n"
-   printf "\\tEOSForce website: https://www.eosforce.io\\n"
-   printf "\\tEOSForce Telegram channel @ https://t.me/eosforce_en\\n"
-   printf "\\tEOSForce wiki: https://eosforce.github.io/Documentation/\\n\\n\\n"
+   printf "\\tFORCEIO website: https://open.eosforce.io/#/en \\n"
+   printf "\\tFORCEIO Telegram channel @ https://t.me/forceio \\n"

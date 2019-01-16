@@ -1,0 +1,18 @@
+/** @file 
+ *    @copyright defined in eos/LICENSE.txt 
+ *
+ * \warning This file is machine generated. DO NOT EDIT.  See contract_config.hpp.in for changes.
+ */
+
+#define CONTRACT_FROZEN_DELAY ${FROZEN_DELAY}
+#define CONTRACT_NUM_OF_TOP_BPS ${MAX_PRODUCERS}
+#define CONTRACT_BLOCK_REWARDS_BP ${BLOCK_REWARDS_BP}
+#define CONTRACT_UPDATE_CYCLE ${UPDATE_CYCLE}
+
+#define RESOURCE_MODEL_UNLIMIT 0
+#define RESOURCE_MODEL_FEE 1
+#define RESOURCE_MODEL_DELEGATE 2
+#define CONTRACT_RESOURCE_MODEL ${RESOURCE_MODEL}
+
+#define IS_ACTIVE_MULTIPLE_VOTE ${IS_ACTIVE_MULTIPLE_VOTE}
+#define IS_ACTIVE_BONUS_TO_VOTE ${IS_ACTIVE_BONUS_TO_VOTE}

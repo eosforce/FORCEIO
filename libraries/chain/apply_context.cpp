@@ -10,6 +10,7 @@
 #include <eosio/chain/account_object.hpp>
 #include <eosio/chain/global_property_object.hpp>
 #include <boost/container/flat_set.hpp>
+#include <eosio/chain/native-contract/native_contracts.hpp>
 
 using boost::container::flat_set;
 
@@ -58,11 +59,14 @@ void apply_context::exec_one( action_trace& trace )
             (*native)( *this );
          }
 
-         if(!((act.account == config::system_account_name) && (act.name == N(onfee)))) {
+         // native contract handler
+         if( act.account == config::native_account_name ){
+            apply_native_contract( act.name, *this );
+         } else {
             if( a.code.size() > 0
-                && !( act.account == config::system_account_name && act.name == N(setcode) &&
-                      receiver == config::system_account_name )) {
-               if( trx_context.enforce_whiteblacklist && control.is_producing_block()) {
+                && !(act.account == config::system_account_name && act.name == N(setcode) &&
+                     receiver == config::system_account_name) ) {
+               if( trx_context.enforce_whiteblacklist && control.is_producing_block() ) {
                   control.check_contract_list(receiver);
                   control.check_action_list(act.account, act.name);
                }
@@ -128,13 +132,17 @@ void apply_context::exec( action_trace& trace )
    }
 
    for( const auto& inline_action : _cfa_inline_actions ) {
-      trx_context.dispatch_fee_action(trace.inline_traces, inline_action);
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
+      trx_context.process_fee( inline_action );
+#endif
       trace.inline_traces.emplace_back();
       trx_context.dispatch_action( trace.inline_traces.back(), inline_action, inline_action.account, true, recurse_depth + 1 );
    }
 
    for( const auto& inline_action : _inline_actions ) {
-      trx_context.dispatch_fee_action(trace.inline_traces, inline_action);
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
+      trx_context.process_fee( inline_action );
+#endif
       trace.inline_traces.emplace_back();
       trx_context.dispatch_action( trace.inline_traces.back(), inline_action, inline_action.account, false, recurse_depth + 1 );
    }
@@ -205,14 +213,9 @@ void apply_context::require_recipient( account_name recipient ) {
  *   can better understand the security risk.
  */
 void apply_context::execute_inline( action&& a ) {
-   auto *code = control.db().find<account_object, by_name>(a.account);
-   EOS_ASSERT(code != nullptr, action_validate_exception,
-              "inline action's code account ${account} does not exist", ( "account", a.account ));
-   if( control.head_block_num() > 4470000 ) {
-      EOS_ASSERT(       ( (a.name != N(onfee))   || ( a.account != config::system_account_name))
-                     && ( (a.name != N(onblock)) || ( a.account != config::system_account_name)),
-                     action_validate_exception, "no call" );
-   }
+   auto* code = control.db().find<account_object, by_name>(a.account);
+   EOS_ASSERT( code != nullptr, action_validate_exception,
+               "inline action's code account ${account} does not exist", ("account", a.account) );
 
    bool enforce_actor_whitelist_blacklist = trx_context.enforce_whiteblacklist && control.is_producing_block();
    flat_set<account_name> actors;
@@ -352,7 +355,7 @@ void apply_context::schedule_deferred_transaction( const uint128_t& sender_id, a
       } catch( const fc::exception& e ) {
          if( disallow_send_to_self_bypass || !is_sending_only_to_self(receiver) ) {
             throw;
-         } else {
+         } else if( control.is_producing_block() ) {
             subjective_block_production_exception new_exception(FC_LOG_MESSAGE( error, "Authorization failure with sent deferred transaction consisting only of actions to self"));
             for (const auto& log: e.get_log()) {
                new_exception.append_log(log);
@@ -362,7 +365,7 @@ void apply_context::schedule_deferred_transaction( const uint128_t& sender_id, a
       } catch( ... ) {
          if( disallow_send_to_self_bypass || !is_sending_only_to_self(receiver) ) {
             throw;
-         } else {
+         } else if( control.is_producing_block() ) {
             EOS_THROW(subjective_block_production_exception, "Unexpected exception occurred validating sent deferred transaction consisting only of actions to self");
          }
       }

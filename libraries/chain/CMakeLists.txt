@@ -1,4 +1,5 @@
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/eosio/chain/core_symbol.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/eosio/chain/core_symbol.hpp)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/eosio/chain/config.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/eosio/chain/config.hpp)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/genesis_state_root_key.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/genesis_state_root_key.cpp)
 
 file(GLOB HEADERS "include/eosio/chain/*.hpp"
@@ -27,29 +28,23 @@ add_library( eosio_chain
              chain_id_type.cpp
              genesis_state.cpp
              ${CMAKE_CURRENT_BINARY_DIR}/genesis_state_root_key.cpp
-
-#             chain_config.cpp
-#             block_trace.cpp
-              wast_to_wasm.cpp
-              wasm_interface.cpp
-              wasm_eosio_validation.cpp
-              wasm_eosio_injection.cpp
-              apply_context.cpp
-              memory_db.cpp
-              abi_serializer.cpp
-              asset.cpp
-              snapshot.cpp
+             wast_to_wasm.cpp
+             wasm_interface.cpp
+             wasm_eosio_validation.cpp
+             wasm_eosio_injection.cpp
+             apply_context.cpp
+             memory_db.cpp
+             abi_serializer.cpp
+             asset.cpp
+             snapshot.cpp
 
              webassembly/wavm.cpp
              webassembly/wabt.cpp
 
-#             get_config.cpp
-#             global_property_object.cpp
-#
-#             contracts/chain_initializer.cpp
+             native-contract/native_contracts.cpp
+             native-contract/native_contracts_abi.cpp
+             native-contract/native_contracts_apply.cpp
 
-
-#             transaction_metadata.cpp
              ${HEADERS}
              )
 

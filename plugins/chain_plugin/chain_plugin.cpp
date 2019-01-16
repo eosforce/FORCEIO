@@ -7,7 +7,6 @@
 #include <eosio/chain/block_log.hpp>
 #include <eosio/chain/exceptions.hpp>
 #include <eosio/chain/authorization_manager.hpp>
-#include <eosio/chain/txfee_manager.hpp>
 #include <eosio/chain/producer_object.hpp>
 #include <eosio/chain/config.hpp>
 #include <eosio/chain/wasm_interface.hpp>
@@ -363,10 +362,10 @@ void chain_plugin::plugin_initialize(const variables_map& options) {
 
    try {
       try {
-         genesis_state gs; // Check if EOSIO_ROOT_KEY is bad
+         genesis_state gs; // Check if ROOT_KEY is bad
       } catch ( const fc::exception& ) {
-         elog( "EOSIO_ROOT_KEY ('${root_key}') is invalid. Recompile with a valid public key.",
-               ("root_key", genesis_state::eosio_root_key));
+         elog( "ROOT_KEY ('${root_key}') is invalid. Recompile with a valid public key.",
+               ("root_key", genesis_state::system_account_root_key));
          throw;
       }
 
@@ -573,17 +572,9 @@ void chain_plugin::plugin_initialize(const variables_map& options) {
       const auto genesis_file = app().config_dir() / "genesis.json";
       my->chain_config->genesis = fc::json::from_file(genesis_file).as<genesis_state>();
 
-      const auto active_account_file = app().config_dir() / "activeacc.json";
-      my->chain_config->active_initial_account_list = fc::json::from_file(active_account_file).as<std::vector<account_tuple>>();
-
-      load_contract_code_abi("System", my->chain_config->System_code, my->chain_config->System_abi);
+      load_contract_code_abi("force.system", my->chain_config->system_code, my->chain_config->system_abi);
       load_contract_code_abi("eosio.token", my->chain_config->token_code, my->chain_config->token_abi);
       load_contract_code_abi("eosio.msig", my->chain_config->msig_code, my->chain_config->msig_abi);
-
-      // load new System contract
-      load_contract_code_abi("System01", my->chain_config->System01_code, my->chain_config->System01_abi);
-
-      load_contract_code_abi("eosio.lock", my->chain_config->lock_code, my->chain_config->lock_abi);
 
       // some config need change
       my->chain_config->genesis.initial_configuration.max_block_cpu_usage = 1000000;
@@ -1893,15 +1884,6 @@ read_only::get_required_keys_result read_only::get_required_keys( const get_requ
    auto required_keys_set = db.get_authorization_manager().get_required_keys( pretty_input, params.available_keys, fc::seconds( pretty_input.delay_sec ));
    get_required_keys_result result;
    result.required_keys = required_keys_set;
-   return result;
-}
-
-read_only::get_required_fee_result read_only::get_required_fee( const get_required_fee_params& params )const {
-   transaction pretty_input;
-   from_variant(params.transaction, pretty_input);
-   auto required_fee = db.get_txfee_manager().get_required_fee(db, pretty_input);
-   get_required_fee_result result;
-   result.required_fee = required_fee;
    return result;
 }
 

@@ -38,7 +38,7 @@
       "name": "extension",
       "base": "",
       "fields": [
-         {"name": "type", "type" : "uint16" },
+         {"name": "type", "type" : "uint64" },
          {"name": "data", "type": "bytes"}
       ]
    },{
@@ -146,5 +146,5 @@
     }
   ],
   "ricardian_clauses": [],
-  "abi_extensions": []
+  "abi_extensions": { "datas":[] }
 }

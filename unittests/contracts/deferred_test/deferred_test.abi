@@ -57,5 +57,5 @@
   "tables": [],
   "ricardian_clauses": [],
   "error_messages": [],
-  "abi_extensions": []
+  "abi_extensions": { "datas":[] }
 }

@@ -19,10 +19,8 @@ RUN mkdir /tmp/config
 COPY nodeosd.sh /opt/eosforce/bin/nodeosd.sh
 COPY config.ini  /tmp/config
 COPY contracts/genesis.json  /tmp/config
-COPY contracts/System.abi  /tmp/config
-COPY contracts/System.wasm  /tmp/config
-COPY contracts/System01.abi  /tmp/config
-COPY contracts/System01.wasm  /tmp/config
+COPY contracts/force.system.abi  /tmp/config
+COPY contracts/force.system.wasm  /tmp/config
 COPY contracts/eosio.token.abi  /tmp/config
 COPY contracts/eosio.token.wasm  /tmp/config
 COPY contracts/eosio.bios.abi  /tmp/config

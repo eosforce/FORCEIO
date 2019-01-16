@@ -10,12 +10,13 @@ namespace eosio {
 void token::create( account_name issuer,
                     asset        maximum_supply )
 {
+    require_auth( _self );
+
     auto sym = maximum_supply.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
     eosio_assert( maximum_supply.is_valid(), "invalid supply");
     eosio_assert( maximum_supply.amount > 0, "max-supply must be positive");
-    eosio::symbol_type eos = S(4,EOS);
-    eosio_assert( sym.name() != eos.name(), "not create EOS");
+    eosio_assert( sym != CORE_SYMBOL, "not allow create core symbol token by token contract");
 
     stats statstable( _self, sym.name() );
     auto existing = statstable.find( sym.name() );
@@ -84,12 +85,29 @@ void token::transfer( account_name from,
     add_balance( to, quantity, from );
 }
 
+void token::fee( account_name payer, asset quantity ){
+   // account to get fee, TODO By FanYang : need use conf
+   const auto fee_account = N(force.fee);
+
+   require_auth( payer );
+
+   auto sym = quantity.symbol.name();
+   stats statstable( _self, sym );
+   const auto& st = statstable.get( sym );
+
+   eosio_assert( quantity.is_valid(), "invalid quantity" );
+   eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
+   eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
+
+   sub_balance( payer, quantity );
+   add_balance( fee_account, quantity, payer );
+}
+
 void token::sub_balance( account_name owner, asset value ) {
    accounts from_acnts( _self, owner );
 
    const auto& from = from_acnts.get( value.symbol.name(), "no balance object found" );
    eosio_assert( from.balance.amount >= value.amount, "overdrawn balance" );
-
 
    if( from.balance.amount == value.amount ) {
       from_acnts.erase( from );
@@ -103,6 +121,7 @@ void token::sub_balance( account_name owner, asset value ) {
 void token::add_balance( account_name owner, asset value, account_name ram_payer )
 {
    accounts to_acnts( _self, owner );
+   
    auto to = to_acnts.find( value.symbol.name() );
    if( to == to_acnts.end() ) {
       to_acnts.emplace( ram_payer, [&]( auto& a ){
@@ -117,4 +136,4 @@ void token::add_balance( account_name owner, asset value, account_name ram_payer
 
 } /// namespace eosio
 
-EOSIO_ABI( eosio::token, (create)(issue)(transfer) )
+EOSIO_ABI( eosio::token, (create)(issue)(transfer)(fee) )

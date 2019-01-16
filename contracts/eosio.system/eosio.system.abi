@@ -574,5 +574,5 @@
     }
    ],
    "ricardian_clauses": [],
-   "abi_extensions": []
+   "abi_extensions": { "datas":[] }
 }

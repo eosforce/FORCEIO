@@ -6,7 +6,6 @@
 #include <eosio/chain/exceptions.hpp>
 
 #include <eosio/chain/account_object.hpp>
-#include <eosio/chain/memory_db.hpp>
 #include <eosio/chain/block_summary_object.hpp>
 #include <eosio/chain/eosio_contract.hpp>
 #include <eosio/chain/global_property_object.hpp>
@@ -16,11 +15,7 @@
 #include <eosio/chain/reversible_block_object.hpp>
 
 #include <eosio/chain/authorization_manager.hpp>
-#include <eosio/chain/txfee_manager.hpp>
-#include <eosio/chain/config_on_chain.hpp>
 #include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/resource_limits_private.hpp>
-#include <eosio/chain/config.hpp>
 #include <eosio/chain/chain_snapshot.hpp>
 
 #include <chainbase/chainbase.hpp>
@@ -28,11 +23,17 @@
 #include <fc/scoped_exit.hpp>
 #include <fc/variant_object.hpp>
 
-#include <eosio/chain/eosio_contract.hpp>
-#include <set>
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/post.hpp>
 
+#include <eosio/chain/memory_db.hpp>
+#include <eosio/chain/txfee_manager.hpp>
+#include <eosio/chain/config_on_chain.hpp>
+#include <eosio/chain/resource_limits_private.hpp>
+#include <eosio/chain/config.hpp>
+#include <eosio/chain/eosio_contract.hpp>
+
+#include <eosio/chain/native-contract/native_contracts.hpp>
 
 namespace eosio { namespace chain {
 
@@ -42,6 +43,7 @@ using controller_index_set = index_set<
    account_index,
    account_sequence_index,
    global_property_multi_index,
+   force_property_multi_index,
    dynamic_global_property_multi_index,
    block_summary_multi_index,
    transaction_multi_index,
@@ -200,7 +202,6 @@ struct controller_impl {
     wasmif( cfg.wasm_runtime ),
     resource_limits( db ),
     authorization( s, db ),
-    txfee(),
     conf( cfg ),
     chain_id( cfg.genesis.compute_chain_id() ),
     read_mode( cfg.read_mode )
@@ -209,14 +210,8 @@ struct controller_impl {
 #define SET_APP_HANDLER( receiver, contract, action) \
    set_apply_handler( #receiver, #contract, #action, &BOOST_PP_CAT(apply_, BOOST_PP_CAT(contract, BOOST_PP_CAT(_,action) ) ) )
 
-   // add a asset if system account is change, if it changed, next SET_APP_HANDLER need also change
-   BOOST_STATIC_ASSERT(N(eosio)       == config::system_account_name);
-   BOOST_STATIC_ASSERT(N(eosio.token) == config::token_account_name);
-
    SET_APP_HANDLER( eosio, eosio, newaccount );
    SET_APP_HANDLER( eosio, eosio, setcode );
-   SET_APP_HANDLER( eosio, eosio, setconfig );
-   SET_APP_HANDLER( eosio, eosio, setfee );
    SET_APP_HANDLER( eosio, eosio, setabi );
    SET_APP_HANDLER( eosio, eosio, updateauth );
    SET_APP_HANDLER( eosio, eosio, deleteauth );
@@ -229,8 +224,14 @@ struct controller_impl {
 */
 
    SET_APP_HANDLER( eosio, eosio, canceldelay );
-   SET_APP_HANDLER( eosio, eosio, onfee );
+   SET_APP_HANDLER( eosio, eosio, setconfig );
+   SET_APP_HANDLER( eosio, eosio, setfee );
+   
+   // add a asset if system account is change, if it changed, next SET_APP_HANDLER need also change
+   BOOST_STATIC_ASSERT(N(eosio)       == config::system_account_name);
+   BOOST_STATIC_ASSERT(N(eosio.token) == config::token_account_name);
 
+   
    fork_db.irreversible.connect( [&]( auto b ) {
                                  on_irreversible(b);
                                  });
@@ -428,7 +429,9 @@ struct controller_impl {
          const auto hash = calculate_integrity_hash();
          ilog( "database initialized with hash: ${hash}", ("hash", hash) );
       }
-
+      sync_name_list(list_type::actor_blacklist_type,true);
+      sync_name_list(list_type::contract_blacklist_type,true);
+      sync_name_list(list_type::resource_greylist_type,true);
    }
 
    ~controller_impl() {
@@ -466,14 +469,6 @@ struct controller_impl {
                    ("rev", db.revision())("head_block", self.head_block_num()));
                    */
       });
-   }
-
-   void initialize_schedule( producer_schedule_type& schedule ) {
-      schedule.version = 0;
-      schedule.producers.reserve(config::max_producers);
-      for( const auto& producer : conf.genesis.initial_producer_list ) {
-         schedule.producers.push_back({producer.name, producer.bpkey});
-      }
    }
 
    void add_contract_tables_to_snapshot( const snapshot_writer_ptr& snapshot ) const {
@@ -647,10 +642,6 @@ struct controller_impl {
    }
 
    void create_native_account( account_name name, const authority& owner, const authority& active, bool is_privileged = false ) {
-      if (db.find<account_object, by_name>(name) != nullptr) {
-        // elog("create_native_account, This account already exists : ${name}", ("name", name));
-        return;
-      }
       db.create<account_object>([&](auto& a) {
          a.name = name;
          a.creation_date = conf.genesis.initial_timestamp;
@@ -658,6 +649,8 @@ struct controller_impl {
 
          if( name == config::system_account_name ) {
             a.set_abi(eosio_contract_abi(abi_def()));
+         } else if( name == config::native_account_name ) {
+            a.set_abi(native_contract_abi(abi_def()));
          }
       });
       db.create<account_sequence_object>([&](auto & a) {
@@ -684,10 +677,6 @@ struct controller_impl {
    void initialize_producer() {
       auto db = memory_db(self);
       for( const auto& producer : conf.genesis.initial_producer_list ) {
-         // create accpimt for init bps
-         const authority auth(producer.bpkey);
-         create_native_account(producer.name, auth, auth, false);
-
          // store bp data in bp table
          db.insert(config::system_account_name, config::system_account_name, N(bps),
                    producer.name,
@@ -695,59 +684,38 @@ struct controller_impl {
                          producer.name,
                          producer.bpkey,
                          producer.commission_rate,
-                         producer.url});
+                         producer.url });
       }
    }
 
-   // initialize_chain_emergency init chain emergency stat
-   void initialize_chain_emergency() {
-      memory_db(self).insert(
-            config::system_account_name, config::system_account_name, N(chainstatus),
-            config::system_account_name,
-            memory_db::chain_status{N(chainstatus), false});
+   void initialize_schedule( producer_schedule_type& schedule ) {
+      schedule.producers.reserve(config::max_producers);
+      for( const auto& producer : conf.genesis.initial_producer_list ) {
+         schedule.producers.push_back({ producer.name, producer.bpkey });
+      }
+   }
+
+   asset get_token_sum() {
+      asset sum = asset(0);
+       for (const auto &account : conf.genesis.initial_account_list) {
+         sum += account.asset;
+      }
+      return sum;
    }
 
    // initialize_account init account from genesis;
-   // inactive account freeze(lock) asset by inactive_freeze_percent;
    void initialize_account() {
-      std::set<account_name> active_acc_set;
-      for (const auto &account : conf.active_initial_account_list) {
-         active_acc_set.insert(account.name);
-      }
-
-      const auto acc_name_a = N(a);
       auto db = memory_db(self);
-      for (const auto &account : conf.genesis.initial_account_list) {
-         const auto &public_key = account.key;
-         auto acc_name = account.name;
-         if (acc_name == acc_name_a) {
-            const auto pk_str = std::string(public_key);
-            const auto name_r = pk_str.substr(pk_str.size() - 12, 12);
-            acc_name = string_to_name(format_name(name_r).c_str());
-         }
-
-         // init asset
-         eosio::chain::asset amount;
-         if (active_acc_set.find(account.name) == active_acc_set.end()) {
-            //issue eoslock token to this account
-            uint64_t eoslock_amount = account.asset.get_amount() * conf.inactive_freeze_percent / 100;
-            db.insert(
-                    config::eoslock_account_name, config::eoslock_account_name, N(accounts), acc_name,
-                     memory_db::eoslock_account{acc_name, eosio::chain::asset(eoslock_amount, symbol(4, "EOSLOCK"))});
-
-            //inactive account freeze(lock) asset
-            amount = account.asset - eosio::chain::asset(eoslock_amount);
-         } else {
-            //active account
-            amount = account.asset;
-         }
-
-         // initialize_account_to_table
+      for( const auto& account : conf.genesis.initial_account_list ) {
+         const auto& public_key = account.key;
          db.insert(
-                 config::system_account_name, config::system_account_name, N(accounts), acc_name,
-                 memory_db::account_info{acc_name, amount});
+               config::token_account_name, account.name, N(accounts), account.name,
+               memory_db::token_account{ account.asset });
          const authority auth(public_key);
-         create_native_account(acc_name, auth, auth, false);
+         create_native_account(account.name, auth, auth, false);
+#if RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
+         resource_limits.set_account_limits(account.name, 0, 0, 0);
+#endif
       }
    }
 
@@ -781,24 +749,62 @@ struct controller_impl {
          aso.abi_sequence += 1;
       });
 
-      const auto& usage  = db.get<resource_limits::resource_usage_object, resource_limits::by_owner>( contract );
-      db.modify( usage, [&]( auto& u ) {
-          u.ram_usage += (code_size + abi_size) * config::setcode_ram_bytes_multiplier;
+      const auto& usage = db.get<resource_limits::resource_usage_object, resource_limits::by_owner>(contract);
+      db.modify(usage, [&]( auto& u ) {
+         u.ram_usage += (code_size + abi_size) * config::setcode_ram_bytes_multiplier;
       });
 
-      ilog("initialize_contract: name:${n}, code_size:${code}, abi_size:${abi}", ("n", account.name)("code",code_size)("abi",abi_size));
+      ilog("initialize_contract: name:${n}, code_size:${code}, abi_size:${abi}", ("n", account.name)("code", code_size)("abi", abi_size));
    }
 
-   // initialize_eos_stats init stats for eos token
-   void initialize_eos_stats() {
+   void update_eosio_authority() {
+      auto update_permission = [&]( auto& permission, auto threshold ) {
+         auto auth = authority(threshold, {}, {});
+         auth.accounts.push_back({ { config::producers_account_name, config::active_name }, 1 });
+
+         if( static_cast<authority>(permission.auth) != auth ) {
+            db.modify(permission, [&]( auto& po ) {
+               po.auth = auth;
+            });
+         }
+      };
+
+      update_permission(authorization.get_permission({ config::system_account_name, config::active_name }), 1);
+   }
+
+   void initialize_database_force() {
+      authority system_auth(conf.genesis.initial_key);
+      create_native_account(config::token_account_name, system_auth, system_auth, false);
+      create_native_account(config::msig_account_name, system_auth, system_auth, false);
+      create_native_account(config::fee_account_name, system_auth, system_auth, false);
+
+      initialize_contract(config::system_account_name, conf.system_code, conf.system_abi, true);
+      initialize_contract(config::token_account_name, conf.token_code, conf.token_abi);
+      initialize_contract(config::msig_account_name, conf.msig_code, conf.msig_abi, true);
+
       const auto& sym = symbol(CORE_SYMBOL).to_symbol_code();
+      const auto tsum = get_token_sum();
       memory_db(self).insert(config::token_account_name, sym, N(stat),
                              config::token_account_name,
                              memory_db::currency_stats{
-                                   asset(10000000),
-                                   asset(100000000000),
-                                   config::token_account_name});
+                                   tsum,
+                                   asset(config::system_token_maximum_supply),
+                                   config::system_account_name });
+
+      memory_db(self).insert(config::token_account_name,
+                             config::system_account_name,
+                             N(accounts),
+                             config::system_account_name,
+                             memory_db::token_account());
+
+      initialize_account();
+      initialize_producer();
+
+      update_eosio_authority();
+      set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
+      set_num_config_on_chain(db, config::func_typ::onfee_action, 1);
    }
+
 
    void initialize_database() {
       // Initialize block summary index
@@ -816,26 +822,29 @@ struct controller_impl {
       });
       db.create<dynamic_global_property_object>([](auto&){});
 
+      //force_property_object    创建内存表的地方
+      const auto fpo = db.create<force_property_object>([&](auto &fpo) {
+         fpo.gmr.cpu_us = config::default_gmr_cpu_limit;
+         fpo.gmr.net_byte = config::default_gmr_net_limit;
+         fpo.gmr.ram_byte = config::default_gmr_ram_limit;
+      });
+   
+
       authorization.initialize_database();
       resource_limits.initialize_database();
 
-      authority system_auth( conf.genesis.initial_key );
+         //初始化  resource_limits
+      resource_limits.set_gmr_parameters(
+         {  fpo.gmr.ram_byte, fpo.gmr.cpu_us,fpo.gmr.net_byte}
+      );
+
+      authority system_auth(conf.genesis.initial_key);
       create_native_account( config::system_account_name, system_auth, system_auth, true );
-      create_native_account( config::token_account_name, system_auth, system_auth, false );
-      create_native_account( config::eoslock_account_name, system_auth, system_auth, false );
 
-      initialize_contract( config::system_account_name, conf.System_code, conf.System_abi, true );
-      initialize_contract( config::token_account_name, conf.token_code, conf.token_abi );
-      initialize_eos_stats();
-      initialize_contract(config::eoslock_account_name, conf.lock_code, conf.lock_abi);
+      // for native contracts
+      create_native_account( config::native_account_name, system_auth, system_auth, true );
 
-      initialize_account();
-      initialize_producer();
-      initialize_chain_emergency();
-
-      // vote4ram func, as the early eosforce user's ram not limit
-      // so at first we set freeram to -1 to unlimit user ram
-      set_num_config_on_chain(db, config::res_typ::free_ram_per_account, -1);
+      initialize_database_force();
 
       auto empty_authority = authority(1, {}, {});
       auto active_producers_authority = authority(1, {}, {});
@@ -856,7 +865,12 @@ struct controller_impl {
                                                                              conf.genesis.initial_timestamp );
    }
 
-
+   void set_resource_gmr() {
+      const auto &gmr = db.get<force_property_object>().gmr;
+      resource_limits.set_gmr_parameters(
+         {  gmr.ram_byte, gmr.cpu_us,gmr.net_byte}
+      );
+   }
 
    /**
     * @post regardless of the success of commit block there is no active pending block
@@ -1040,10 +1054,6 @@ struct controller_impl {
          return trace;
       }
 
-      // is_onfee_act on early version eosforce we use a trx contain onfee act before do trx
-      // new version use a onfee act in the trx, when exec trx, a onfee action will do first
-      const auto is_onfee_act = is_func_has_open(self, config::func_typ::onfee_action);
-
       auto reset_in_trx_requiring_checks = fc::make_scoped_exit([old_value=in_trx_requiring_checks,this](){
          in_trx_requiring_checks = old_value;
       });
@@ -1059,17 +1069,14 @@ struct controller_impl {
       trx_context.enforce_whiteblacklist = gtrx.sender.empty() ? true : !sender_avoids_whitelist_blacklist_enforcement( gtrx.sender );
       trace = trx_context.trace;
       try {
-          //action check
-          check_action(dtrx.actions);
-          asset fee_ext = dtrx.fee;
-
+         //action check
+         check_action(dtrx.actions);
          trx_context.init_for_deferred_trx( gtrx.published );
-         if( !is_onfee_act ) {
-            trx_context.make_limit_by_contract(fee_ext);
-         }else{
-            trx_context.make_fee_act(fee_ext);
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
+         if( is_func_has_open(self, config::func_typ::onfee_action) ) {
+            trx_context.set_fee_data();
          }
-
+#endif
          if( trx_context.enforce_whiteblacklist && pending->_block_status == controller::block_status::incomplete ) {
             check_actor_list( trx_context.bill_to_accounts ); // Assumes bill_to_accounts is the set of actors authorizing the transaction
          }
@@ -1171,7 +1178,7 @@ struct controller_impl {
    const transaction_receipt& push_receipt( const T& trx, transaction_receipt_header::status_enum status,
                                             uint64_t cpu_usage_us, uint64_t net_usage ) {
       uint64_t net_usage_words = net_usage / 8;
-      // EOS_ASSERT( net_usage_words*8 == net_usage, transaction_exception, "net_usage is not divisible by 8" );
+      EOS_ASSERT( net_usage_words*8 == net_usage, transaction_exception, "net_usage is not divisible by 8" );
       pending->_pending_block_state->block->transactions.emplace_back( trx );
       transaction_receipt& r = pending->_pending_block_state->block->transactions.back();
       r.cpu_usage_us         = cpu_usage_us;
@@ -1180,35 +1187,101 @@ struct controller_impl {
       return r;
    }
 
-   bool check_chainstatus() const {
-      const auto *cstatus_tid = db.find<table_id_object, by_code_scope_table>(
-            boost::make_tuple(config::system_account_name, config::system_account_name, N(chainstatus)));
-
-      EOS_ASSERT(cstatus_tid != nullptr, fork_database_exception, "get chainstatus fatal");
-
-      const auto& idx = db.get_index<key_value_index, by_scope_primary>();
-      const auto it = idx.lower_bound(boost::make_tuple(cstatus_tid->id, N(chainstatus)));
-
-      EOS_ASSERT(( it != idx.end()), fork_database_exception, "get chainstatus fatal by no stat");
-
-      auto cstatus = fc::raw::unpack<memory_db::chain_status>(
-            it->value.data(),
-            it->value.size());
-      return cstatus.emergency;
+   void check_action( const vector<action>& actions ) const {
+      const auto is_stop_chain_for_maintain = is_func_has_open(self, config::func_typ::chain_maintain_stat);
+      for( const auto& act : actions ) {
+         EOS_ASSERT(( !is_stop_chain_for_maintain
+                      || ( act.account == config::system_account_name
+                           && (   act.name == N(setconfig)
+                               || act.name == N(onblock)
+                               || act.name == N(onfee))
+                               )),
+                    invalid_action_args_exception,
+                    "chain is in maintain now !");
+      }
    }
 
-   void check_action( const vector<action>& actions ) const {
-      const auto chain_status = check_chainstatus();
-      for( const auto& _a : actions ) {
-         EOS_ASSERT(_a.data.size() < config::default_trx_size,
-                    invalid_action_args_exception,
-                    "must less than 100 * 1024 bytes");
-         EOS_ASSERT(( !chain_status
-                      || _a.name == N(setemergency)
-                      || _a.name == N(onblock)
-                      || _a.name == N(onfee)),
-                    invalid_action_args_exception,
-                    "chain is in emergency now !");
+   //set_name_list
+   void set_name_list(list_type list, list_action_type action, std::vector<account_name> name_list)
+   {
+       int64_t lst = static_cast<int64_t>(list);
+
+      EOS_ASSERT(list >= list_type::actor_blacklist_type && list < list_type::list_type_count, transaction_exception, "unknown list type : ${l}, action: ${n}", ("l", static_cast<int64_t>(list))("n", static_cast<int64_t>(action)));
+      vector<flat_set<account_name> *> lists = {&conf.actor_blacklist, &conf.contract_blacklist, &conf.resource_greylist};
+      EOS_ASSERT(lists.size() == static_cast<int64_t>(list_type::list_type_count) - 1, transaction_exception, " list size wrong : ${l}, action: ${n}", ("l", static_cast<int64_t>(list))("n", static_cast<int64_t>(action)));
+
+      flat_set<account_name> &lo = *lists[lst - 1];
+
+      if (action == list_action_type::insert_type)
+      {
+         lo.insert(name_list.begin(), name_list.end());
+      }
+      else if (action == list_action_type::remove_type)
+      {
+         flat_set<account_name> name_set(name_list.begin(), name_list.end());
+
+         flat_set<account_name> results;
+         results.reserve(lo.size());
+         set_difference(lo.begin(), lo.end(),
+                        name_set.begin(), name_set.end(),
+                        std::inserter(results,results.begin()));
+
+         lo = results;
+      }
+
+      sync_name_list(list);
+   }
+
+   void sync_name_list(list_type list,bool isMerge=false)
+   {
+      const auto &force_property = db.get<force_property_object>();
+      db.modify(force_property, [&](auto &forceps) {
+         sync_list_and_db(list,forceps,isMerge);
+      });
+   }
+
+   void set_gmr_config(gmr_type gt,uint64_t value) {
+      const auto &force_property = db.get<force_property_object>();
+      db.modify(force_property, [&](auto &forceps) {
+         sync_fpo_and_resource(gt,value,forceps);
+      });
+
+      resource_limits.set_gmr_parameters(
+         {  force_property.gmr.ram_byte, force_property.gmr.cpu_us,force_property.gmr.net_byte}
+      );
+   }
+
+   void sync_fpo_and_resource(gmr_type gt,uint64_t value,force_property_object &forceps) {
+      int64_t grt = static_cast<int64_t>(gt);
+      vector<uint64_t *> gmr_value = {&forceps.gmr.cpu_us,&forceps.gmr.ram_byte,&forceps.gmr.net_byte};
+      uint64_t &change_value = *gmr_value[grt - 1];
+      change_value = value; 
+   }
+
+   void sync_list_and_db(list_type list, force_property_object &forceps,bool isMerge=false)
+   {
+      int64_t lst = static_cast<int64_t>(list);
+      EOS_ASSERT( list >= list_type::actor_blacklist_type && list < list_type::list_type_count, transaction_exception, "unknown list type : ${l}, ismerge: ${n}", ("l", static_cast<int64_t>(list))("n", isMerge));
+      vector<shared_vector<account_name> *> lists = {&forceps.clfg.actor_blacklist, &forceps.clfg.contract_blacklist, &forceps.clfg.resource_greylist};
+      vector<flat_set<account_name> *> conflists = {&conf.actor_blacklist, &conf.contract_blacklist, &conf.resource_greylist};
+      EOS_ASSERT(lists.size() == static_cast<int64_t>(list_type::list_type_count) - 1, transaction_exception, " list size wrong : ${l}, ismerge: ${n}", ("l", static_cast<int64_t>(list))("n", isMerge));
+      shared_vector<account_name> &lo = *lists[lst - 1];
+      flat_set<account_name> &clo = *conflists[lst - 1];
+
+      if (isMerge)
+      {
+         //initialize,  merge elements and deduplication between list and db.result save to  list
+         for (auto &a : lo)
+         {
+            clo.insert(a);
+         }
+      }
+
+      //clear list from db and save merge result to db  object
+      lo.clear();
+      for (auto &a : clo)
+      {
+         lo.push_back(a);
       }
    }
 
@@ -1223,7 +1296,6 @@ struct controller_impl {
                                            bool explicit_billed_cpu_time = false )
    {
       EOS_ASSERT(deadline != fc::time_point(), transaction_exception, "deadline cannot be uninitialized");
-      EOS_ASSERT(trx->trx.context_free_actions.size()==0, transaction_exception, "context free actions size should be zero!");
       check_action(trx->trx.actions);
 
       transaction_trace_ptr trace;
@@ -1248,14 +1320,9 @@ struct controller_impl {
                                                skip_recording);
             }
 
-            // is_onfee_act on early version eosforce we use a trx contain onfee act before do trx
-            // new version use a onfee act in the trx, when exec trx, a onfee action will do first
-
-            const auto is_onfee_act = is_func_has_open(self, config::func_typ::onfee_action);
             trx_context.delay = fc::seconds(trx->trx.delay_sec);
 
-            asset fee_ext(0); // fee ext to get more res
-            if( !trx->implicit ) {
+            if( !self.skip_auth_check() && !trx->implicit ) {
                authorization.check_authorization(
                        trx->trx.actions,
                        trx->recover_keys( chain_id ),
@@ -1266,53 +1333,14 @@ struct controller_impl {
                                  std::placeholders::_1)*/,
                        false
                );
-
-               const auto fee_required = txfee.get_required_fee(self, trx->trx);
-               EOS_ASSERT(trx->trx.fee >= fee_required, transaction_exception, "set tx fee failed: no enough fee in trx");
-               EOS_ASSERT(txfee.check_transaction(trx->trx) == true, transaction_exception, "transaction include actor more than one");
-               fee_ext = trx->trx.fee - fee_required;
-
-
-               // keep
-               if( !is_onfee_act ) {
-                  try {
-                     auto onftrx = std::make_shared<transaction_metadata>(
-                           get_on_fee_transaction(trx->trx.fee, trx->trx.actions[0].authorization[0].actor));
-                     onftrx->implicit = true;
-                     auto onftrace = push_transaction(onftrx, fc::time_point::maximum(),
-                                                      config::default_min_transaction_cpu_usage, true);
-                     if( onftrace->except ) throw *onftrace->except;
-                  } catch( const fc::exception& e ) {
-                     EOS_ASSERT(false, transaction_exception, "on fee transaction failed, exception: ${e}", ( "e", e ));
-                  } catch( ... ) {
-                     EOS_ASSERT(false, transaction_exception,
-                                "on fee transaction failed, but shouldn't enough asset to pay for transaction fee");
-                  }
-               } else {
-                  trx_context.make_fee_act( trx->trx.fee );
-               }
             }
-
-            try {
-               if(explicit_billed_cpu_time && billed_cpu_time_us == 0){
-                  EOS_ASSERT(false, transaction_exception, "error trx",
-                      ("block", head->block_num)("trx", trx->trx.id())("actios", trx->trx.actions));
-               }
-
-               if(!is_onfee_act) {
-                  trx_context.make_limit_by_contract(fee_ext);
-               }
-               trx_context.exec();
-               trx_context.finalize(); // Automatically rounds up network and CPU usage in trace and bills payers if successful
-             } catch (const fc::exception &e) {
-               // keep
-               if( !is_onfee_act ) {
-                  trace->except = e;
-                  trace->except_ptr = std::current_exception();
-               } else {
-                  throw;
-               }
-             }
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
+            if( !trx->implicit && is_func_has_open(self, config::func_typ::onfee_action)) {
+               trx_context.set_fee_data();
+            }
+#endif
+            trx_context.exec();
+            trx_context.finalize(); // Automatically rounds up network and CPU usage in trace and bills payers if successful
 
             auto restore = make_block_restore_point();
 
@@ -1370,33 +1398,6 @@ struct controller_impl {
    } /// push_transaction
 
 
-   // check_func_open
-   void check_func_open() {
-      // when on the specific block : load new System contract
-      if( is_func_open_in_curr_block( self, config::func_typ::use_system01, 3385100 ) ) {
-         initialize_contract(config::system_account_name, conf.System01_code, conf.System01_abi, true);
-      }
-
-      // when on the specific block : load eosio.msig contract
-      if( is_func_open_in_curr_block( self, config::func_typ::use_msig, 4356456 ) ) {
-         initialize_contract(config::msig_account_name, conf.msig_code, conf.msig_abi, true);
-      }
-
-      // when on the specific block : update auth eosio@active to eosio.prods@active
-      if( is_func_open_in_curr_block( self, config::func_typ::use_eosio_prods) ) {
-         ilog("update auth eosio@active to eosio.prods@active");
-         update_eosio_authority();
-      }
-
-      // vote4ram func, as the early eosforce user's ram not limit
-      // so at first we set freeram to -1 to unlimit user ram
-      // when vote4ram open, change to 8kb per user
-      if( is_func_open_in_curr_block(self, config::func_typ::vote_for_ram) ) {
-         set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
-      }
-   }
-
-
    void start_block( block_timestamp_type when, uint16_t confirm_block_count, controller::block_status s,
                      const optional<block_id_type>& producer_block_id )
    {
@@ -1447,8 +1448,6 @@ struct controller_impl {
                      gp.proposed_schedule.clear();
                   });
             }
-
-         check_func_open();
 
          try {
             auto onbtrx = std::make_shared<transaction_metadata>( get_on_block_transaction() );
@@ -1526,11 +1525,7 @@ struct controller_impl {
             bool transaction_can_fail = receipt.status == transaction_receipt_header::hard_fail && receipt.trx.contains<transaction_id_type>();
             if( transaction_failed && !transaction_can_fail) {
                edump((*trace));
-               // the eosio 's block not contain the block which has error,
-               // so general a block 's push_transaction func called by apply_block in other pb should no exception.
-               // but in eosforce block will include error, this will make chain error,
-               // so eosforce should no throw
-               // throw *trace->except;
+               throw *trace->except;
             }
 
             EOS_ASSERT( pending->_pending_block_state->block->transactions.size() > 0,
@@ -1773,6 +1768,11 @@ struct controller_impl {
          {EOS_PERCENT(chain_config.max_block_net_usage, chain_config.target_block_net_usage_pct), chain_config.max_block_net_usage, config::block_size_average_window_ms / config::block_interval_ms, max_virtual_mult, {99, 100}, {1000, 999}}
       );
       resource_limits.process_block_usage(pending->_pending_block_state->block_num);
+      //这个放在这里还有待考虑   xuyp
+      const auto& gmr = self.get_force_property().gmr;
+      resource_limits.set_gmr_parameters(
+         {  gmr.ram_byte, gmr.cpu_us,gmr.net_byte}
+      );
 
       set_action_merkle();
       set_trx_merkle();
@@ -1783,21 +1783,6 @@ struct controller_impl {
       create_block_summary(p->id);
 
    } FC_CAPTURE_AND_RETHROW() }
-
-    void update_eosio_authority() {
-        auto update_permission = [&]( auto& permission, auto threshold ) {
-            auto auth = authority( threshold, {}, {});
-            auth.accounts.push_back({{config::producers_account_name, config::active_name}, 1});
-
-            if( static_cast<authority>(permission.auth) != auth ) {
-                db.modify(permission, [&]( auto& po ) {
-                    po.auth = auth;
-                });
-            }
-        };
-
-        update_permission( authorization.get_permission({config::system_account_name, config::active_name}), 1);
-    }
 
    void update_producers_authority() {
       const auto& producers = pending->_pending_block_state->active_schedule.producers;
@@ -2018,22 +2003,6 @@ struct controller_impl {
       return trx;
    }
 
-   signed_transaction get_on_fee_transaction( const asset &fee, const account_name &actor)
-   {
-      action on_fee_act;
-      on_fee_act.account = config::system_account_name;
-      on_fee_act.name = N(onfee);
-      on_fee_act.authorization = vector<permission_level>{{actor, config::active_name}};
-
-      fee_paramter param(actor, fee, self.head_block_header().producer);
-      on_fee_act.data = fc::raw::pack(param);
-
-      signed_transaction trx;
-      trx.actions.emplace_back(std::move(on_fee_act));
-      trx.set_reference_block(self.head_block_id());
-      trx.expiration = self.pending_block_time() + fc::microseconds(999'999); // Round up to nearest second to avoid appearing expired
-      return trx;
-   }
 }; /// controller_impl
 
 const resource_limits_manager&   controller::get_resource_limits_manager()const
@@ -2055,10 +2024,6 @@ authorization_manager&         controller::get_mutable_authorization_manager()
 }
 
 const txfee_manager&   controller::get_txfee_manager()const
-{
-   return my->txfee;
-}
-txfee_manager&         controller::get_mutable_txfee_manager()
 {
    return my->txfee;
 }
@@ -2577,28 +2542,16 @@ const flat_set<account_name> &controller::get_resource_greylist() const {
    return  my->conf.resource_greylist;
 }
 
-// format_name format name from genesis
-const std::string format_name( const std::string& name ) {
-   std::stringstream ss;
-   for( int i = 0; i < 12; i++ ) {
-      const auto n = name[i];
-      if( n >= 'A' && n <= 'Z' ) {
-         ss << static_cast<char>( n + 32 );
-      } else if(( n >= 'a' && n <= 'z' ) || ( n >= '1' && n <= '5' )) {
-         ss << static_cast<char>( n );
-      } else if( n >= '6' && n <= '9' ) {
-         ss << static_cast<char>( n - 5 );
-      } else {
-         // unknown char no process
-      }
-   }
+void controller::set_name_list(list_type list, list_action_type action, std::vector<account_name> name_list) {
+   my->set_name_list(list,action,name_list);
+}
 
-   const auto res = ss.str();
+const force_property_object& controller::get_force_property()const {
+   return my->db.get<force_property_object>();
+}
 
-   if( res.size() < 12 ) {
-      EOS_ASSERT(false, name_type_exception, "initialize format name failed");
-   }
-   return res;
+void controller::set_gmr_config(gmr_type gt,uint64_t value) {
+   my->set_gmr_config(gt,value);
 }
 
 } } /// eosio::chain

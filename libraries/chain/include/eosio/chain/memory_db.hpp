@@ -94,13 +94,12 @@ private:
 public:
    chainbase::database& db;  ///< database where state is stored
 
-   // account_info
-   struct account_info {
-      account_name name;
-      asset available;
+    // eosio.token accounts
+    struct token_account {
+       asset    balance = asset{0};
 
-      uint64_t primary_key() const { return name; }
-   };
+       uint64_t primary_key()const { return balance.get_symbol().to_symbol_code().value; }
+    };
 
     struct eoslock_account {
         account_name owner;
@@ -121,10 +120,12 @@ public:
       uint32_t        commission_rate;
       int64_t         total_staked             = 0;
       asset           rewards_pool;
+      asset           rewards_block;
       int64_t         total_voteage            = 0;
       uint32_t        voteage_update_height    = 0;
       std::string     url;
       bool            emergency                = false;
+      bool            isactive                 = true;
 
       bp_info() : commission_rate(0) {
       }
@@ -278,8 +279,8 @@ public:
 } } // namespace eosio::chain
 
 FC_REFLECT(eosio::chain::memory_db::bp_info, (name)(producer_key)
-            (commission_rate)(total_staked)(rewards_pool)(total_voteage)(voteage_update_height)(url)(emergency))
-FC_REFLECT(eosio::chain::memory_db::account_info, (name)(available))
+            (commission_rate)(total_staked)(rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(isactive))
+FC_REFLECT(eosio::chain::memory_db::token_account, (balance))
 FC_REFLECT(eosio::chain::memory_db::eoslock_account, (owner)(balance))
 FC_REFLECT(eosio::chain::memory_db::chain_status, (name)(emergency))
 FC_REFLECT(eosio::chain::memory_db::currency_stats, (supply)(max_supply)(issuer))

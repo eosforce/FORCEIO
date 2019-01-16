@@ -8,7 +8,6 @@
 #include <eosiolib/types.hpp>
 #include <eosiolib/time.hpp>
 #include <eosiolib/serialize.hpp>
-#include <eosiolib/asset.hpp>
 #include <vector>
 
 namespace eosio {
@@ -51,9 +50,8 @@ namespace eosio {
       vector<action>  context_free_actions;
       vector<action>  actions;
       extensions_type transaction_extensions;
-      asset                  fee;
 
-      EOSLIB_SERIALIZE_DERIVED( transaction, transaction_header, (context_free_actions)(actions)(transaction_extensions)(fee) )
+      EOSLIB_SERIALIZE_DERIVED( transaction, transaction_header, (context_free_actions)(actions)(transaction_extensions) )
    };
 
    /**

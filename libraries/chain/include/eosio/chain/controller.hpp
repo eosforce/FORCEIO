@@ -28,6 +28,7 @@ namespace eosio { namespace chain {
 
    class dynamic_global_property_object;
    class global_property_object;
+   class force_property_object;
    class permission_object;
    class account_object;
    using resource_limits::resource_limits_manager;
@@ -45,6 +46,26 @@ namespace eosio { namespace chain {
    enum class validation_mode {
       FULL,
       LIGHT
+   };
+
+   enum  class list_type:int64_t {
+      actor_blacklist_type=1,
+      contract_blacklist_type,
+      resource_greylist_type,
+      list_type_count
+   };
+   enum  class list_action_type:int64_t
+   {
+      insert_type = 1,
+      remove_type,
+      list_action_type_count
+   };
+
+   enum  class gmr_type:int64_t {
+      cpu_us_type=1,
+      ram_byte_type,
+      net_byte_type,
+      gmr_type_count
    };
 
    class controller {
@@ -75,19 +96,12 @@ namespace eosio { namespace chain {
             genesis_state            genesis;
             wasm_interface::vm_type  wasm_runtime = chain::config::default_wasm_runtime;
 
-            std::vector<account_tuple>  active_initial_account_list;
-            uint32_t                    inactive_freeze_percent = 80;
-
-            bytes                                    System_code;
-            bytes                                    System_abi;
+            bytes                                    system_code;
+            bytes                                    system_abi;
             bytes                                    token_code;
             bytes                                    token_abi;
-            bytes                                    lock_code;
-            bytes                                    lock_abi;
             bytes                                    msig_code;
             bytes                                    msig_abi;
-            bytes                                    System01_code;
-            bytes                                    System01_abi;
 
             db_read_mode             read_mode              = db_read_mode::SPECULATIVE;
             validation_mode          block_validation_mode  = validation_mode::FULL;
@@ -172,7 +186,6 @@ namespace eosio { namespace chain {
          const authorization_manager&          get_authorization_manager()const;
          authorization_manager&                get_mutable_authorization_manager();
          const txfee_manager&                  get_txfee_manager()const;
-         txfee_manager&                        get_mutable_txfee_manager();
 
          const flat_set<account_name>&   get_actor_whitelist() const;
          const flat_set<account_name>&   get_actor_blacklist() const;
@@ -240,6 +253,10 @@ namespace eosio { namespace chain {
          void validate_tapos( const transaction& t )const;
          void validate_db_available_size() const;
          void validate_reversible_available_size() const;
+         //black list
+         void set_name_list(list_type list, list_action_type action, std::vector<account_name> name_list);
+         const force_property_object&        get_force_property()const;
+         void set_gmr_config(gmr_type gt,uint64_t value);
 
          bool is_known_unexpired_transaction( const transaction_id_type& id) const;
 
@@ -314,9 +331,6 @@ namespace eosio { namespace chain {
 
    };
 
-   // format_name format name from genesis
-   const std::string format_name( const std::string& name );
-
 } }  /// eosio::chain
 
 FC_REFLECT( eosio::chain::controller::config,
@@ -334,13 +348,9 @@ FC_REFLECT( eosio::chain::controller::config,
             (contracts_console)
             (genesis)
             (wasm_runtime)
-            (active_initial_account_list)
-            (inactive_freeze_percent)
             (token_code)(token_abi)
-            (System_code)(System_abi)
-            (lock_code)(lock_abi)
+            (system_code)(system_abi)
             (msig_code)(msig_abi)
-            (System01_code)(System01_abi)
             (resource_greylist)
             (trusted_producers)
           )

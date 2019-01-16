@@ -25,12 +25,22 @@ namespace config{
    };
 
    namespace func_typ{
-      static const auto vote_for_ram = N(f.ram4vote);
-      static const auto onfee_action = N(f.onfeeact);
-      static const auto use_system01 = N(f.system1);
-      static const auto use_msig     = N(f.msig);
-      static const auto use_eosio_prods     = N(f.prods);
+      static const auto onfee_action        = N(f.onfeeact);
+      static const auto chain_maintain_stat = N(f.maintain);
+   };
+
+   namespace list_typ{
+      static const auto list_actor_black = N(l.actblack);
+      static const auto list_contract_black = N(l.crtblack);
+      static const auto list_resource_grey = N(l.resgrey);
+   };
+
+   namespace gmr_typ{
+      static const auto gmr_cpu= N(gmr.cpu);
+      static const auto gmr_ram = N(gmr.ram);
+      static const auto gmr_net = N(gmr.net);
    }
+
 };
 
 // some spec type for fast
@@ -71,6 +81,11 @@ bool is_func_has_open( const controller& ctl, const name &func_typ );
 
 // is_func_open_in_curr_block if a func is open in curr block
 bool is_func_open_in_curr_block( const controller& ctl, const name &func_typ, const int64_t default_open_block = 0 );
+
+//set list config
+void set_list_config_on_chain(controller& ctl,const setconfig &cfg);
+
+void set_guaranteed_minimum_config(controller& ctl,const setconfig &cfg);
 
 } } /// namespace eosio::chain
 
