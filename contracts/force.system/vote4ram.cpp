@@ -1,6 +1,8 @@
 #include "force.system.hpp"
 
 namespace eosiosystem {
+   // FIXME BY FanYang vote4ram in multiple vote
+   // FIXME BY FanYang if chain no bonus to vote, it need another way to get ram
    void system_contract::vote4ram( const account_name voter, const account_name bpname, const asset stake ) {
       require_auth(voter);
 
@@ -51,10 +53,8 @@ namespace eosiosystem {
       if( change > asset{} ) {
          auto fts = freeze_tbl.find(voter);
          eosio_assert( fts != freeze_tbl.end() && fts->staked >= change, "voter freeze token < vote token" );
-         print("cost freeze ", change);
          freeze_tbl.modify( fts, 0, [&]( freeze_info& v ) {
             v.staked -= change;
-            print("stat ", v.staked);
          });
       }
 
@@ -79,9 +79,4 @@ namespace eosiosystem {
 
       set_need_check_ram_limit(voter);
    }
-
-   void system_contract::unfreezeram( const account_name voter, const account_name bpname ) {
-      require_auth(voter);
-   }
-
 }

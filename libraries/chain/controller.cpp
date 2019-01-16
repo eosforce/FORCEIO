@@ -713,6 +713,9 @@ struct controller_impl {
                memory_db::token_account{ account.asset });
          const authority auth(public_key);
          create_native_account(account.name, auth, auth, false);
+#if RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
+         resource_limits.set_account_limits(account.name, 0, 0, 0);
+#endif
       }
    }
 
@@ -1069,11 +1072,11 @@ struct controller_impl {
          //action check
          check_action(dtrx.actions);
          trx_context.init_for_deferred_trx( gtrx.published );
-
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
          if( is_func_has_open(self, config::func_typ::onfee_action) ) {
             trx_context.set_fee_data();
          }
-
+#endif
          if( trx_context.enforce_whiteblacklist && pending->_block_status == controller::block_status::incomplete ) {
             check_actor_list( trx_context.bill_to_accounts ); // Assumes bill_to_accounts is the set of actors authorizing the transaction
          }
@@ -1331,9 +1334,11 @@ struct controller_impl {
                        false
                );
             }
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
             if( !trx->implicit && is_func_has_open(self, config::func_typ::onfee_action)) {
                trx_context.set_fee_data();
             }
+#endif
             trx_context.exec();
             trx_context.finalize(); // Automatically rounds up network and CPU usage in trace and bills payers if successful
 

@@ -28,6 +28,12 @@ namespace eosiosystem {
                v.unstake_height =  curr_block_num;
             }
          });
+
+         // process multiple vote
+         auto mv = _voters.find(voter);
+         if((mv != _voters.end()) && (change != asset{})){
+            update_votes(voter, mv->producers, false);
+         }
       }
 
       if( change > asset{0} ) {
@@ -41,6 +47,10 @@ namespace eosiosystem {
    // vote vote to a bp from voter to bpname with stake EOSC
    void system_contract::vote( const account_name voter, const account_name bpname, const asset stake ) {
       require_auth(voter);
+
+#if IS_ACTIVE_MULTIPLE_VOTE
+      eosio_assert(false, "curr chain is active mutiple vote, no allow vote to simple bp");
+#endif
 
       bps_table bps_tbl(_self, _self);
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
@@ -92,10 +102,8 @@ namespace eosiosystem {
       if( change > asset{} ) {
          auto fts = freeze_tbl.find(voter);
          eosio_assert( fts != freeze_tbl.end() && fts->staked >= change, "voter freeze token < vote token" );
-         print("cost freeze ", change);
          freeze_tbl.modify( fts, 0, [&]( freeze_info& v ) {
             v.staked -= change;
-            print("stat ", v.staked);
          });
       }
 
@@ -130,6 +138,10 @@ namespace eosiosystem {
 
    void system_contract::claim( const account_name voter, const account_name bpname ) {
       require_auth(voter);
+
+#if !IS_ACTIVE_BONUS_TO_VOTE
+      eosio_assert(false, "curr chain no bonus to account who vote");
+#endif
 
       bps_table bps_tbl(_self, _self);
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");

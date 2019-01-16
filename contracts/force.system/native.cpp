@@ -2,10 +2,6 @@
 
 namespace eosiosystem {
     
-    void system_contract::newaccount(account_name creator,account_name name,authority owner,authority active) {
-
-    }
-    
     void system_contract::updateauth(account_name account,permission_name permission,permission_name parent,authority auth) {
         
     }

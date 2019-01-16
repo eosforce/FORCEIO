@@ -331,6 +331,7 @@ namespace bacc = boost::accumulators;
       init( 0 );
    }
 
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
    // set_fee_data insert onfee act in trx
    void transaction_context::set_fee_data( const asset& require_fee /*= asset{0}*/ ) {
       EOS_ASSERT(!trx.actions[0].authorization.empty(), transaction_exception, "authorization empty");
@@ -384,7 +385,6 @@ namespace bacc = boost::accumulators;
             ("cpus", cpu_limit_by_contract)("nets", net_limit_by_contract));
       */
    }
-
    void transaction_context::process_fee( const action& act ){
       // if free resouse model fees are no longer charged
       #ifdef FREE_RESOUSE
@@ -419,14 +419,17 @@ namespace bacc = boost::accumulators;
                          });
       }
    }
+#endif
 
    void transaction_context::exec() {
       EOS_ASSERT( is_initialized, transaction_exception, "must first initialize" );
 
       if( apply_context_free ) {
          for( const auto& act : trx.context_free_actions ) {
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
             // to cost fee for action
             process_fee( act );
+#endif
             trace->action_traces.emplace_back();
             dispatch_action( trace->action_traces.back(), act, true );
          }
@@ -434,17 +437,20 @@ namespace bacc = boost::accumulators;
 
       if( delay == fc::microseconds() ) {
          for( const auto& act : trx.actions ) {
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
             // to cost fee for action
             process_fee( act );
+#endif
             trace->action_traces.emplace_back();
             dispatch_action( trace->action_traces.back(), act );
          }
       } else {
          schedule_transaction();
       }
-
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
       //dlog("fee cost ${c}", ("c", fee_costed));
       dispatch_fee_action( trace->action_traces );
+#endif
    }
 
    void transaction_context::finalize() {
