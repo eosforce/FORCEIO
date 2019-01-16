@@ -30,4 +30,4 @@
 	branch = force
 [submodule "libraries/wabt"]
 	path = libraries/wabt
-	url = http://github.com/EOSIO/wabt
+	url = https://github.com/EOSIO/wabt
