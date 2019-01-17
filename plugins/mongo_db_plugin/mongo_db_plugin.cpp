@@ -1401,7 +1401,7 @@ void mongo_db_plugin_impl::insert_default_abi()
       {
          abi_cache_index.erase( name_account );
          chain::newaccount newacc{
-                                 .creator  = N(eosio),
+                                 .creator  = chain::config::system_account_name,
                                  .name     = name_account,
                                  .owner    = authority( get_public_key( name_account, "owner" ) ),
                                  .active   = authority( get_public_key( name_account, "active" ) )
@@ -1438,7 +1438,7 @@ void mongo_db_plugin_impl::insert_default_abi()
             }
       }
       get_abi_serializer(name_account);
-      name_account = N(eosio);
+      name_account = chain::config::system_account_name;
       {
          abi_cache_index.erase( name_account );
          auto account = find_account( _accounts, name_account );

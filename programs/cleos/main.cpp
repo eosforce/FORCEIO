@@ -3029,7 +3029,7 @@ int main( int argc, char** argv ) {
          ("requested", requested_perm_var)
          ("trx", trx_var);
 
-      send_actions({chain::action{accountPermissions, "eosio.msig", "propose", variant_to_bin( N(eosio.msig), N(propose), args ) }});
+      send_actions({chain::action{accountPermissions, "eosio.msig", "propose", variant_to_bin( chain::config::msig_account_name, N(propose), args ) }});
    });
 
    //multisig propose transaction
@@ -3069,7 +3069,7 @@ int main( int argc, char** argv ) {
          ("requested", requested_perm_var)
          ("trx", trx_var);
 
-      send_actions({chain::action{accountPermissions, "eosio.msig", "propose", variant_to_bin( N(eosio.msig), N(propose), args ) }});
+      send_actions({chain::action{accountPermissions, "eosio.msig", "propose", variant_to_bin( chain::config::msig_account_name, N(propose), args ) }});
    });
 
 
@@ -3289,7 +3289,7 @@ int main( int argc, char** argv ) {
       }
 
       auto accountPermissions = get_account_permissions(tx_permission, {proposer,config::active_name});
-      send_actions({chain::action{accountPermissions, "eosio.msig", action, variant_to_bin( N(eosio.msig), action, args ) }});
+      send_actions({chain::action{accountPermissions, "eosio.msig", action, variant_to_bin( chain::config::msig_account_name, action, args ) }});
    };
 
    // multisig approve
@@ -3319,7 +3319,7 @@ int main( int argc, char** argv ) {
          ("account", invalidator);
 
       auto accountPermissions = get_account_permissions(tx_permission, {invalidator,config::active_name});
-      send_actions({chain::action{accountPermissions, "eosio.msig", "invalidate", variant_to_bin( N(eosio.msig), "invalidate", args ) }});
+      send_actions({chain::action{accountPermissions, "eosio.msig", "invalidate", variant_to_bin( chain::config::msig_account_name, "invalidate", args ) }});
    });
 
    // multisig cancel
@@ -3346,7 +3346,7 @@ int main( int argc, char** argv ) {
          ("proposal_name", proposal_name)
          ("canceler", canceler);
 
-      send_actions({chain::action{accountPermissions, "eosio.msig", "cancel", variant_to_bin( N(eosio.msig), N(cancel), args ) }});
+      send_actions({chain::action{accountPermissions, "eosio.msig", "cancel", variant_to_bin( chain::config::msig_account_name, N(cancel), args ) }});
       }
    );
 
@@ -3375,7 +3375,7 @@ int main( int argc, char** argv ) {
          ("proposal_name", proposal_name)
          ("executer", executer);
 
-      send_actions({chain::action{accountPermissions, "eosio.msig", "exec", variant_to_bin( N(eosio.msig), N(exec), args ) }});
+      send_actions({chain::action{accountPermissions, "eosio.msig", "exec", variant_to_bin( chain::config::msig_account_name, N(exec), args ) }});
       }
    );
 
@@ -3436,7 +3436,7 @@ int main( int argc, char** argv ) {
          ("emergency", bSet);
 
       auto accountPermissions = vector<permission_level>{{bp_name, config::active_name}};
-      send_actions({chain::action{accountPermissions, "eosio", "setemergency", variant_to_bin( N(eosio), N(setemergency), args ) }});
+      send_actions({chain::action{accountPermissions, "eosio", "setemergency", variant_to_bin( chain::config::system_account_name, N(setemergency), args ) }});
    };
 
    auto setemergency = system->add_subcommand("setemergency", localized("Setting the status of the chain is an emergency"));
