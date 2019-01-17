@@ -1,5 +1,7 @@
 #pragma once
 
+#include <eosiolib/types.hpp>
+
 #define CONTRACT_FROZEN_DELAY ${FROZEN_DELAY}
 #define CONTRACT_NUM_OF_TOP_BPS ${MAX_PRODUCERS}
 #define CONTRACT_BLOCK_REWARDS_BP ${BLOCK_REWARDS_BP}
@@ -15,6 +17,11 @@
 
 namespace config {
    const static uint64_t system_account_name    = N(eosio);
+   const static uint64_t null_account_name      = N(eosio.null);
+   const static uint64_t producers_account_name = N(eosio.prods);
+   const static uint64_t chain_config_name      = N(eosio.config);
    const static uint64_t token_account_name     = N(eosio.token);
-   const static uint64_t fee_account_name       = N(force.fee);
+   const static uint64_t msig_account_name      = N(eosio.msig);
+   const static uint64_t bios_account_name      = N(eosio.bios);
+   const static uint64_t fee_account_name       = N(eosio.fee);
 }

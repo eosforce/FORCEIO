@@ -207,29 +207,19 @@ struct controller_impl {
     read_mode( cfg.read_mode )
    {
 
-#define SET_APP_HANDLER( receiver, contract, action) \
-   set_apply_handler( #receiver, #contract, #action, &BOOST_PP_CAT(apply_, BOOST_PP_CAT(contract, BOOST_PP_CAT(_,action) ) ) )
+#define SET_NATIVE_SYSTEM_APP_HANDLER(action) \
+   set_apply_handler( config::system_account_name, config::system_account_name, #action, &BOOST_PP_CAT(apply_system_native_,action) )
 
-   SET_APP_HANDLER( eosio, eosio, newaccount );
-   SET_APP_HANDLER( eosio, eosio, setcode );
-   SET_APP_HANDLER( eosio, eosio, setabi );
-   SET_APP_HANDLER( eosio, eosio, updateauth );
-   SET_APP_HANDLER( eosio, eosio, deleteauth );
-   SET_APP_HANDLER( eosio, eosio, linkauth );
-   SET_APP_HANDLER( eosio, eosio, unlinkauth );
-/*
-   SET_APP_HANDLER( eosio, eosio, postrecovery );
-   SET_APP_HANDLER( eosio, eosio, passrecovery );
-   SET_APP_HANDLER( eosio, eosio, vetorecovery );
-*/
-
-   SET_APP_HANDLER( eosio, eosio, canceldelay );
-   SET_APP_HANDLER( eosio, eosio, setconfig );
-   SET_APP_HANDLER( eosio, eosio, setfee );
-   
-   // add a asset if system account is change, if it changed, next SET_APP_HANDLER need also change
-   BOOST_STATIC_ASSERT(N(eosio)       == config::system_account_name);
-   BOOST_STATIC_ASSERT(N(eosio.token) == config::token_account_name);
+   SET_NATIVE_SYSTEM_APP_HANDLER( newaccount );
+   SET_NATIVE_SYSTEM_APP_HANDLER( setcode );
+   SET_NATIVE_SYSTEM_APP_HANDLER( setabi );
+   SET_NATIVE_SYSTEM_APP_HANDLER( updateauth );
+   SET_NATIVE_SYSTEM_APP_HANDLER( deleteauth );
+   SET_NATIVE_SYSTEM_APP_HANDLER( linkauth );
+   SET_NATIVE_SYSTEM_APP_HANDLER( unlinkauth );
+   SET_NATIVE_SYSTEM_APP_HANDLER( canceldelay );
+   SET_NATIVE_SYSTEM_APP_HANDLER( setconfig );
+   SET_NATIVE_SYSTEM_APP_HANDLER( setfee );
 
    
    fork_db.irreversible.connect( [&]( auto b ) {
@@ -807,6 +797,7 @@ struct controller_impl {
 
 
    void initialize_database() {
+      try {
       // Initialize block summary index
       for (int i = 0; i < 0x10000; i++)
          db.create<block_summary_object>([&](block_summary_object&) {});
@@ -863,6 +854,7 @@ struct controller_impl {
                                                                              majority_permission.id,
                                                                              active_producers_authority,
                                                                              conf.genesis.initial_timestamp );
+      } FC_CAPTURE_AND_RETHROW()
    }
 
    void set_resource_gmr() {
