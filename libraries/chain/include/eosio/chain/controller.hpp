@@ -16,7 +16,9 @@ namespace chainbase {
 namespace eosio { namespace chain {
 
    class authorization_manager;
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
    class txfee_manager;
+#endif
 
    namespace resource_limits {
       class resource_limits_manager;
@@ -185,8 +187,9 @@ namespace eosio { namespace chain {
          resource_limits_manager&              get_mutable_resource_limits_manager();
          const authorization_manager&          get_authorization_manager()const;
          authorization_manager&                get_mutable_authorization_manager();
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE         
          const txfee_manager&                  get_txfee_manager()const;
-
+#endif
          const flat_set<account_name>&   get_actor_whitelist() const;
          const flat_set<account_name>&   get_actor_blacklist() const;
          const flat_set<account_name>&   get_contract_whitelist() const;

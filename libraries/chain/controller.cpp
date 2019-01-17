@@ -48,7 +48,11 @@ using controller_index_set = index_set<
    block_summary_multi_index,
    transaction_multi_index,
    generated_transaction_multi_index,
-   table_id_multi_index
+   table_id_multi_index,
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
+   action_fee_object_index,
+#endif
+   config_data_object_index
 >;
 
 using contract_database_index_set = index_set<
@@ -135,7 +139,9 @@ struct controller_impl {
    wasm_interface                 wasmif;
    resource_limits_manager        resource_limits;
    authorization_manager          authorization;
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE   
    txfee_manager                  txfee;
+#endif
    controller::config             conf;
    chain_id_type                  chain_id;
    bool                           replaying= false;
@@ -219,8 +225,10 @@ struct controller_impl {
    SET_NATIVE_SYSTEM_APP_HANDLER( unlinkauth );
    SET_NATIVE_SYSTEM_APP_HANDLER( canceldelay );
    SET_NATIVE_SYSTEM_APP_HANDLER( setconfig );
-   SET_NATIVE_SYSTEM_APP_HANDLER( setfee );
 
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
+   SET_NATIVE_SYSTEM_APP_HANDLER( setfee );
+#endif
    
    fork_db.irreversible.connect( [&]( auto b ) {
                                  on_irreversible(b);
@@ -442,8 +450,8 @@ struct controller_impl {
       controller_index_set::add_indices(db);
       contract_database_index_set::add_indices(db);
 
-      db.add_index<action_fee_object_index>();
-      db.add_index<config_data_object_index>();
+      //db.add_index<action_fee_object_index>();
+      //db.add_index<config_data_object_index>();
 
       authorization.add_indices();
       resource_limits.add_indices();
@@ -2015,10 +2023,12 @@ authorization_manager&         controller::get_mutable_authorization_manager()
    return my->authorization;
 }
 
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
 const txfee_manager&   controller::get_txfee_manager()const
 {
    return my->txfee;
 }
+#endif
 
 controller::controller( const controller::config& cfg )
 :my( new controller_impl( cfg, *this ) )

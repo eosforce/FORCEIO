@@ -32,6 +32,10 @@ namespace eosio { namespace chain {
    void apply_system_native_setfee(apply_context&);
    void apply_system_native_setabi(apply_context&);
 
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
+   void apply_system_native_setfee(apply_context&);
+#endif
+
    void apply_system_native_canceldelay(apply_context&);
    ///@}  end action handlers
 

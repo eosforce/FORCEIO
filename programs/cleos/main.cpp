@@ -601,6 +601,7 @@ chain::action create_setabi(const name& account, const bytes& abi) {
    };
 }
 
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
 chain::action create_setfee(const name& account, const name &act, const asset fee, const uint32_t cpu, const uint32_t net, const uint32_t ram) {
    const auto permission_account =
          ((cpu == 0)&&(net == 0)&&(ram == 0))
@@ -619,6 +620,7 @@ chain::action create_setfee(const name& account, const name &act, const asset fe
          }
    };
 }
+#endif
 
 chain::action create_setcode(const name& account, const bytes& code) {
    return action {
@@ -2452,6 +2454,7 @@ int main( int argc, char** argv ) {
    uint32_t net_limit_by_contract = 0;
    uint32_t ram_limit_by_contract = 0;
 
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
    auto feeSubcommand = setSubcommand->add_subcommand("setfee", localized("Set Fee need to action"));
    feeSubcommand->add_option("account", account, localized("The account to set the Fee for"))->required();
    feeSubcommand->add_option("action", action_to_set_fee, localized("The action to set the Fee for"))->required();
@@ -2465,7 +2468,18 @@ int main( int argc, char** argv ) {
       dlog("set fee ${act}, ${fee}", ("act", action_to_set_fee)("fee", a));
       send_actions({create_setfee(account, action_to_set_fee, a, cpu_limit_by_contract, net_limit_by_contract, ram_limit_by_contract)});
    });
-
+#else
+   auto feeSubcommand = setSubcommand->add_subcommand("setfee", localized("Set Fee need to action"));
+   feeSubcommand->add_option("account", account, localized("The account to set the Fee for"))->required();
+   feeSubcommand->add_option("action", action_to_set_fee, localized("The action to set the Fee for"))->required();
+   feeSubcommand->add_option("fee", fee_to_set, localized("The Fee to set to action"))->required();
+   feeSubcommand->add_option("cpu_limit", cpu_limit_by_contract, localized("The cpu max use limit to set to action"))->required();
+   feeSubcommand->add_option("net_limit", net_limit_by_contract, localized("The net max use limit to set to action"))->required();
+   feeSubcommand->add_option("ram_limit", ram_limit_by_contract, localized("The ram max use limit to set to action"))->required();
+   feeSubcommand->set_callback([&] {
+      dlog("In non-RESOURCE_MODEL_FEE model, do not support setfee");
+   });
+#endif
 
    auto contractSubcommand = setSubcommand->add_subcommand("contract", localized("Create or update the contract on an account"));
    contractSubcommand->add_option("account", account, localized("The account to publish a contract for"))
