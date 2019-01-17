@@ -573,8 +573,8 @@ void chain_plugin::plugin_initialize(const variables_map& options) {
       my->chain_config->genesis = fc::json::from_file(genesis_file).as<genesis_state>();
 
       load_contract_code_abi("force.system", my->chain_config->system_code, my->chain_config->system_abi);
-      load_contract_code_abi("eosio.token", my->chain_config->token_code, my->chain_config->token_abi);
-      load_contract_code_abi("eosio.msig", my->chain_config->msig_code, my->chain_config->msig_abi);
+      load_contract_code_abi("force.token", my->chain_config->token_code, my->chain_config->token_abi);
+      load_contract_code_abi("force.msig", my->chain_config->msig_code, my->chain_config->msig_abi);
 
       // some config need change
       my->chain_config->genesis.initial_configuration.max_block_cpu_usage = 1000000;
