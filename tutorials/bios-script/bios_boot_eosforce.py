@@ -149,7 +149,6 @@ def stepCreateNodeDirs():
 
 def stepLog():
     run('tail -n 1000 ' + args.nodes_dir + 'biosbpa.log')
-    listProducers()
     run(args.cleos + ' get info')
     print('you can use \"alias cleost=\'%s\'\" to call cleos to testnet' % args.cleos)
 
