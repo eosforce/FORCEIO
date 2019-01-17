@@ -150,7 +150,7 @@ namespace eosiosystem {
       } // tot_itr can be invalid, should go out of scope
 
       // create refund or update from existing refund
-      if ( N(eosio) != source_stake_from ) { //for eosio both transfer and refund make no sense
+      if ( ::config::system_account_name != source_stake_from ) { //for eosio both transfer and refund make no sense
          refunds_table refunds_tbl( _self, from );
          auto req = refunds_tbl.find( from );
 
@@ -211,8 +211,13 @@ namespace eosiosystem {
 
          auto transfer_amount = net_balance + cpu_balance;
          if ( asset(0) < transfer_amount ) {
-            INLINE_ACTION_SENDER(eosio::token, transfer)( config::token_account_name, {source_stake_from, N(active)},
-               { source_stake_from, N(eosio), asset(transfer_amount), std::string("stake bandwidth") } );
+            INLINE_ACTION_SENDER(eosio::token, transfer)( 
+               config::token_account_name, 
+               {source_stake_from, N(active)},
+               { source_stake_from, 
+                 ::config::system_account_name, 
+                 asset(transfer_amount), 
+                 std::string("stake bandwidth") } );
          }
       }
    }
@@ -251,8 +256,9 @@ namespace eosiosystem {
       // allow people to get their tokens earlier than the 3 day delay if the unstake happened immediately after many
       // consecutive missed blocks.
 
-      INLINE_ACTION_SENDER(eosio::token, transfer)( config::token_account_name, {N(eosio),N(active)},
-                                                    { N(eosio), req->owner, req->net_amount + req->cpu_amount, std::string("unstake") } );
+      INLINE_ACTION_SENDER(eosio::token, transfer)( config::token_account_name, 
+                                                    { ::config::system_account_name, N(active) },
+                                                    { ::config::system_account_name, req->owner, req->net_amount + req->cpu_amount, std::string("unstake") } );
 
       refunds_tbl.erase( req );
    }

@@ -40,7 +40,7 @@ namespace eosiosystem {
          INLINE_ACTION_SENDER(eosio::token, transfer)(
                config::token_account_name,
                { voter, N(active) },
-               { voter, N(eosio), asset(change), "freeze" });
+               { voter, ::config::system_account_name, asset(change), "freeze" });
       }
    }
 
@@ -127,8 +127,8 @@ namespace eosiosystem {
 
       INLINE_ACTION_SENDER(eosio::token, transfer)(
             config::token_account_name,
-            { N(eosio), N(active) },
-            { N(eosio), voter, itr.unstaking, "unfreeze" });
+            { ::config::system_account_name, N(active) },
+            { ::config::system_account_name, voter, itr.unstaking, "unfreeze" });
 
       freeze_tbl.modify(itr, 0, [&]( freeze_info& v ) {
          v.unstaking.set_amount(0);
@@ -170,8 +170,8 @@ namespace eosiosystem {
       eosio_assert(reward_all > asset{}, "no any reward!");
       INLINE_ACTION_SENDER(eosio::token, transfer)(
             config::token_account_name,
-            { N(eosio), N(active) },
-            { N(eosio), voter, reward_all, "claim" });
+            { ::config::system_account_name, N(active) },
+            { ::config::system_account_name, voter, reward_all, "claim" });
 
       votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
          v.voteage = 0;

@@ -1,8 +1,4 @@
-/** @file 
- *    @copyright defined in eos/LICENSE.txt 
- *
- * \warning This file is machine generated. DO NOT EDIT.  See contract_config.hpp.in for changes.
- */
+#pragma once
 
 #define CONTRACT_FROZEN_DELAY ${FROZEN_DELAY}
 #define CONTRACT_NUM_OF_TOP_BPS ${MAX_PRODUCERS}
@@ -18,5 +14,7 @@
 #define IS_ACTIVE_BONUS_TO_VOTE ${IS_ACTIVE_BONUS_TO_VOTE}
 
 namespace config {
-   const static uint64_t token_account_name = N(eosio.token);
+   const static uint64_t system_account_name    = N(eosio);
+   const static uint64_t token_account_name     = N(eosio.token);
+   const static uint64_t fee_account_name       = N(force.fee);
 }
