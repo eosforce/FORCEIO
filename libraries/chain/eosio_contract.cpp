@@ -182,6 +182,7 @@ void apply_eosio_setcode(apply_context& context) {
    }
 }
 
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
 // setfee just for test imp contracts
 void apply_eosio_setfee(apply_context& context) {
    auto &db = context.db;
@@ -229,6 +230,7 @@ void apply_eosio_setfee(apply_context& context) {
       });
    }
 }
+#endif
 
 void apply_eosio_setabi(apply_context& context) {
    auto& db  = context.db;

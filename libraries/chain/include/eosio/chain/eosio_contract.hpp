@@ -29,7 +29,9 @@ namespace eosio { namespace chain {
    void apply_eosio_setconfig(apply_context&);
    
    void apply_eosio_setcode(apply_context&);
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
    void apply_eosio_setfee(apply_context&);
+#endif
    void apply_eosio_setabi(apply_context&);
 
    void apply_eosio_canceldelay(apply_context&);

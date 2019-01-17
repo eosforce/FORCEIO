@@ -135,7 +135,7 @@ struct controller_impl {
    wasm_interface                 wasmif;
    resource_limits_manager        resource_limits;
    authorization_manager          authorization;
-   txfee_manager                  txfee;
+   //txfee_manager                  txfee;
    controller::config             conf;
    chain_id_type                  chain_id;
    bool                           replaying= false;
@@ -225,8 +225,9 @@ struct controller_impl {
 
    SET_APP_HANDLER( eosio, eosio, canceldelay );
    SET_APP_HANDLER( eosio, eosio, setconfig );
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
    SET_APP_HANDLER( eosio, eosio, setfee );
-   
+#endif
    // add a asset if system account is change, if it changed, next SET_APP_HANDLER need also change
    BOOST_STATIC_ASSERT(N(eosio)       == config::system_account_name);
    BOOST_STATIC_ASSERT(N(eosio.token) == config::token_account_name);
@@ -2023,10 +2024,12 @@ authorization_manager&         controller::get_mutable_authorization_manager()
    return my->authorization;
 }
 
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
 const txfee_manager&   controller::get_txfee_manager()const
 {
    return my->txfee;
 }
+#endif
 
 controller::controller( const controller::config& cfg )
 :my( new controller_impl( cfg, *this ) )
