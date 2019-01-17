@@ -15,9 +15,6 @@
 #include <eosio.token/eosio.token.wast.hpp>
 #include <eosio.token/eosio.token.abi.hpp>
 
-#include <eosio.system/eosio.system.wast.hpp>
-#include <eosio.system/eosio.system.abi.hpp>
-
 #include <fc/io/fstream.hpp>
 
 #include <Runtime/Runtime.h>
@@ -341,108 +338,6 @@ BOOST_FIXTURE_TEST_CASE( get_table_by_seckey_test, TESTER ) try {
                   );
    }
    produce_blocks(1);
-
-   set_code( config::system_account_name, eosio_system_wast );
-   set_abi( config::system_account_name, eosio_system_abi );
-
-   // bidname
-   auto bidname = [this]( const account_name& bidder, const account_name& newname, const asset& bid ) {
-      return push_action( N(eosio), N(bidname), bidder, fc::mutable_variant_object()
-                          ("bidder",  bidder)
-                          ("newname", newname)
-                          ("bid", bid)
-                          );
-   };
-
-   bidname(N(inita), N(com), eosio::chain::asset::from_string("10.0000 SYS"));
-   bidname(N(initb), N(org), eosio::chain::asset::from_string("11.0000 SYS"));
-   bidname(N(initc), N(io), eosio::chain::asset::from_string("12.0000 SYS"));
-   bidname(N(initd), N(html), eosio::chain::asset::from_string("14.0000 SYS"));
-   produce_blocks(1);
-
-   // get table: normal case
-   eosio::chain_apis::read_only plugin(*(this->control), fc::microseconds(INT_MAX));
-   eosio::chain_apis::read_only::get_table_rows_params p;
-   p.code = N(eosio);
-   p.scope = "eosio";
-   p.table = N(namebids);
-   p.json = true;
-   p.index_position = "secondary"; // ordered by high_bid
-   p.key_type = "i64";
-   eosio::chain_apis::read_only::get_table_rows_result result = plugin.read_only::get_table_rows(p);
-   BOOST_REQUIRE_EQUAL(4, result.rows.size());
-   BOOST_REQUIRE_EQUAL(false, result.more);
-   if (result.rows.size() >= 4) {
-      BOOST_REQUIRE_EQUAL("html", result.rows[0]["newname"].as_string());
-      BOOST_REQUIRE_EQUAL("initd", result.rows[0]["high_bidder"].as_string());
-      BOOST_REQUIRE_EQUAL("140000", result.rows[0]["high_bid"].as_string());
-
-      BOOST_REQUIRE_EQUAL("io", result.rows[1]["newname"].as_string());
-      BOOST_REQUIRE_EQUAL("initc", result.rows[1]["high_bidder"].as_string());
-      BOOST_REQUIRE_EQUAL("120000", result.rows[1]["high_bid"].as_string());
-
-      BOOST_REQUIRE_EQUAL("org", result.rows[2]["newname"].as_string());
-      BOOST_REQUIRE_EQUAL("initb", result.rows[2]["high_bidder"].as_string());
-      BOOST_REQUIRE_EQUAL("110000", result.rows[2]["high_bid"].as_string());
-
-      BOOST_REQUIRE_EQUAL("com", result.rows[3]["newname"].as_string());
-      BOOST_REQUIRE_EQUAL("inita", result.rows[3]["high_bidder"].as_string());
-      BOOST_REQUIRE_EQUAL("100000", result.rows[3]["high_bid"].as_string());
-   }
-
-   // reverse search, with show ram payer
-   p.reverse = true;
-   p.show_payer = true;
-   result = plugin.read_only::get_table_rows(p);
-   BOOST_REQUIRE_EQUAL(4, result.rows.size());
-   BOOST_REQUIRE_EQUAL(false, result.more);
-   if (result.rows.size() >= 4) {
-      BOOST_REQUIRE_EQUAL("html", result.rows[3]["data"]["newname"].as_string());
-      BOOST_REQUIRE_EQUAL("initd", result.rows[3]["data"]["high_bidder"].as_string());
-      BOOST_REQUIRE_EQUAL("140000", result.rows[3]["data"]["high_bid"].as_string());
-      BOOST_REQUIRE_EQUAL("initd", result.rows[3]["payer"].as_string());
-
-      BOOST_REQUIRE_EQUAL("io", result.rows[2]["data"]["newname"].as_string());
-      BOOST_REQUIRE_EQUAL("initc", result.rows[2]["data"]["high_bidder"].as_string());
-      BOOST_REQUIRE_EQUAL("120000", result.rows[2]["data"]["high_bid"].as_string());
-      BOOST_REQUIRE_EQUAL("initc", result.rows[2]["payer"].as_string());
-
-      BOOST_REQUIRE_EQUAL("org", result.rows[1]["data"]["newname"].as_string());
-      BOOST_REQUIRE_EQUAL("initb", result.rows[1]["data"]["high_bidder"].as_string());
-      BOOST_REQUIRE_EQUAL("110000", result.rows[1]["data"]["high_bid"].as_string());
-      BOOST_REQUIRE_EQUAL("initb", result.rows[1]["payer"].as_string());
-
-      BOOST_REQUIRE_EQUAL("com", result.rows[0]["data"]["newname"].as_string());
-      BOOST_REQUIRE_EQUAL("inita", result.rows[0]["data"]["high_bidder"].as_string());
-      BOOST_REQUIRE_EQUAL("100000", result.rows[0]["data"]["high_bid"].as_string());
-      BOOST_REQUIRE_EQUAL("inita", result.rows[0]["payer"].as_string());
-   }
-
-   // limit to 1 (get the highest bidname)
-   p.reverse = false;
-   p.show_payer = false;
-   p.limit = 1;
-   result = plugin.read_only::get_table_rows(p);
-   BOOST_REQUIRE_EQUAL(1, result.rows.size());
-   BOOST_REQUIRE_EQUAL(true, result.more);
-   if (result.rows.size() >= 1) {
-      BOOST_REQUIRE_EQUAL("html", result.rows[0]["newname"].as_string());
-      BOOST_REQUIRE_EQUAL("initd", result.rows[0]["high_bidder"].as_string());
-      BOOST_REQUIRE_EQUAL("140000", result.rows[0]["high_bid"].as_string());
-   }
-
-   // limit to 1 reverse, (get the lowest bidname)
-   p.reverse = true;
-   p.show_payer = false;
-   p.limit = 1;
-   result = plugin.read_only::get_table_rows(p);
-   BOOST_REQUIRE_EQUAL(1, result.rows.size());
-   BOOST_REQUIRE_EQUAL(true, result.more);
-   if (result.rows.size() >= 1) {
-      BOOST_REQUIRE_EQUAL("com", result.rows[0]["newname"].as_string());
-      BOOST_REQUIRE_EQUAL("inita", result.rows[0]["high_bidder"].as_string());
-      BOOST_REQUIRE_EQUAL("100000", result.rows[0]["high_bid"].as_string());
-   }
 
 } FC_LOG_AND_RETHROW()
 
