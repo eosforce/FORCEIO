@@ -30,7 +30,7 @@ namespace eosiosystem {
          });
       }
 
-      INLINE_ACTION_SENDER(eosio::token, issue)( N(eosio.token), {{N(eosio),N(active)}},
+      INLINE_ACTION_SENDER(eosio::token, issue)( config::token_account_name, {{N(eosio),N(active)}},
                                                  {N(eosio), asset(BLOCK_REWARDS_BP), std::string("issue tokens for producer pay")} );
       //reward bps
       reward_bps(block_producers);

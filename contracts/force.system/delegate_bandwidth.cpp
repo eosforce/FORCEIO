@@ -211,7 +211,7 @@ namespace eosiosystem {
 
          auto transfer_amount = net_balance + cpu_balance;
          if ( asset(0) < transfer_amount ) {
-            INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {source_stake_from, N(active)},
+            INLINE_ACTION_SENDER(eosio::token, transfer)( config::token_account_name, {source_stake_from, N(active)},
                { source_stake_from, N(eosio), asset(transfer_amount), std::string("stake bandwidth") } );
          }
       }
@@ -251,7 +251,7 @@ namespace eosiosystem {
       // allow people to get their tokens earlier than the 3 day delay if the unstake happened immediately after many
       // consecutive missed blocks.
 
-      INLINE_ACTION_SENDER(eosio::token, transfer)( N(eosio.token), {N(eosio),N(active)},
+      INLINE_ACTION_SENDER(eosio::token, transfer)( config::token_account_name, {N(eosio),N(active)},
                                                     { N(eosio), req->owner, req->net_amount + req->cpu_amount, std::string("unstake") } );
 
       refunds_tbl.erase( req );

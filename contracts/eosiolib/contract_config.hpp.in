@@ -16,3 +16,7 @@
 
 #define IS_ACTIVE_MULTIPLE_VOTE ${IS_ACTIVE_MULTIPLE_VOTE}
 #define IS_ACTIVE_BONUS_TO_VOTE ${IS_ACTIVE_BONUS_TO_VOTE}
+
+namespace config {
+   const static uint64_t token_account_name = N(eosio.token);
+}

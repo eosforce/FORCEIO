@@ -38,7 +38,7 @@ namespace eosiosystem {
 
       if( change > asset{0} ) {
          INLINE_ACTION_SENDER(eosio::token, transfer)(
-               N(eosio.token),
+               config::token_account_name,
                { voter, N(active) },
                { voter, N(eosio), asset(change), "freeze" });
       }
@@ -126,7 +126,7 @@ namespace eosiosystem {
       eosio_assert(0 < itr.unstaking.amount, "need unstaking quantity > 0");
 
       INLINE_ACTION_SENDER(eosio::token, transfer)(
-            N(eosio.token),
+            config::token_account_name,
             { N(eosio), N(active) },
             { N(eosio), voter, itr.unstaking, "unfreeze" });
 
@@ -169,7 +169,7 @@ namespace eosiosystem {
 
       eosio_assert(reward_all > asset{}, "no any reward!");
       INLINE_ACTION_SENDER(eosio::token, transfer)(
-            N(eosio.token),
+            config::token_account_name,
             { N(eosio), N(active) },
             { N(eosio), voter, reward_all, "claim" });
 
