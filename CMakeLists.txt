@@ -254,6 +254,12 @@ endif()
 
 message( STATUS "Using '${CHAIN_INIT_TIMESTAMP}' as chain init timestamp" )
 
+if ("${ROOT_ACCOUNT}" STREQUAL "")
+    set(ROOT_ACCOUNT "force")
+endif()
+
+message( STATUS "Using '${ROOT_ACCOUNT}' as root account" )
+
 #add contract_config
 if ("${FROZEN_DELAY}" STREQUAL "")
   set( FROZEN_DELAY "3 * 24 * 60 * 20" )

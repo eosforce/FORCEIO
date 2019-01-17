@@ -2614,7 +2614,7 @@ int main( int argc, char** argv ) {
    auto setActionPermission = set_action_permission_subcommand(setAction);
 
    // Transfer subcommand
-   string con = "eosio.token";
+   string con = chain::config::token_contract_name_str;
    string sender;
    string recipient;
    string amount;
