@@ -2,7 +2,7 @@
 
 A customizable blockchain service framework
 
-[Main Page](https://open.eosforce.io/#/en)
+[Main Page](https://open.eosforce.io/#/en) [Telegram](https://t.me/forceio)
 
 ## Vision
 
@@ -40,3 +40,7 @@ FORCEIO offers a range of tools including the wallet, block explorer and develop
 ## Getting Start
 
 Read this Document to learn how to start a customize chain : [customize document](customize.md)
+
+## Resource
+
+[Telegram](https://t.me/forceio)
