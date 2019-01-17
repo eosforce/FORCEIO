@@ -7,7 +7,7 @@ set(STANDARD_INCLUDE_FOLDERS ${CMAKE_SOURCE_DIR}/contracts ${CMAKE_BINARY_DIR}/c
 add_subdirectory(eosiolib)
 add_subdirectory(musl)
 add_subdirectory(libc++)
-add_subdirectory(eosio.token)
+add_subdirectory(force.token)
 add_subdirectory(eosio.msig)
 add_subdirectory(multi_index_test)
 add_subdirectory(snapshot_test)

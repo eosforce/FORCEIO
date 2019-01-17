@@ -12,8 +12,8 @@
 #include <asserter/asserter.wast.hpp>
 #include <asserter/asserter.abi.hpp>
 
-#include <eosio.token/eosio.token.wast.hpp>
-#include <eosio.token/eosio.token.abi.hpp>
+#include <force.token/force.token.wast.hpp>
+#include <force.token/force.token.abi.hpp>
 
 #include <fc/io/fstream.hpp>
 
@@ -48,8 +48,8 @@ BOOST_FIXTURE_TEST_CASE( get_scope_test, TESTER ) try {
    create_accounts(accs);
    produce_block();
 
-   set_code( N(eosio.token), eosio_token_wast );
-   set_abi( N(eosio.token), eosio_token_abi );
+   set_code( N(eosio.token), force_token_wast );
+   set_abi( N(eosio.token), force_token_abi );
    produce_blocks(1);
 
    // create currency
@@ -124,8 +124,8 @@ BOOST_FIXTURE_TEST_CASE( get_table_test, TESTER ) try {
    create_accounts(accs);
    produce_block();
 
-   set_code( N(eosio.token), eosio_token_wast );
-   set_abi( N(eosio.token), eosio_token_abi );
+   set_code( N(eosio.token), force_token_wast );
+   set_abi( N(eosio.token), force_token_abi );
    produce_blocks(1);
 
    // create currency
@@ -319,8 +319,8 @@ BOOST_FIXTURE_TEST_CASE( get_table_by_seckey_test, TESTER ) try {
    create_accounts(accs);
    produce_block();
 
-   set_code( N(eosio.token), eosio_token_wast );
-   set_abi( N(eosio.token), eosio_token_abi );
+   set_code( N(eosio.token), force_token_wast );
+   set_abi( N(eosio.token), force_token_abi );
    produce_blocks(1);
 
    // create currency

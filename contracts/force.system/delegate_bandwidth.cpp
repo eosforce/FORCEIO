@@ -15,7 +15,7 @@
 #include <eosiolib/privileged.h>
 #include <eosiolib/transaction.hpp>
 
-#include <eosio.token/eosio.token.hpp>
+#include <force.token/force.token.hpp>
 
 
 #include <cmath>

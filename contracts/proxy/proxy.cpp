@@ -4,7 +4,7 @@
  */
 #include <proxy/proxy.hpp>
 #include <eosiolib/transaction.hpp>
-#include <eosio.token/eosio.token.hpp>
+#include <force.token/force.token.hpp>
 
 namespace proxy {
    using namespace eosio;
