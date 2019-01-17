@@ -139,7 +139,9 @@ struct controller_impl {
    wasm_interface                 wasmif;
    resource_limits_manager        resource_limits;
    authorization_manager          authorization;
-   //txfee_manager                  txfee;
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE   
+   txfee_manager                  txfee;
+#endif
    controller::config             conf;
    chain_id_type                  chain_id;
    bool                           replaying= false;
