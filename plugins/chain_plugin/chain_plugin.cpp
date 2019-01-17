@@ -321,7 +321,7 @@ fc::time_point calculate_genesis_timestamp( string tstr ) {
 
 /**
  * load code and abi file to bytes
- * string contract: contract name (eg: System, eosio.token)
+ * string contract: contract name (eg: System, force.token)
  * bytes& code: out param
  * bytes& abi: out param
  */
@@ -573,8 +573,8 @@ void chain_plugin::plugin_initialize(const variables_map& options) {
       my->chain_config->genesis = fc::json::from_file(genesis_file).as<genesis_state>();
 
       load_contract_code_abi("force.system", my->chain_config->system_code, my->chain_config->system_abi);
-      load_contract_code_abi("eosio.token", my->chain_config->token_code, my->chain_config->token_abi);
-      load_contract_code_abi("eosio.msig", my->chain_config->msig_code, my->chain_config->msig_abi);
+      load_contract_code_abi("force.token", my->chain_config->token_code, my->chain_config->token_abi);
+      load_contract_code_abi("force.msig", my->chain_config->msig_code, my->chain_config->msig_abi);
 
       // some config need change
       my->chain_config->genesis.initial_configuration.max_block_cpu_usage = 1000000;
@@ -1906,7 +1906,8 @@ chain::symbol read_only::extract_core_symbol()const {
 
    // The following code makes assumptions about the contract deployed on eosio account (i.e. the system contract) and how it stores its data.
    const auto& d = db.db();
-   const auto* t_id = d.find<chain::table_id_object, chain::by_code_scope_table>(boost::make_tuple( N(eosio), N(eosio), N(rammarket) ));
+   const auto* t_id = d.find<chain::table_id_object, chain::by_code_scope_table>(
+      boost::make_tuple( config::system_account_name, config::system_account_name, N(rammarket) ));
    if( t_id != nullptr ) {
       const auto &idx = d.get_index<key_value_index, by_scope_primary>();
       auto it = idx.find(boost::make_tuple( t_id->id, eosio::chain::string_to_symbol_c(4,"RAMCORE") ));

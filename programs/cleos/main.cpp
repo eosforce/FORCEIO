@@ -601,6 +601,7 @@ chain::action create_setabi(const name& account, const bytes& abi) {
    };
 }
 
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
 chain::action create_setfee(const name& account, const name &act, const asset fee, const uint32_t cpu, const uint32_t net, const uint32_t ram) {
    const auto permission_account =
          ((cpu == 0)&&(net == 0)&&(ram == 0))
@@ -619,6 +620,7 @@ chain::action create_setfee(const name& account, const name &act, const asset fe
          }
    };
 }
+#endif
 
 chain::action create_setcode(const name& account, const bytes& code) {
    return action {
@@ -703,7 +705,7 @@ asset to_asset( account_name code, const string& s ) {
 }
 
 inline asset to_asset( const string& s ) {
-   return to_asset( N(eosio.token), s );
+   return to_asset( config::token_account_name, s );
 }
 
 struct set_account_permission_subcommand {
@@ -2452,6 +2454,7 @@ int main( int argc, char** argv ) {
    uint32_t net_limit_by_contract = 0;
    uint32_t ram_limit_by_contract = 0;
 
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
    auto feeSubcommand = setSubcommand->add_subcommand("setfee", localized("Set Fee need to action"));
    feeSubcommand->add_option("account", account, localized("The account to set the Fee for"))->required();
    feeSubcommand->add_option("action", action_to_set_fee, localized("The action to set the Fee for"))->required();
@@ -2465,7 +2468,18 @@ int main( int argc, char** argv ) {
       dlog("set fee ${act}, ${fee}", ("act", action_to_set_fee)("fee", a));
       send_actions({create_setfee(account, action_to_set_fee, a, cpu_limit_by_contract, net_limit_by_contract, ram_limit_by_contract)});
    });
-
+#else
+   auto feeSubcommand = setSubcommand->add_subcommand("setfee", localized("Set Fee need to action"));
+   feeSubcommand->add_option("account", account, localized("The account to set the Fee for"))->required();
+   feeSubcommand->add_option("action", action_to_set_fee, localized("The action to set the Fee for"))->required();
+   feeSubcommand->add_option("fee", fee_to_set, localized("The Fee to set to action"))->required();
+   feeSubcommand->add_option("cpu_limit", cpu_limit_by_contract, localized("The cpu max use limit to set to action"))->required();
+   feeSubcommand->add_option("net_limit", net_limit_by_contract, localized("The net max use limit to set to action"))->required();
+   feeSubcommand->add_option("ram_limit", ram_limit_by_contract, localized("The ram max use limit to set to action"))->required();
+   feeSubcommand->set_callback([&] {
+      dlog("In non-RESOURCE_MODEL_FEE model, do not support setfee");
+   });
+#endif
 
    auto contractSubcommand = setSubcommand->add_subcommand("contract", localized("Create or update the contract on an account"));
    contractSubcommand->add_option("account", account, localized("The account to publish a contract for"))
@@ -2614,7 +2628,7 @@ int main( int argc, char** argv ) {
    auto setActionPermission = set_action_permission_subcommand(setAction);
 
    // Transfer subcommand
-   string con = "eosio.token";
+   string con = chain::config::token_contract_name_str;
    string sender;
    string recipient;
    string amount;
@@ -3029,7 +3043,7 @@ int main( int argc, char** argv ) {
          ("requested", requested_perm_var)
          ("trx", trx_var);
 
-      send_actions({chain::action{accountPermissions, "eosio.msig", "propose", variant_to_bin( N(eosio.msig), N(propose), args ) }});
+      send_actions({chain::action{accountPermissions, "eosio.msig", "propose", variant_to_bin( chain::config::msig_account_name, N(propose), args ) }});
    });
 
    //multisig propose transaction
@@ -3069,7 +3083,7 @@ int main( int argc, char** argv ) {
          ("requested", requested_perm_var)
          ("trx", trx_var);
 
-      send_actions({chain::action{accountPermissions, "eosio.msig", "propose", variant_to_bin( N(eosio.msig), N(propose), args ) }});
+      send_actions({chain::action{accountPermissions, "eosio.msig", "propose", variant_to_bin( chain::config::msig_account_name, N(propose), args ) }});
    });
 
 
@@ -3289,7 +3303,7 @@ int main( int argc, char** argv ) {
       }
 
       auto accountPermissions = get_account_permissions(tx_permission, {proposer,config::active_name});
-      send_actions({chain::action{accountPermissions, "eosio.msig", action, variant_to_bin( N(eosio.msig), action, args ) }});
+      send_actions({chain::action{accountPermissions, "eosio.msig", action, variant_to_bin( chain::config::msig_account_name, action, args ) }});
    };
 
    // multisig approve
@@ -3319,7 +3333,7 @@ int main( int argc, char** argv ) {
          ("account", invalidator);
 
       auto accountPermissions = get_account_permissions(tx_permission, {invalidator,config::active_name});
-      send_actions({chain::action{accountPermissions, "eosio.msig", "invalidate", variant_to_bin( N(eosio.msig), "invalidate", args ) }});
+      send_actions({chain::action{accountPermissions, "eosio.msig", "invalidate", variant_to_bin( chain::config::msig_account_name, "invalidate", args ) }});
    });
 
    // multisig cancel
@@ -3346,7 +3360,7 @@ int main( int argc, char** argv ) {
          ("proposal_name", proposal_name)
          ("canceler", canceler);
 
-      send_actions({chain::action{accountPermissions, "eosio.msig", "cancel", variant_to_bin( N(eosio.msig), N(cancel), args ) }});
+      send_actions({chain::action{accountPermissions, "eosio.msig", "cancel", variant_to_bin( chain::config::msig_account_name, N(cancel), args ) }});
       }
    );
 
@@ -3375,7 +3389,7 @@ int main( int argc, char** argv ) {
          ("proposal_name", proposal_name)
          ("executer", executer);
 
-      send_actions({chain::action{accountPermissions, "eosio.msig", "exec", variant_to_bin( N(eosio.msig), N(exec), args ) }});
+      send_actions({chain::action{accountPermissions, "eosio.msig", "exec", variant_to_bin( chain::config::msig_account_name, N(exec), args ) }});
       }
    );
 
@@ -3436,7 +3450,7 @@ int main( int argc, char** argv ) {
          ("emergency", bSet);
 
       auto accountPermissions = vector<permission_level>{{bp_name, config::active_name}};
-      send_actions({chain::action{accountPermissions, "eosio", "setemergency", variant_to_bin( N(eosio), N(setemergency), args ) }});
+      send_actions({chain::action{accountPermissions, "eosio", "setemergency", variant_to_bin( chain::config::system_account_name, N(setemergency), args ) }});
    };
 
    auto setemergency = system->add_subcommand("setemergency", localized("Setting the status of the chain is an emergency"));

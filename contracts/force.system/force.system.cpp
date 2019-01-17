@@ -1,4 +1,4 @@
-#include <eosio.token/eosio.token.hpp>
+#include <force.token/force.token.hpp>
 #include "force.system.hpp"
 
 #include "native.cpp"
