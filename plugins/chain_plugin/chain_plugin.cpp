@@ -321,7 +321,7 @@ fc::time_point calculate_genesis_timestamp( string tstr ) {
 
 /**
  * load code and abi file to bytes
- * string contract: contract name (eg: System, eosio.token)
+ * string contract: contract name (eg: System, force.token)
  * bytes& code: out param
  * bytes& abi: out param
  */
