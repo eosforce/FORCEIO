@@ -1192,12 +1192,12 @@ struct controller_impl {
       for( const auto& act : actions ) {
          EOS_ASSERT(( !is_stop_chain_for_maintain
                       || ( act.account == config::system_account_name
-                           && (   act.name == N(setconfig)
-                               || act.name == N(onblock)
+                           && (   act.name == config::action::setconfig_name
+                               || act.name == config::action::onblock_name
                                )
                       // open in other mode, it is no harm
                       || ( act.account == config::token_account_name
-                           && (   act.name == N(fee)
+                           && (   act.name == config::action::fee_name
                            )))
                            ),
                     invalid_action_args_exception,
@@ -1996,7 +1996,7 @@ struct controller_impl {
    {
       action on_block_act;
       on_block_act.account = config::system_account_name;
-      on_block_act.name = N(onblock);
+      on_block_act.name = config::action::onblock_name;
       on_block_act.authorization = vector<permission_level>{{config::system_account_name, config::active_name}};
       on_block_act.data = fc::raw::pack(self.head_block_header());
 

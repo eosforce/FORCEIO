@@ -336,8 +336,9 @@ struct state_history_plugin_impl : std::enable_shared_from_this<state_history_pl
       if (p->action_traces.size() != 1)
          return false;
       auto& act = p->action_traces[0].act;
-      if (act.account != eosio::chain::config::system_account_name || act.name != N(onblock) ||
-          act.authorization.size() != 1)
+      if (   act.account != eosio::chain::config::system_account_name
+          || act.name != config::action::onblock_name
+          || act.authorization.size() != 1)
          return false;
       auto& auth = act.authorization[0];
       return auth.actor == eosio::chain::config::system_account_name &&

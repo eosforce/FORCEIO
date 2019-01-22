@@ -47,6 +47,12 @@ const static uint64_t minority_producers_permission_name = N(prod.minor); // gre
 const static uint64_t active_name = N(active);
 const static uint64_t owner_name  = N(owner);
 
+namespace action {
+   const static action_name onblock_name   = N(onblock);
+   const static action_name setconfig_name = N(setconfig);
+   const static action_name setfee_name    = N(setfee);
+   const static action_name fee_name       = N(fee);
+};
 
 const static int      block_interval_ms = ${BLOCK_INTERVAL_MS};
 const static int      block_interval_us = block_interval_ms*1000;
