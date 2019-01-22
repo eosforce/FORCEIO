@@ -296,7 +296,7 @@ namespace eosio { namespace chain {
          signal<void(const transaction_trace_ptr&)>  post_apply_action;
          */
 
-         const apply_handler* find_apply_handler( account_name contract, scope_name scope, action_name act )const;
+         const apply_handler* find_apply_handler( account_name contract, account_name scope, action_name act )const;
          wasm_interface& get_wasm_interface();
 
 

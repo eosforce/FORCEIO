@@ -109,9 +109,9 @@ struct chain_list_config {
    chain_list_config( chainbase::allocator<char> alloc )
       :actor_blacklist(alloc),contract_blacklist(alloc),resource_greylist(alloc){}
 
-   shared_vector<name>  actor_blacklist;
-   shared_vector<name>  contract_blacklist;
-   shared_vector<name>  resource_greylist;
+   shared_vector<account_name>  actor_blacklist;
+   shared_vector<account_name>  contract_blacklist;
+   shared_vector<account_name>  resource_greylist;
 
    void validate()const;
 

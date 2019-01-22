@@ -337,7 +337,7 @@ namespace bacc = boost::accumulators;
       EOS_ASSERT(!trx.actions[0].authorization.empty(), transaction_exception, "authorization empty");
       fee_payer = trx.actions[0].authorization[0].actor;
       max_fee_to_pay = require_fee; // it will work in next version
-      EOS_ASSERT(fee_payer != name{}, transaction_exception, "fee_payer nil");
+      EOS_ASSERT(fee_payer != account_name{}, transaction_exception, "fee_payer nil");
    }
 
    void transaction_context::add_limit_by_fee( const action &act ) {
@@ -386,7 +386,7 @@ namespace bacc = boost::accumulators;
       */
    }
    void transaction_context::process_fee( const action& act ){
-      if(fee_payer != name{}) {
+      if(fee_payer != account_name{}) {
          const auto fee = control.get_txfee_manager().get_required_fee(control, act);
          //dlog("process fee ${acc} ${act} to ${a} / ${all}",
          //      ("acc", act.account)("act", act.name)("a", fee)("all", fee_costed));
@@ -398,7 +398,7 @@ namespace bacc = boost::accumulators;
 
    void transaction_context::dispatch_fee_action( vector<action_trace>& action_traces ) {
       // if fee_payer is nil, it is mean now is not pay fee by action
-      if( fee_payer != name{} ) {
+      if( fee_payer != account_name{} ) {
          action_traces.emplace_back();
          dispatch_action(action_traces.back(),
                          action{

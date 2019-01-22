@@ -26,7 +26,7 @@ struct newaccount {
 };
 
 struct setconfig {
-   account_name  typ;
+   name  typ;
    int64_t       num = 0;
    account_name  key; // TBD By FanYang will use for cfg future
    asset         fee; // TBD By FanYang will use for cfg future
