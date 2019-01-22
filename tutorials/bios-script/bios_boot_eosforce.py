@@ -205,7 +205,7 @@ notify-retry-times = 3" > ''' + os.path.abspath(args.config_dir) + '/config.ini'
 
 def setFuncStartBlock(func_typ, num):
     run(args.cleos +
-        'push action eosio setconfig ' +
+        'push action force setconfig ' +
         ('\'{"typ":"%s","num":%s,"key":"","fee":"%s"}\' ' % (func_typ, num, intToCurrency(0))) +
         '-p force.config' )
 
@@ -218,9 +218,10 @@ def setFee(account, act, fee, cpu, net, ram):
 
 def stepSetFuncs():
     # we need set some func start block num
-    setFee('eosio', 'setconfig', 100, 100000, 1000000, 1000)
+    # setFee('eosio', 'setconfig', 100, 100000, 1000000, 1000)
 
     # some config to set
+    print('stepSetFuncs')
 
 def clearData():
     stepKillAll()
