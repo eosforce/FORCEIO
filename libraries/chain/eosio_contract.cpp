@@ -94,8 +94,7 @@ void apply_system_native_newaccount(apply_context& context) {
    EOS_ASSERT(!creator.privileged, action_validate_exception, "not support privileged accounts");
 
 
-   if(    is_func_has_open(context.control, config::func_typ::onfee_action)
-       && (create.creator != config::system_account_name)
+   if(    (create.creator != config::system_account_name)
        && (create.creator != config::producers_account_name)
        && (create.creator != config::chain_config_name) ) {
       EOS_ASSERT( name_str.find( "force." ) != 0, action_validate_exception,

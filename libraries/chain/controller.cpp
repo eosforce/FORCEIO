@@ -800,7 +800,6 @@ struct controller_impl {
 
       update_eosio_authority();
       set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
-      set_num_config_on_chain(db, config::func_typ::onfee_action, 1);
    }
 
 
@@ -1073,9 +1072,7 @@ struct controller_impl {
          check_action(dtrx.actions);
          trx_context.init_for_deferred_trx( gtrx.published );
 #if RESOURCE_MODEL == RESOURCE_MODEL_FEE
-         if( is_func_has_open(self, config::func_typ::onfee_action) ) {
-            trx_context.set_fee_data();
-         }
+         trx_context.set_fee_data();
 #endif
          if( trx_context.enforce_whiteblacklist && pending->_block_status == controller::block_status::incomplete ) {
             check_actor_list( trx_context.bill_to_accounts ); // Assumes bill_to_accounts is the set of actors authorizing the transaction
@@ -1339,7 +1336,7 @@ struct controller_impl {
                );
             }
 #if RESOURCE_MODEL == RESOURCE_MODEL_FEE
-            if( !trx->implicit && is_func_has_open(self, config::func_typ::onfee_action)) {
+            if( !trx->implicit ) {
                trx_context.set_fee_data();
             }
 #endif
