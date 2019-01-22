@@ -403,7 +403,7 @@ namespace bacc = boost::accumulators;
          dispatch_action(action_traces.back(),
                          action{
                                vector<permission_level>{ { fee_payer, config::active_name } },
-                               config::token_account_name, N(fee),
+                               config::token_account_name, config::action::fee_name,
                                fc::raw::pack(transfer_fee{
                                      fee_payer, fee_costed
                                }),
