@@ -4,6 +4,7 @@
  */
 #pragma once
 #include <eosio/chain/name.hpp>
+#include <eosio/chain/account_name.hpp>
 #include <eosio/chain/chain_id_type.hpp>
 
 #include <chainbase/chainbase.hpp>
@@ -117,7 +118,7 @@ namespace eosio { namespace chain {
 
    using action_name      = name;
    using scope_name       = name;
-   using account_name     = name;
+   using account_name     = account_name;
    using permission_name  = name;
    using table_name       = name;
 
