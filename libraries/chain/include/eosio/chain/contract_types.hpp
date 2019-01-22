@@ -36,7 +36,7 @@ struct setconfig {
    }
 
    static action_name get_name() {
-      return N(setconfig);
+      return config::action::setconfig_name;
    }
 };
 
@@ -70,7 +70,7 @@ struct setfee{
    }
 
    static action_name get_name() {
-      return N(setfee);
+      return config::action::setfee_name;
    }
 };
 #endif
@@ -183,7 +183,7 @@ struct transfer_fee {
    }
 
    static action_name get_name() {
-      return N(fee);
+      return config::action::fee_name;
    }
 };
 

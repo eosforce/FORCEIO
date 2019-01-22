@@ -94,8 +94,7 @@ void apply_system_native_newaccount(apply_context& context) {
    EOS_ASSERT(!creator.privileged, action_validate_exception, "not support privileged accounts");
 
 
-   if(    is_func_has_open(context.control, config::func_typ::onfee_action)
-       && (create.creator != config::system_account_name)
+   if(    (create.creator != config::system_account_name)
        && (create.creator != config::producers_account_name)
        && (create.creator != config::chain_config_name) ) {
       EOS_ASSERT( name_str.find( "force." ) != 0, action_validate_exception,
@@ -193,11 +192,11 @@ void apply_system_native_setfee(apply_context& context) {
    if(   ( act.cpu_limit == 0 )
       && ( act.net_limit == 0 )
       && ( act.ram_limit == 0 ) ) {
-      if(!context.has_authorization(N(force.test))) {
+      if(!context.has_authorization(config::chain_config_name)) {
          context.require_authorization(act.account);
       }
    } else {
-      context.require_authorization(N(force.test));
+      context.require_authorization(config::chain_config_name);
    }
 
    // by keep for main net so use get_amount

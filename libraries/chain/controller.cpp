@@ -800,7 +800,6 @@ struct controller_impl {
 
       update_eosio_authority();
       set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
-      set_num_config_on_chain(db, config::func_typ::onfee_action, 1);
    }
 
 
@@ -1073,9 +1072,7 @@ struct controller_impl {
          check_action(dtrx.actions);
          trx_context.init_for_deferred_trx( gtrx.published );
 #if RESOURCE_MODEL == RESOURCE_MODEL_FEE
-         if( is_func_has_open(self, config::func_typ::onfee_action) ) {
-            trx_context.set_fee_data();
-         }
+         trx_context.set_fee_data();
 #endif
          if( trx_context.enforce_whiteblacklist && pending->_block_status == controller::block_status::incomplete ) {
             check_actor_list( trx_context.bill_to_accounts ); // Assumes bill_to_accounts is the set of actors authorizing the transaction
@@ -1192,10 +1189,14 @@ struct controller_impl {
       for( const auto& act : actions ) {
          EOS_ASSERT(( !is_stop_chain_for_maintain
                       || ( act.account == config::system_account_name
-                           && (   act.name == N(setconfig)
-                               || act.name == N(onblock)
-                               || act.name == N(onfee))
-                               )),
+                           && (   act.name == config::action::setconfig_name
+                               || act.name == config::action::onblock_name
+                               )
+                      // open in other mode, it is no harm
+                      || ( act.account == config::token_account_name
+                           && (   act.name == config::action::fee_name
+                           )))
+                           ),
                     invalid_action_args_exception,
                     "chain is in maintain now !");
       }
@@ -1335,7 +1336,7 @@ struct controller_impl {
                );
             }
 #if RESOURCE_MODEL == RESOURCE_MODEL_FEE
-            if( !trx->implicit && is_func_has_open(self, config::func_typ::onfee_action)) {
+            if( !trx->implicit ) {
                trx_context.set_fee_data();
             }
 #endif
@@ -1992,7 +1993,7 @@ struct controller_impl {
    {
       action on_block_act;
       on_block_act.account = config::system_account_name;
-      on_block_act.name = N(onblock);
+      on_block_act.name = config::action::onblock_name;
       on_block_act.authorization = vector<permission_level>{{config::system_account_name, config::active_name}};
       on_block_act.data = fc::raw::pack(self.head_block_header());
 
