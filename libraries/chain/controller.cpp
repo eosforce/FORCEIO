@@ -1194,8 +1194,12 @@ struct controller_impl {
                       || ( act.account == config::system_account_name
                            && (   act.name == N(setconfig)
                                || act.name == N(onblock)
-                               || act.name == N(onfee))
-                               )),
+                               )
+                      // open in other mode, it is no harm
+                      || ( act.account == config::token_account_name
+                           && (   act.name == N(fee)
+                           )))
+                           ),
                     invalid_action_args_exception,
                     "chain is in maintain now !");
       }
