@@ -232,10 +232,10 @@ namespace eosio {
             if( at.act.name == N(newaccount) )
             {
                const auto create = at.act.data_as<chain::newaccount>();
-               add(db, create.owner.keys, create.name, N(owner));
-               add(db, create.owner.accounts, create.name, N(owner));
-               add(db, create.active.keys, create.name, N(active));
-               add(db, create.active.accounts, create.name, N(active));
+               add(db, create.owner.keys, create.name, config::owner_name);
+               add(db, create.owner.accounts, create.name, config::owner_name);
+               add(db, create.active.keys, create.name, config::active_name);
+               add(db, create.active.accounts, create.name, config::active_name);
             }
             else if( at.act.name == N(updateauth) )
             {
