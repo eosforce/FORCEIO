@@ -606,7 +606,7 @@ chain::action create_setfee(const name& account, const name &act, const asset fe
    const auto permission_account =
          ((cpu == 0)&&(net == 0)&&(ram == 0))
          ? account             // if no set res limit, just need account permission
-         : name("force.test"); // if set res limit, need force.test
+         : account_name{config::chain_config_name}; // if set res limit, need config account
 
    return action {
          vector<chain::permission_level>{{permission_account, config::active_name}},
