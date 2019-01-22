@@ -192,11 +192,11 @@ void apply_system_native_setfee(apply_context& context) {
    if(   ( act.cpu_limit == 0 )
       && ( act.net_limit == 0 )
       && ( act.ram_limit == 0 ) ) {
-      if(!context.has_authorization(N(force.config))) {
+      if(!context.has_authorization(config::chain_config_name)) {
          context.require_authorization(act.account);
       }
    } else {
-      context.require_authorization(N(force.config));
+      context.require_authorization(config::chain_config_name);
    }
 
    // by keep for main net so use get_amount
