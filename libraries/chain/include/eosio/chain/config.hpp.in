@@ -37,6 +37,7 @@ const static uint64_t eosio_all_scope        = N(${ROOT_ACCOUNT}.all);
 const static uint64_t eosio_any_name         = N(${ROOT_ACCOUNT}.any);
 const static uint64_t eosio_code_name        = N(${ROOT_ACCOUNT}.code);
 const static uint64_t native_account_name    = N(${ROOT_ACCOUNT}.native);
+const static uint64_t relay_account_name     = N(${ROOT_ACCOUNT}.relay);
 
 const static uint64_t system_token_maximum_supply = 10000000000 * 10000ll; //maximum supply 10 billion
 

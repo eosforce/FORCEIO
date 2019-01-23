@@ -550,6 +550,7 @@ void chain_plugin::plugin_initialize(const variables_map& options) {
       my->chain_config->system.load(config::system_account_name, config_path_root / "force.system");
       my->chain_config->token.load(config::token_account_name, config_path_root / "force.token");
       my->chain_config->msig.load(config::msig_account_name, config_path_root / "force.msig");
+      my->chain_config->relay.load(config::relay_account_name, config_path_root / "force.relay");
 
       // some config need change
       my->chain_config->genesis.initial_configuration.max_block_cpu_usage = 1000000;

@@ -773,10 +773,12 @@ struct controller_impl {
       create_native_account(config::token_account_name, system_auth, system_auth, false);
       create_native_account(config::msig_account_name, system_auth, system_auth, false);
       create_native_account(config::fee_account_name, system_auth, system_auth, false);
+      create_native_account(config::relay_account_name, system_auth, system_auth, false);
 
       initialize_contract(conf.system, true);
       initialize_contract(conf.token);
       initialize_contract(conf.msig, true);
+      initialize_contract(conf.relay);
 
       const auto& sym = symbol(CORE_SYMBOL).to_symbol_code();
       const auto tsum = get_token_sum();

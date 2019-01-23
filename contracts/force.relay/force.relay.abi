@@ -1,9 +1,61 @@
 {
    "version":"eosio::abi/1.0",
    "types":[
-
+       {
+          "new_type_name": "account_name",
+          "type": "name"
+       },{
+          "new_type_name": "permission_name",
+          "type": "name"
+       },{
+          "new_type_name": "action_name",
+          "type": "name"
+       },{
+          "new_type_name": "transaction_id_type",
+          "type": "checksum256"
+       },{
+          "new_type_name": "weight_type",
+          "type": "uint16"
+       }
    ],
-   "structs":[
+   "structs":[{
+                      "name": "permission_level",
+                      "base": "",
+                      "fields": [
+                        {"name":"actor",      "type":"account_name"},
+                        {"name":"permission", "type":"permission_name"}
+                      ]
+                    },{
+                      "name": "key_weight",
+                      "base": "",
+                      "fields": [
+                        {"name":"key",    "type":"public_key"},
+                        {"name":"weight", "type":"weight_type"}
+                      ]
+                    },{
+                      "name": "permission_level_weight",
+                      "base": "",
+                      "fields": [
+                        {"name":"permission", "type":"permission_level"},
+                        {"name":"weight",     "type":"weight_type"}
+                      ]
+                    },{
+                      "name": "wait_weight",
+                      "base": "",
+                      "fields": [
+                        {"name":"wait_sec", "type":"uint32"},
+                        {"name":"weight",   "type":"weight_type"}
+                      ]
+                    },{
+                      "name": "authority",
+                      "base": "",
+                      "fields": [
+                        {"name":"threshold", "type":"uint32"},
+                        {"name":"keys",      "type":"key_weight[]"},
+                        {"name":"accounts",  "type":"permission_level_weight[]"},
+                        {"name":"waits",     "type":"wait_weight[]"}
+                      ]
+                    },
       {
          "name":"action",
          "base":"",
@@ -30,10 +82,6 @@
          "name":"block_type",
          "base":"",
          "fields":[
-            {
-               "name":"timestamp",
-               "type":"block_timestamp"
-            },
             {
                "name":"producer",
                "type":"account_name"

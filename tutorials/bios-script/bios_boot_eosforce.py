@@ -176,6 +176,8 @@ def stepMakeGenesis():
     run('cp ' + args.contracts_dir + '/force.system/force.system.wasm ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/force.msig/force.msig.abi ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/force.msig/force.msig.wasm ' + os.path.abspath(args.config_dir))
+    run('cp ' + args.contracts_dir + '/force.relay/force.relay.abi ' + os.path.abspath(args.config_dir))
+    run('cp ' + args.contracts_dir + '/force.relay/force.relay.wasm ' + os.path.abspath(args.config_dir))
 
     #run('cp ./genesis-data/genesis.json ' + os.path.abspath(args.config_dir))
     #replaceFile(os.path.abspath(args.config_dir) + "/genesis.json", "#CORE_SYMBOL#", args.symbol)

@@ -39,7 +39,6 @@ public:
    // block
    struct block_type {
    public:
-      block_timestamp         timestamp;
       account_name            producer;
       checksum256             id;
       checksum256             previous;
@@ -51,7 +50,7 @@ public:
       vector<action>          actions;
 
       EOSLIB_SERIALIZE( block_type,
-            (timestamp)(producer)(id)(previous)(confirmed)
+            (producer)(id)(previous)(confirmed)
             (transaction_mroot)(action_mroot)(action_mroot)(mroot)
             (actions) )
    };
@@ -80,7 +79,7 @@ private:
 public:
    /// @abi action
    void commit( const name chain, const account_name transfer, const block_type& block ) {
-      print( "commit ", chain, " by ", name{transfer} );
+      print( "commit ", chain );
    }
 
    /// @abi action
@@ -88,7 +87,7 @@ public:
                  const account_name checker,
                  const checksum256 id,
                  const checksum256 mroot ) {
-      print( "commit ", chain, " by ", name{checker} );
+      print( "confirm ", chain );
    }
 
    /// @abi action
@@ -101,7 +100,7 @@ public:
    void newmap( const name chain,
                 const name type,
                 const account_name account ) {
-      print( "newchannel ", chain, " ", type, " ", name{account} );
+      print( "newchannel ", chain );
    }
 };
 

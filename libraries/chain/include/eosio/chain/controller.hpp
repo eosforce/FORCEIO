@@ -110,6 +110,7 @@ namespace eosio { namespace chain {
             system_contract system;
             system_contract token;
             system_contract msig;
+            system_contract relay;
 
             db_read_mode             read_mode              = db_read_mode::SPECULATIVE;
             validation_mode          block_validation_mode  = validation_mode::FULL;
