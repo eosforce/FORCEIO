@@ -387,7 +387,7 @@ void chain_plugin::plugin_initialize(const variables_map& options) {
             EOS_ASSERT( pos != std::string::npos, plugin_config_exception, "Invalid entry in action-blacklist: '${a}'", ("a", a));
             account_name code( a.substr( 0, pos ));
             action_name act( a.substr( pos + 2 ));
-            list.emplace( code.value, act.value );
+            list.emplace( code.get_value(), act.value );
          }
       }
 

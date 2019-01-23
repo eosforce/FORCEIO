@@ -141,7 +141,7 @@ public:
    };
 
    struct get_account_params {
-      name             account_name;
+      account_name             account_name;
       optional<symbol> expected_core_symbol;
    };
    get_account_results get_account( const get_account_params& params )const;
