@@ -47,8 +47,8 @@ namespace eosio {
    class market_maker : public contract {
       public:
          market_maker( account_name self ):contract(self){}
-         void addmarket(account_name market_maker,trade_type type,string coinbase_symbol,asset coinbase_amount,account_name coinbase_account,
-               string coinmarket_symbol,asset coinmarket_amount,account_name coinmarket_account,uint64_t ratio);//新增一个交易对    
+         void addmarket(account_name market_maker,trade_type type,string coinbase_symbol,asset coinbase_amount,account_name coinbase_account,uint64_t base_weight,
+               string coinmarket_symbol,asset coinmarket_amount,account_name coinmarket_account,uint64_t market_weight);//新增一个交易对    
 
          void addmortgage(int64_t trade_id,account_name market_maker,account_name recharge_account,asset recharge_amount,coin_type type);//增加抵押
          void claimmortgage(int64_t trade_id,account_name market_maker,asset claim_amount,coin_type type);//取出抵押     是否需要冻结一段时间有待考虑
@@ -75,7 +75,8 @@ namespace eosio {
             coin  coin_base;        //一般指共识程度较高的币种    做市上一般用这个币种来担保coin_market
             coin  coin_market;      //一般指做市上自己的币种   和coin_base属于相互担保的关系
             account_name   market_maker;// 做市商的账户     抵押中继链资源等都需要这个账户   暂时没有抵押资源这些操作
-            uint64_t  ratio;      //兑换比例
+            uint64_t  base_weight;      //coin_base 比重
+            uint64_t  market_weight;      //coin_base 比重
 
             uint64_t primary_key()const { return trade_id; }
 
@@ -85,7 +86,8 @@ namespace eosio {
                coin_base = b.coin_base;
                coin_market = b.coin_market;
                market_maker = b.market_maker;
-               ratio = b.ratio;
+               base_weight = b.base_weight;
+               market_weight = b.market_weight;
             }
          };
          

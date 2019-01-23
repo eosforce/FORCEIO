@@ -7,8 +7,8 @@
 
 namespace eosio {
    //新增一个交易对   
-   void market_maker::addmarket(account_name market_maker,trade_type type,string coinbase_symbol,asset coinbase_amount,account_name coinbase_account,
-         string coinmarket_symbol,asset coinmarket_amount,account_name coinmarket_account,uint64_t ratio) {
+   void market_maker::addmarket(account_name market_maker,trade_type type,string coinbase_symbol,asset coinbase_amount,account_name coinbase_account,uint64_t base_weight,
+               string coinmarket_symbol,asset coinmarket_amount,account_name coinmarket_account,uint64_t market_weight) {
          //需要三个账户的权限
          require_auth(market_maker);
          require_auth(coinbase_account);
@@ -27,7 +27,8 @@ namespace eosio {
      //    eosio_assert(coinbase_sym != coinmarket_sym,"a market must on two coin");
          //校验type
          eosio_assert( type < trade_type::trade_type_count, "invalid trade type");
-         eosio_assert( ratio > 0,"invalid ratio");
+         eosio_assert( market_weight > 0,"invalid market_weight");
+          eosio_assert( base_weight > 0,"invalid base_weight");
           tradepairs tradepair( _self,market_maker);
           //先生成要插入表的对象
          trade_pair trade;
@@ -41,7 +42,8 @@ namespace eosio {
          trade.coin_market.coin_maker = coinmarket_account;
 
          trade.type = type;
-         trade.ratio = ratio;
+         trade.base_weight = base_weight;
+         trade.market_weight = market_weight;
          //打币操作
          INLINE_ACTION_SENDER(eosio::token, transfer)( 
                config::token_account_name, 
@@ -158,7 +160,9 @@ namespace eosio {
       asset market_recv_amount = type != coin_type::coin_base ? existing->coin_base.amount : existing->coin_market.amount;
 
       //先做一个简单的乘法
-      auto recv_amount = convert_amount.amount * existing->ratio;
+      
+      auto recv_amount = type != coin_type::coin_base? (convert_amount.amount * existing->base_weight / existing->market_weight) : (convert_amount.amount * existing->market_weight / existing->base_weight);
+
       eosio_assert(recv_amount < market_recv_amount.amount,
       "the market do not has enouth dest coin");
 
@@ -175,12 +179,12 @@ namespace eosio {
      
       tradepair.modify( *existing, 0, [&]( auto& s ) {
             if (type == coin_type::coin_base) {
-                  s.coin_base.amount = s.coin_base.amount + convert_amount;
-                  s.coin_market.amount = s.coin_market.amount - recv_asset;
+                  s.coin_base.amount = s.coin_base.amount - convert_amount;
+                  s.coin_market.amount = s.coin_market.amount + recv_asset;
             }
             else {
-                  s.coin_market.amount = s.coin_market.amount + convert_amount;
-                  s.coin_base.amount = s.coin_base.amount - recv_asset;
+                  s.coin_market.amount = s.coin_market.amount - convert_amount;
+                  s.coin_base.amount = s.coin_base.amount + recv_asset;
             }
       });
       //两个转账操作

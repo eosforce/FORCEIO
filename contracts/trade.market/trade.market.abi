@@ -32,6 +32,10 @@
           "type": "account_name"
         },
         {
+          "name": "base_weight",
+          "type": "uint64"
+        },
+        {
           "name": "coinmarket_symbol",
           "type": "string"
         },
@@ -44,7 +48,7 @@
           "type": "account_name"
         },
         {
-          "name": "ratio",
+          "name": "market_weight",
           "type": "uint64"
         }
       ]
@@ -170,7 +174,11 @@
           "type": "account_name"
         },
         {
-          "name": "ratio",
+          "name": "base_weight",
+          "type": "uint64"
+        },
+        {
+          "name": "market_weight",
           "type": "uint64"
         }
       ]
