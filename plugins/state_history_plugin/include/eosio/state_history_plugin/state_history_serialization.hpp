@@ -105,7 +105,7 @@ datastream<ST>& operator<<(datastream<ST>& ds, const history_serial_wrapper<std:
 template <typename ST>
 datastream<ST>& operator<<(datastream<ST>& ds, const history_serial_wrapper<eosio::chain::account_object>& obj) {
    fc::raw::pack(ds, fc::unsigned_int(0));
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.name.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.name.get_value()));
    fc::raw::pack(ds, as_type<uint8_t>(obj.obj.vm_type));
    fc::raw::pack(ds, as_type<uint8_t>(obj.obj.vm_version));
    fc::raw::pack(ds, as_type<bool>(obj.obj.privileged));
@@ -120,10 +120,10 @@ datastream<ST>& operator<<(datastream<ST>& ds, const history_serial_wrapper<eosi
 template <typename ST>
 datastream<ST>& operator<<(datastream<ST>& ds, const history_serial_wrapper<eosio::chain::table_id_object>& obj) {
    fc::raw::pack(ds, fc::unsigned_int(0));
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.code.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.code.get_value()));
    fc::raw::pack(ds, as_type<uint64_t>(obj.obj.scope.value));
    fc::raw::pack(ds, as_type<uint64_t>(obj.obj.table.value));
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.payer.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.payer.get_value()));
    return ds;
 }
 
@@ -132,11 +132,11 @@ datastream<ST>&
 operator<<(datastream<ST>&                                                                                     ds,
            const history_context_wrapper<const eosio::chain::table_id_object, eosio::chain::key_value_object>& obj) {
    fc::raw::pack(ds, fc::unsigned_int(0));
-   fc::raw::pack(ds, as_type<uint64_t>(obj.context.code.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.context.code.get_value()));
    fc::raw::pack(ds, as_type<uint64_t>(obj.context.scope.value));
    fc::raw::pack(ds, as_type<uint64_t>(obj.context.table.value));
    fc::raw::pack(ds, as_type<uint64_t>(obj.obj.primary_key));
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.payer.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.payer.get_value()));
    fc::raw::pack(ds, as_type<eosio::chain::shared_string>(obj.obj.value));
    return ds;
 }
@@ -175,11 +175,11 @@ template <typename ST, typename T>
 datastream<ST>& serialize_secondary_index(datastream<ST>& ds, const eosio::chain::table_id_object& context,
                                           const T& obj) {
    fc::raw::pack(ds, fc::unsigned_int(0));
-   fc::raw::pack(ds, as_type<uint64_t>(context.code.value));
+   fc::raw::pack(ds, as_type<uint64_t>(context.code.get_value()));
    fc::raw::pack(ds, as_type<uint64_t>(context.scope.value));
    fc::raw::pack(ds, as_type<uint64_t>(context.table.value));
    fc::raw::pack(ds, as_type<uint64_t>(obj.primary_key));
-   fc::raw::pack(ds, as_type<uint64_t>(obj.payer.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.payer.get_value()));
    serialize_secondary_index_data(ds, obj.secondary_key);
    return ds;
 }
@@ -221,7 +221,7 @@ datastream<ST>& operator<<(
 
 template <typename ST>
 datastream<ST>& operator<<(datastream<ST>& ds, const history_serial_wrapper<eosio::chain::producer_key>& obj) {
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.producer_name.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.producer_name.get_value()));
    fc::raw::pack(ds, as_type<eosio::chain::public_key_type>(obj.obj.block_signing_key));
    return ds;
 }
@@ -274,9 +274,9 @@ template <typename ST>
 datastream<ST>& operator<<(datastream<ST>&                                                           ds,
                            const history_serial_wrapper<eosio::chain::generated_transaction_object>& obj) {
    fc::raw::pack(ds, fc::unsigned_int(0));
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.sender.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.sender.get_value()));
    fc::raw::pack(ds, as_type<__uint128_t>(obj.obj.sender_id));
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.payer.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.payer.get_value()));
    fc::raw::pack(ds, as_type<eosio::chain::transaction_id_type>(obj.obj.trx_id));
    fc::raw::pack(ds, as_type<eosio::chain::shared_string>(obj.obj.packed_trx));
    return ds;
@@ -291,7 +291,7 @@ datastream<ST>& operator<<(datastream<ST>& ds, const history_serial_wrapper<eosi
 
 template <typename ST>
 datastream<ST>& operator<<(datastream<ST>& ds, const history_serial_wrapper<eosio::chain::permission_level>& obj) {
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.actor.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.actor.get_value()));
    fc::raw::pack(ds, as_type<uint64_t>(obj.obj.permission.value));
    return ds;
 }
@@ -323,7 +323,7 @@ datastream<ST>& operator<<(datastream<ST>& ds, const history_serial_wrapper<eosi
 template <typename ST>
 datastream<ST>& operator<<(datastream<ST>& ds, const history_serial_wrapper<eosio::chain::permission_object>& obj) {
    fc::raw::pack(ds, fc::unsigned_int(0));
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.owner.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.owner.get_value()));
    fc::raw::pack(ds, as_type<uint64_t>(obj.obj.name.value));
    if (obj.obj.parent._id) {
       auto&       index  = obj.db.get_index<eosio::chain::permission_index>();
@@ -348,8 +348,8 @@ template <typename ST>
 datastream<ST>& operator<<(datastream<ST>&                                                     ds,
                            const history_serial_wrapper<eosio::chain::permission_link_object>& obj) {
    fc::raw::pack(ds, fc::unsigned_int(0));
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.account.value));
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.code.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.account.get_value()));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.code.get_value()));
    fc::raw::pack(ds, as_type<uint64_t>(obj.obj.message_type.value));
    fc::raw::pack(ds, as_type<uint64_t>(obj.obj.required_permission.value));
    return ds;
@@ -361,7 +361,7 @@ datastream<ST>& operator<<(datastream<ST>&                                      
    EOS_ASSERT(!obj.obj.pending, eosio::chain::plugin_exception,
               "accepted_block sent while resource_limits_object in pending state");
    fc::raw::pack(ds, fc::unsigned_int(0));
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.owner.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.owner.get_value()));
    fc::raw::pack(ds, as_type<int64_t>(obj.obj.net_weight));
    fc::raw::pack(ds, as_type<int64_t>(obj.obj.cpu_weight));
    fc::raw::pack(ds, as_type<int64_t>(obj.obj.ram_bytes));
@@ -382,7 +382,7 @@ template <typename ST>
 datastream<ST>& operator<<(datastream<ST>&                                                                     ds,
                            const history_serial_wrapper<eosio::chain::resource_limits::resource_usage_object>& obj) {
    fc::raw::pack(ds, fc::unsigned_int(0));
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.owner.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.owner.get_value()));
    fc::raw::pack(ds, make_history_serial_wrapper(
                          obj.db, as_type<eosio::chain::resource_limits::usage_accumulator>(obj.obj.net_usage)));
    fc::raw::pack(ds, make_history_serial_wrapper(
@@ -450,7 +450,7 @@ operator<<(datastream<ST>&                                                      
 
 template <typename ST>
 datastream<ST>& operator<<(datastream<ST>& ds, const history_serial_wrapper<eosio::chain::action>& obj) {
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.account.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.account.get_value()));
    fc::raw::pack(ds, as_type<uint64_t>(obj.obj.name.value));
    history_serialize_container(ds, obj.db, as_type<std::vector<eosio::chain::permission_level>>(obj.obj.authorization));
    fc::raw::pack(ds, as_type<eosio::bytes>(obj.obj.data));
@@ -460,11 +460,11 @@ datastream<ST>& operator<<(datastream<ST>& ds, const history_serial_wrapper<eosi
 template <typename ST>
 datastream<ST>& operator<<(datastream<ST>& ds, const history_serial_wrapper<eosio::chain::action_receipt>& obj) {
    fc::raw::pack(ds, fc::unsigned_int(0));
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.receiver.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.receiver.get_value()));
    fc::raw::pack(ds, as_type<eosio::chain::digest_type>(obj.obj.act_digest));
    fc::raw::pack(ds, as_type<uint64_t>(obj.obj.global_sequence));
    fc::raw::pack(ds, as_type<uint64_t>(obj.obj.recv_sequence));
-   history_serialize_container(ds, obj.db, as_type<flat_map<eosio::name, uint64_t>>(obj.obj.auth_sequence));
+   history_serialize_container(ds, obj.db, as_type<flat_map<eosio::account_name, uint64_t>>(obj.obj.auth_sequence));
    fc::raw::pack(ds, as_type<fc::unsigned_int>(obj.obj.code_sequence));
    fc::raw::pack(ds, as_type<fc::unsigned_int>(obj.obj.abi_sequence));
    return ds;
@@ -472,7 +472,7 @@ datastream<ST>& operator<<(datastream<ST>& ds, const history_serial_wrapper<eosi
 
 template <typename ST>
 datastream<ST>& operator<<(datastream<ST>& ds, const history_serial_wrapper<eosio::chain::account_delta>& obj) {
-   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.account.value));
+   fc::raw::pack(ds, as_type<uint64_t>(obj.obj.account.get_value()));
    fc::raw::pack(ds, as_type<int64_t>(obj.obj.delta));
    return ds;
 }

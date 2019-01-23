@@ -210,7 +210,7 @@ namespace eosio {
             chainbase::database& db = const_cast<chainbase::database&>( chain.db() ); // Override read-only access to state DB (highly unrecommended practice!)
 
             const auto& idx = db.get_index<account_history_index, by_account_action_seq>();
-            auto itr = idx.lower_bound( boost::make_tuple( name(n.value+1), 0 ) );
+            auto itr = idx.lower_bound( boost::make_tuple( name(n.get_value()+1), 0 ) );
 
             uint64_t asn = 0;
             if( itr != idx.begin() ) --itr;
@@ -408,7 +408,7 @@ namespace eosio {
         auto n = params.account_name;
         idump((pos));
         if( pos == -1 ) {
-            auto itr = idx.lower_bound( boost::make_tuple( name(n.value+1), 0 ) );
+            auto itr = idx.lower_bound( boost::make_tuple( name(n.get_value()+1), 0 ) );
             if( itr == idx.begin() ) {
                if( itr->account == n )
                   pos = itr->account_sequence_num+1;

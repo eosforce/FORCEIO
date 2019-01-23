@@ -1244,8 +1244,8 @@ read_only::get_table_by_scope_result read_only::get_table_by_scope( const read_o
    const auto& d = db.db();
 
    const auto& idx = d.get_index<chain::table_id_multi_index, chain::by_code_scope_table>();
-   auto lower_bound_lookup_tuple = std::make_tuple( p.code.value, std::numeric_limits<uint64_t>::lowest(), p.table.value );
-   auto upper_bound_lookup_tuple = std::make_tuple( p.code.value, std::numeric_limits<uint64_t>::max(),
+   auto lower_bound_lookup_tuple = std::make_tuple( p.code.get_value(), std::numeric_limits<uint64_t>::lowest(), p.table.value );
+   auto upper_bound_lookup_tuple = std::make_tuple( p.code.get_value(), std::numeric_limits<uint64_t>::max(),
                                                     (p.table.empty() ? std::numeric_limits<uint64_t>::max() : p.table.value) );
 
    if( p.lower_bound.size() ) {

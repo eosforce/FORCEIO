@@ -112,9 +112,9 @@ struct txn_test_gen_plugin_impl {
       trxs.reserve(2);
 
       try {
-         name newaccountA("txn.test.a");
-         name newaccountB("txn.test.b");
-         name newaccountC("txn.test.t");
+         account_name newaccountA("txn.test.a");
+			account_name newaccountB("txn.test.b");
+			account_name newaccountC("txn.test.t");
          name creator(init_name);
 
          abi_def currency_abi_def = fc::json::from_string(eosio_token_abi).as<abi_def>();
