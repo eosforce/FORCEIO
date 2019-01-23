@@ -3187,14 +3187,14 @@ int main( int argc, char** argv ) {
                                           ("scope", "eosio.msig")
                                           ("table", "invals")
                                           ("table_key", "")
-                                          ("lower_bound", a.first.value)
-                                          ("upper_bound", a.first.value + 1)
+                                          ("lower_bound", a.first.get_value())
+                                          ("upper_bound", a.first.get_value() + 1)
                                           // Less than ideal upper_bound usage preserved so cleos can still work with old buggy nodeos versions
                                           // Change to name(proposal_name).value when cleos no longer needs to support nodeos versions older than 1.5.0
                                           ("limit", 1)
                                     );
                const auto& rows4 = result4.get_object()["rows"].get_array();
-               if( rows4.empty() || rows4[0].get_object()["account"].as<eosio::name>() != a.first ) {
+               if( rows4.empty() || rows4[0].get_object()["account"].as<eosio::account_name>() != a.first ) {
                   continue;
                }
 
