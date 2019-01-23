@@ -107,12 +107,9 @@ namespace eosio { namespace chain {
             genesis_state            genesis;
             wasm_interface::vm_type  wasm_runtime = chain::config::default_wasm_runtime;
 
-            bytes                                    system_code;
-            bytes                                    system_abi;
-            bytes                                    token_code;
-            bytes                                    token_abi;
-            bytes                                    msig_code;
-            bytes                                    msig_abi;
+            system_contract system;
+            system_contract token;
+            system_contract msig;
 
             db_read_mode             read_mode              = db_read_mode::SPECULATIVE;
             validation_mode          block_validation_mode  = validation_mode::FULL;
@@ -365,9 +362,9 @@ FC_REFLECT( eosio::chain::controller::config,
             (contracts_console)
             (genesis)
             (wasm_runtime)
-            (token_code)(token_abi)
-            (system_code)(system_abi)
-            (msig_code)(msig_abi)
+            (token)
+            (system)
+            (msig)
             (resource_greylist)
             (trusted_producers)
           )

@@ -569,12 +569,16 @@ void chain_plugin::plugin_initialize(const variables_map& options) {
          wlog("The --import-reversible-blocks option should be used by itself.");
       }
 
-      const auto genesis_file = app().config_dir() / "genesis.json";
+      const auto config_path_root = app().config_dir();
+
+      const auto genesis_file = config_path_root / "genesis.json";
       my->chain_config->genesis = fc::json::from_file(genesis_file).as<genesis_state>();
 
-      load_contract_code_abi("force.system", my->chain_config->system_code, my->chain_config->system_abi);
-      load_contract_code_abi("force.token", my->chain_config->token_code, my->chain_config->token_abi);
-      load_contract_code_abi("force.msig", my->chain_config->msig_code, my->chain_config->msig_abi);
+      my->chain_config->system.load("force.system", config_path_root);
+      // system name is root
+      my->chain_config->system.name = config::system_account_name;
+      my->chain_config->token.load("force.token", config_path_root);
+      my->chain_config->msig.load("force.msig", config_path_root);
 
       // some config need change
       my->chain_config->genesis.initial_configuration.max_block_cpu_usage = 1000000;
