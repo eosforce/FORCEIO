@@ -106,15 +106,19 @@
           "type": "uint64"
         },
         {
-          "name": "account_base",
+          "name": "market_maker",
           "type": "account_name"
         },
         {
-          "name": "account_market",
+          "name": "account_covert",
           "type": "account_name"
         },
         {
-          "name": "amount",
+          "name": "account_recv",
+          "type": "account_name"
+        },
+        {
+          "name": "convert_amount",
           "type": "asset"
         },
         {

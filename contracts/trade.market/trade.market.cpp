@@ -104,6 +104,7 @@ namespace eosio {
    }
 
    void market_maker::claimmortgage(int64_t trade_id,account_name market_maker,asset claim_amount,coin_type type) {
+      require_auth(_self);
       tradepairs tradepair( _self,market_maker);
       auto existing = tradepair.find( trade_id );
       eosio_assert( existing != tradepair.end(), "the market is not exist" );
@@ -141,7 +142,56 @@ namespace eosio {
 
    }
 
-   void market_maker::exchange(int64_t trade_id,account_name market_maker,account_name account_base,account_name account_market,asset amount,coin_type type) {
+   void market_maker::exchange(int64_t trade_id,account_name market_maker,account_name account_covert,account_name account_recv,asset convert_amount,coin_type type) {
+      require_auth(_self);
+      require_auth(account_covert);
+
+      tradepairs tradepair( _self,market_maker);
+      auto existing = tradepair.find( trade_id );
+      eosio_assert( existing != tradepair.end(), "the market is not exist" );
+
+      auto coinconvert_sym = convert_amount.symbol;
+      eosio_assert( coinconvert_sym.is_valid(), "invalid symbol name" );
+      eosio_assert( convert_amount.is_valid(), "invalid supply");
+      eosio_assert( convert_amount.amount > 0, "max-supply must be positive");
+
+      asset market_recv_amount = type != coin_type::coin_base ? existing->coin_base.amount : existing->coin_market.amount;
+
+      //先做一个简单的乘法
+      auto recv_amount = convert_amount.amount * existing->ratio;
+      eosio_assert(recv_amount < market_recv_amount.amount,
+      "the market do not has enouth dest coin");
+
+      auto recv_asset = asset(recv_amount,market_recv_amount.symbol);
+
+      INLINE_ACTION_SENDER(eosio::token, transfer)( 
+            config::token_account_name, 
+            {account_covert, N(active)},
+            { account_covert, 
+            _self, 
+            convert_amount, 
+            std::string("claim market transfer coin market") } );
+
+     
+      tradepair.modify( *existing, 0, [&]( auto& s ) {
+            if (type == coin_type::coin_base) {
+                  s.coin_base.amount = s.coin_base.amount + convert_amount;
+                  s.coin_market.amount = s.coin_market.amount - recv_asset;
+            }
+            else {
+                  s.coin_market.amount = s.coin_market.amount + convert_amount;
+                  s.coin_base.amount = s.coin_base.amount - recv_asset;
+            }
+      });
+      //两个转账操作
+ 
+      INLINE_ACTION_SENDER(eosio::token, transfer)( 
+            config::token_account_name, 
+            {_self, N(active)},
+            { _self, 
+            account_recv, 
+            recv_asset, 
+            std::string("claim market transfer coin market") } );
 
    }
 
