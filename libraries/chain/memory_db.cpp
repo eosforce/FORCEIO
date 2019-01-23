@@ -10,11 +10,11 @@ using boost::container::flat_set;
 
 namespace eosio { namespace chain {
 
-const table_id_object *memory_db::find_table( name code, name scope, name table ) {
+const table_id_object *memory_db::find_table( account_name code, name scope, name table ) {
    return db.find<table_id_object, by_code_scope_table>(boost::make_tuple(code, scope, table));
 }
 
-const table_id_object& memory_db::find_or_create_table( name code, name scope, name table, const account_name& payer ) {
+const table_id_object& memory_db::find_or_create_table( account_name code, name scope, name table, const account_name& payer ) {
    const auto *existing_tid = db.find<table_id_object, by_code_scope_table>(boost::make_tuple(code, scope, table));
    if( existing_tid != nullptr ) {
       return *existing_tid;

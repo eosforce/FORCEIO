@@ -87,8 +87,8 @@ private:
 
    int db_get_i64( const key_value_object* obj , char* buffer, size_t buffer_size ) const;
 
-   const table_id_object *find_table( name code, name scope, name table );
-   const table_id_object& find_or_create_table( name code, name scope, name table, const account_name& payer );
+   const table_id_object *find_table( account_name code, name scope, name table );
+   const table_id_object& find_or_create_table( account_name code, name scope, name table, const account_name& payer );
    void remove_table( const table_id_object& tid );
 
 public:
@@ -180,7 +180,7 @@ void eosio_contract_assert( bool condition, const char* msg );
 template<uint64_t TableName, typename T>
 class native_multi_index{
 private:
-   name current_receiver() {
+   account_name current_receiver() {
       return _ctx.receiver;
    }
 
@@ -245,7 +245,7 @@ public:
 
    template<typename Lambda>
    void modify( const int32_t &itr, const T& obj, uint64_t payer, Lambda&& updater ) {
-      eosio_contract_assert( _code == current_receiver().value,
+      eosio_contract_assert( _code == current_receiver().get_value(),
             "cannot modify objects in table of another contract" );
       // Quick fix for mutating db using multi_index that shouldn't allow mutation. Real fix can come in RC2.
 
