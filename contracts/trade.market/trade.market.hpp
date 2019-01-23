@@ -50,12 +50,12 @@ namespace eosio {
          void addmarket(account_name market_maker,trade_type type,string coinbase_symbol,asset coinbase_amount,account_name coinbase_account,
                string coinmarket_symbol,asset coinmarket_amount,account_name coinmarket_account,uint64_t ratio);//新增一个交易对    
 
-         void addmortgage(int64_t trade_id,account_name account,asset amount,coin_type type);//增加抵押
-         void claimmortgage(int64_t trade_id,account_name account,asset amount,coin_type type);//取出抵押     是否需要冻结一段时间有待考虑
+         void addmortgage(int64_t trade_id,account_name market_maker,account_name recharge_account,asset recharge_amount,coin_type type);//增加抵押
+         void claimmortgage(int64_t trade_id,account_name market_maker,asset claim_amount,coin_type type);//取出抵押     是否需要冻结一段时间有待考虑
 
          //需要有一个查询功能  根据做市商查询这个做市商所有的交易对
          //散户使用的功能就是做交易
-         void exchange(int64_t trade_id,account_name account_base,account_name account_market,asset amount,coin_type type);
+         void exchange(int64_t trade_id,account_name market_maker,account_name account_base,account_name account_market,asset amount,coin_type type);
       private:
 
          struct coin {

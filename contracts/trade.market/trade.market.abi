@@ -58,11 +58,15 @@
           "type": "uint64"
         },
         {
-          "name": "account",
+          "name": "market_maker",
           "type": "account_name"
         },
         {
-          "name": "amount",
+          "name": "recharge_account",
+          "type": "account_name"
+        },
+        {
+          "name": "recharge_amount",
           "type": "asset"
         },
         {
@@ -80,11 +84,11 @@
           "type": "uint64"
         },
         {
-          "name": "account",
+          "name": "market_maker",
           "type": "account_name"
         },
         {
-          "name": "amount",
+          "name": "claim_amount",
           "type": "asset"
         },
         {
