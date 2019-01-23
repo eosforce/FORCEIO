@@ -2557,4 +2557,8 @@ void controller::set_gmr_config(gmr_type gt,uint64_t value) {
    my->set_gmr_config(gt,value);
 }
 
+void system_contract::load( const std::string& n ) {
+   
+}
+
 } } /// eosio::chain

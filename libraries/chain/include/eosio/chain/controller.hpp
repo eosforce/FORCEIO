@@ -70,6 +70,15 @@ namespace eosio { namespace chain {
       gmr_type_count
    };
 
+   struct system_contract {
+   public:
+      void load( const std::string& n );
+
+      account_name name;
+      bytes code;
+      bytes abi;
+   };
+
    class controller {
       public:
          friend class memory_db;
@@ -335,6 +344,11 @@ namespace eosio { namespace chain {
    };
 
 } }  /// eosio::chain
+
+FC_REFLECT( eosio::chain::system_contract,
+            (name)
+            (code)
+            (abi))
 
 FC_REFLECT( eosio::chain::controller::config,
             (actor_whitelist)
