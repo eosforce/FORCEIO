@@ -2555,14 +2555,14 @@ void controller::set_gmr_config(gmr_type gt,uint64_t value) {
    my->set_gmr_config(gt,value);
 }
 
-void system_contract::load( const std::string& n, const boost::filesystem::path& config_path ) {
+void system_contract::load( const account_name& n, const boost::filesystem::path& config_path ) {
    ilog("load contract for system : ${contract}", ("contract", n));
 
-   const auto path_root = (config_path / n).string();
+   const auto path_root = config_path.string();
    const auto wasm_path = path_root + ".wasm";
    const auto abi_path = path_root + ".abi";
 
-   name = account_name{ n };
+   name = n;
 
    std::string wasm;
    fc::read_file_contents(wasm_path, wasm);
@@ -2571,7 +2571,7 @@ void system_contract::load( const std::string& n, const boost::filesystem::path&
    if( wasm.compare(0, 4, binary_wasm_header) == 0 ) {
       code = bytes(wasm.begin(), wasm.end());
    } else {
-      EOS_THROW(wasm_serialization_error, "not support this ${n} wasm", ("n", n));
+      EOS_THROW(wasm_serialization_error, "not support this ${path} wasm", ("path", wasm_path));
    }
 
    EOS_ASSERT(fc::exists(abi_path), abi_not_found_exception, "no abi file ${path} found", ("path", abi_path));

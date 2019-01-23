@@ -574,11 +574,9 @@ void chain_plugin::plugin_initialize(const variables_map& options) {
       const auto genesis_file = config_path_root / "genesis.json";
       my->chain_config->genesis = fc::json::from_file(genesis_file).as<genesis_state>();
 
-      my->chain_config->system.load("force.system", config_path_root);
-      // system name is root
-      my->chain_config->system.name = config::system_account_name;
-      my->chain_config->token.load("force.token", config_path_root);
-      my->chain_config->msig.load("force.msig", config_path_root);
+      my->chain_config->system.load(config::system_account_name, config_path_root / "force.system");
+      my->chain_config->token.load(config::token_account_name, config_path_root / "force.token");
+      my->chain_config->msig.load(config::msig_account_name, config_path_root / "force.msig");
 
       // some config need change
       my->chain_config->genesis.initial_configuration.max_block_cpu_usage = 1000000;

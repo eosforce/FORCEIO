@@ -72,7 +72,7 @@ namespace eosio { namespace chain {
 
    struct system_contract {
    public:
-      void load( const std::string& n, const boost::filesystem::path& config_path );
+      void load( const account_name& n, const boost::filesystem::path& config_path );
 
       account_name name;
       bytes code;
