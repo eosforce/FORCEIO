@@ -319,33 +319,6 @@ fc::time_point calculate_genesis_timestamp( string tstr ) {
    return genesis_timestamp;
 }
 
-/**
- * load code and abi file to bytes
- * string contract: contract name (eg: System, force.token)
- * bytes& code: out param
- * bytes& abi: out param
- */
-void load_contract_code_abi( const string& contract, bytes& code, bytes& abi ) {
-   ilog("load contract : ${contract}", ( "contract", contract ));
-
-   const auto wast_path = app().config_dir() / contract += ".wasm";
-   std::string wast;
-   fc::read_file_contents(wast_path, wast);
-   EOS_ASSERT(!wast.empty(), wasm_file_not_found, "no wast file found ");
-   const string binary_wasm_header("\x00\x61\x73\x6d", 4);
-   if( wast.compare(0, 4, binary_wasm_header) == 0 ) {
-      code = bytes(wast.begin(), wast.end());
-   } else {
-      FC_ASSERT("not support this wast");
-   }
-
-   const auto abi_path = app().config_dir() / contract += ".abi";
-   EOS_ASSERT(fc::exists(abi_path), abi_not_found_exception, "no abi file found ");
-   const auto abijson = fc::json::from_file(abi_path).as<abi_def>();
-   abi = fc::raw::pack(abijson);
-}
-
-
 void clear_directory_contents( const fc::path& p ) {
    using boost::filesystem::directory_iterator;
 
