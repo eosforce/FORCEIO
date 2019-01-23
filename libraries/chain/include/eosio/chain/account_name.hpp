@@ -134,4 +134,4 @@ namespace fc {
 } // fc
 
 
-FC_REFLECT(eosio::chain::account_name,)
+FC_REFLECT_EMPTY( eosio::chain::account_name )
