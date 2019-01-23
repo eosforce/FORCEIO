@@ -145,7 +145,7 @@ namespace eosio {
    }
 
    void market_maker::exchange(int64_t trade_id,account_name market_maker,account_name account_covert,account_name account_recv,asset convert_amount,coin_type type) {
-      require_auth(_self);
+      //require_auth(_self);
       require_auth(account_covert);
 
       tradepairs tradepair( _self,market_maker);
