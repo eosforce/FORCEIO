@@ -8,137 +8,194 @@
   ],
   "structs": [
     {
-      "name": "transfer",
+      "name": "addmarket",
       "base": "",
       "fields": [
         {
-          "name": "from",
+          "name": "market_maker",
           "type": "account_name"
         },
         {
-          "name": "to",
-          "type": "account_name"
+          "name": "type",
+          "type": "uint64"
         },
         {
-          "name": "quantity",
-          "type": "asset"
-        },
-        {
-          "name": "memo",
+          "name": "coinbase_symbol",
           "type": "string"
-        }
-      ]
-    },
-    {
-      "name": "create",
-      "base": "",
-      "fields": [
-        {
-          "name": "issuer",
-          "type": "account_name"
         },
         {
-          "name": "maximum_supply",
-          "type": "asset"
-        }
-      ]
-    },
-    {
-      "name": "issue",
-      "base": "",
-      "fields": [
-        {
-          "name": "to",
-          "type": "account_name"
-        },
-        {
-          "name": "quantity",
+          "name": "coinbase_amount",
           "type": "asset"
         },
         {
-          "name": "memo",
+          "name": "coinbase_account",
+          "type": "account_name"
+        },
+        {
+          "name": "coinmarket_symbol",
           "type": "string"
+        },
+        {
+          "name": "coinmarket_amount",
+          "type": "asset"
+        },
+        {
+          "name": "coinmarket_account",
+          "type": "account_name"
+        },
+        {
+          "name": "ratio",
+          "type": "uint64"
         }
       ]
     },
     {
-      "name": "account",
+      "name": "addmortgage",
       "base": "",
       "fields": [
         {
-          "name": "balance",
+          "name": "trade_id",
+          "type": "uint64"
+        },
+        {
+          "name": "account",
+          "type": "account_name"
+        },
+        {
+          "name": "amount",
           "type": "asset"
+        },
+        {
+          "name": "type",
+          "type": "uint64"
         }
       ]
     },
     {
-      "name": "currency_stats",
+      "name": "claimmortgage",
       "base": "",
       "fields": [
         {
-          "name": "supply",
+          "name": "trade_id",
+          "type": "uint64"
+        },
+        {
+          "name": "account",
+          "type": "account_name"
+        },
+        {
+          "name": "amount",
           "type": "asset"
         },
         {
-          "name": "max_supply",
+          "name": "type",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
+      "name": "exchange",
+      "base": "",
+      "fields": [
+        {
+          "name": "trade_id",
+          "type": "uint64"
+        },
+        {
+          "name": "account_base",
+          "type": "account_name"
+        },
+        {
+          "name": "account_market",
+          "type": "account_name"
+        },
+        {
+          "name": "amount",
           "type": "asset"
         },
         {
-          "name": "issuer",
+          "name": "type",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
+      "name": "coin",
+      "base": "",
+      "fields": [
+        {
+          "name": "symbol",
+          "type": "string"
+        },
+        {
+          "name": "amount",
+          "type": "asset"
+        },
+        {
+          "name": "coin_maker",
           "type": "account_name"
         }
       ]
     },
     {
-      "name": "fee",
+      "name": "trade_pair",
       "base": "",
       "fields": [
         {
-          "name": "payer",
+          "name": "trade_id",
+          "type": "uint64"
+        },
+        {
+          "name": "type",
+          "type": "uint64"
+        },
+        {
+          "name": "coin_base",
+          "type": "coin"
+        },
+        {
+          "name": "coin_market",
+          "type": "coin"
+        },
+        {
+          "name": "market_maker",
           "type": "account_name"
         },
         {
-          "name": "quantity",
-          "type": "asset"
+          "name": "ratio",
+          "type": "uint64"
         }
       ]
     }
   ],
   "actions": [
     {
-      "name": "transfer",
-      "type": "transfer",
+      "name": "addmarket",
+      "type": "addmarket",
       "ricardian_contract": ""
     },
     {
-      "name": "issue",
-      "type": "issue",
+      "name": "addmortgage",
+      "type": "addmortgage",
       "ricardian_contract": ""
     },
     {
-      "name": "create",
-      "type": "create",
+      "name": "claimmortgage",
+      "type": "claimmortgage",
       "ricardian_contract": ""
     },
     {
-      "name": "fee",
-      "type": "fee",
+      "name": "exchange",
+      "type": "exchange",
       "ricardian_contract": ""
     }
   ],
   "tables": [
     {
-      "name": "accounts",
-      "type": "account",
+      "name": "tradepairs",
+      "type": "trade_pair",
       "index_type": "i64",
-      "key_names": [ "currency" ],
-      "key_types": [ "uint64" ]
-    },
-    {
-      "name": "stat",
-      "type": "currency_stats",
-      "index_type": "i64",
-      "key_names": [ "currency" ],
+      "key_names": [ "trade_id" ],
       "key_types": [ "uint64" ]
     }
   ],
