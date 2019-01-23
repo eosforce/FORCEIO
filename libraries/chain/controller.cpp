@@ -22,6 +22,7 @@
 #include <fc/io/json.hpp>
 #include <fc/scoped_exit.hpp>
 #include <fc/variant_object.hpp>
+#include <fc/io/fstream.hpp>
 
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/post.hpp>
@@ -718,36 +719,33 @@ struct controller_impl {
    }
 
    // initialize_contract init sys contract
-   void initialize_contract( const uint64_t& contract,
-                             const bytes& code,
-                             const bytes& abi,
-                             const bool privileged = false ) {
-      const auto& code_id = fc::sha256::hash(code.data(), (uint32_t) code.size());
-      const int64_t code_size = code.size();
-      const int64_t abi_size = abi.size();
+   void initialize_contract( const system_contract& sc, const bool privileged = false ) {
+      const auto code_id = fc::sha256::hash(sc.code.data(), static_cast<uint32_t>(sc.code.size()));
+      const auto code_size = sc.code.size();
+      const auto abi_size = sc.abi.size();
 
-      const auto& account = db.get<account_object, by_name>(contract);
+      const auto& account = db.get<account_object, by_name>(sc.name);
       db.modify(account, [&]( auto& a ) {
          a.last_code_update = conf.genesis.initial_timestamp;
          a.privileged = privileged;
 
          a.code_version = code_id;
          a.code.resize(code_size);
-         memcpy(a.code.data(), code.data(), code_size);
+         memcpy(a.code.data(), sc.code.data(), code_size);
 
          a.abi.resize(abi_size);
          if( abi_size > 0 ) {
-            memcpy(a.abi.data(), abi.data(), abi_size);
+            memcpy(a.abi.data(), sc.abi.data(), abi_size);
          }
       });
 
-      const auto& account_sequence = db.get<account_sequence_object, by_name>(contract);
+      const auto& account_sequence = db.get<account_sequence_object, by_name>(sc.name);
       db.modify(account_sequence, [&]( auto& aso ) {
          aso.code_sequence += 1;
          aso.abi_sequence += 1;
       });
 
-      const auto& usage = db.get<resource_limits::resource_usage_object, resource_limits::by_owner>(contract);
+      const auto& usage = db.get<resource_limits::resource_usage_object, resource_limits::by_owner>(sc.name);
       db.modify(usage, [&]( auto& u ) {
          u.ram_usage += (code_size + abi_size) * config::setcode_ram_bytes_multiplier;
       });
@@ -776,9 +774,9 @@ struct controller_impl {
       create_native_account(config::msig_account_name, system_auth, system_auth, false);
       create_native_account(config::fee_account_name, system_auth, system_auth, false);
 
-      initialize_contract(config::system_account_name, conf.system_code, conf.system_abi, true);
-      initialize_contract(config::token_account_name, conf.token_code, conf.token_abi);
-      initialize_contract(config::msig_account_name, conf.msig_code, conf.msig_abi, true);
+      initialize_contract(conf.system, true);
+      initialize_contract(conf.token);
+      initialize_contract(conf.msig, true);
 
       const auto& sym = symbol(CORE_SYMBOL).to_symbol_code();
       const auto tsum = get_token_sum();
@@ -2555,6 +2553,30 @@ const force_property_object& controller::get_force_property()const {
 
 void controller::set_gmr_config(gmr_type gt,uint64_t value) {
    my->set_gmr_config(gt,value);
+}
+
+void system_contract::load( const account_name& n, const boost::filesystem::path& config_path ) {
+   ilog("load contract for system : ${contract}", ("contract", n));
+
+   const auto path_root = config_path.string();
+   const auto wasm_path = path_root + ".wasm";
+   const auto abi_path = path_root + ".abi";
+
+   name = n;
+
+   std::string wasm;
+   fc::read_file_contents(wasm_path, wasm);
+   EOS_ASSERT(!wasm.empty(), wasm_file_not_found, "no wasm file ${path} found", ("path", wasm_path));
+   const string binary_wasm_header("\x00\x61\x73\x6d", 4);
+   if( wasm.compare(0, 4, binary_wasm_header) == 0 ) {
+      code = bytes(wasm.begin(), wasm.end());
+   } else {
+      EOS_THROW(wasm_serialization_error, "not support this ${path} wasm", ("path", wasm_path));
+   }
+
+   EOS_ASSERT(fc::exists(abi_path), abi_not_found_exception, "no abi file ${path} found", ("path", abi_path));
+   const auto abi_json = fc::json::from_file(abi_path).as<abi_def>();
+   abi = fc::raw::pack(abi_json);
 }
 
 } } /// eosio::chain
