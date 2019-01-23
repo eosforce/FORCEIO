@@ -140,6 +140,14 @@ struct native_to_wasm<name> {
    using type = I64;
 };
 template<>
+struct native_to_wasm<const account_name &> {
+   using type = I64;
+};
+template<>
+struct native_to_wasm<account_name> {
+   using type = I64;
+};
+template<>
 struct native_to_wasm<const fc::time_point_sec &> {
    using type = I32;
 };
