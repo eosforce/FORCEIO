@@ -170,6 +170,10 @@ inline auto convert_native_to_wasm(const running_instance_context& ctx, const na
    return native_to_wasm_t<const name &>(val.value);
 }
 
+inline auto convert_native_to_wasm(const running_instance_context& ctx, const account_name &val) {
+   return native_to_wasm_t<const account_name &>(val.get_value());
+}
+
 inline auto convert_native_to_wasm(const running_instance_context& ctx, const fc::time_point_sec& val) {
    return native_to_wasm_t<const fc::time_point_sec &>(val.sec_since_epoch());
 }
