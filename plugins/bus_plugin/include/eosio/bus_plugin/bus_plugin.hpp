@@ -32,7 +32,7 @@ public:
 
 private:
    bus_plugin_impl_ptr my;
-   bool b_need_start = false;
+  // bool b_need_start = false;
 };
 
 }

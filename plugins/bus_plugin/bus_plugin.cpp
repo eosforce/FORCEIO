@@ -154,15 +154,16 @@ std::string grpc_stub::PutBlockRequest(int blocknum,vector<BlockTransRequest> &b
     ClientContext context;
     Status status = block_stub_->rpc_sendaction(&context, request, &reply);
     if (status.ok()) {
+       ilog("bus_plug send blockRequest success block_num:${num}",("num",blocknum));
       return reply.message();
     } else {
-      std::cout << status.error_code() << ": " << status.error_message()
-                << std::endl;
+      elog("PutBlockRequest error error_code:${error_code},error_message:${message}",("error_code",(int)(status.error_code()))("message",status.error_message()));
       return "RPC failed";
     }
    }catch(std::exception& e)
    {
      elog( "Exception on grpc_stub PutRequest: ${e}", ("e", e.what()));
+     return "exception " + string(e.what());
    }
 }
 
@@ -285,9 +286,6 @@ void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& 
       bool HasTransaction = false;
       for( const auto& receipt : bs->block->transactions ) {
          string trx_id_str;
-
-
-
          if( receipt.trx.contains<packed_transaction>() ) {
             const auto& pt = receipt.trx.get<packed_transaction>();
             // get id via get_raw_transaction() as packed_transaction.id() mutates internal transaction state
