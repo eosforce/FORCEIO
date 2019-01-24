@@ -201,6 +201,11 @@ inline auto convert_native_to_literal(const wabt_apply_instance_vars&, const nam
    tv.set_i64(val.value);
    return tv;
 }
+inline auto convert_native_to_literal(const wabt_apply_instance_vars&, const account_name &val) {
+	TypedValue tv(Type::I64);
+	tv.set_i64(val.get_value());
+	return tv;
+}
 
 inline auto convert_native_to_literal(const wabt_apply_instance_vars& vars, char* ptr) {
    const char* base = vars.memory->data.data();
@@ -263,6 +268,10 @@ struct wabt_to_rvalue_type<const name&> {
 template<>
 struct wabt_to_rvalue_type<name> {
    static constexpr auto value = Type::I64;
+};
+template<>
+struct wabt_to_rvalue_type<const account_name&> {
+	static constexpr auto value = Type::I64;
 };
 template<>
 struct wabt_to_rvalue_type<account_name> {
@@ -574,7 +583,23 @@ struct intrinsic_invoker_impl<Ret, std::tuple<const name&, Inputs...>> {
       return next_step::template fn<translate_one<Then>>();
    }
 };
+template<typename Ret, typename... Inputs>
+struct intrinsic_invoker_impl<Ret, std::tuple<const account_name&, Inputs...>> {
+	using next_step = intrinsic_invoker_impl<Ret, std::tuple<Inputs...>>;
+	using then_type = Ret (*)(wabt_apply_instance_vars&, const account_name&, Inputs..., const TypedValues&, int);
 
+	template<then_type Then>
+	static Ret translate_one(wabt_apply_instance_vars& vars, Inputs... rest, const TypedValues& args, int offset) {
+		uint64_t wasm_value = args.at((uint32_t)offset).get_i64();
+		auto value = account_name(wasm_value);
+		return Then(vars, value, rest..., args, (uint32_t)offset - 1);
+	}
+
+	template<then_type Then>
+	static const auto fn() {
+		return next_step::template fn<translate_one<Then>>();
+	}
+};
 /**
  * Specialization for transcribing a reference to a fc::time_point_sec which can be passed as a native value
  *    This type transcribes into a native type which is loaded by value into a
