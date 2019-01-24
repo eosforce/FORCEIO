@@ -12,10 +12,9 @@ namespace eosio {
 
 
          struct account_name {
-         private:
+
             uint64_t value = 0;
 
-         public:
             bool empty() const { return 0 == value; }
 
             bool good() const { return !empty(); }
@@ -134,4 +133,4 @@ namespace fc {
 } // fc
 
 
-FC_REFLECT_EMPTY( eosio::chain::account_name )
+FC_REFLECT( eosio::chain::account_name, (value) )
