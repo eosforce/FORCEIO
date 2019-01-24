@@ -97,6 +97,10 @@ template<>
 struct is_reference_from_value<name> {
    static constexpr bool value = true;
 };
+template<>
+struct is_reference_from_value<account_name> {
+   static constexpr bool value = true;
+};
 
 template<>
 struct is_reference_from_value<fc::time_point_sec> {
@@ -148,6 +152,12 @@ template<>
 inline name convert_literal_to_native<name>(const TypedValue& v) {
    int64_t val = v.get_i64();
    return name(val);
+}
+
+template<>
+inline account_name convert_literal_to_native<account_name>(const TypedValue& v) {
+   int64_t val = v.get_i64();
+   return account_name(val);
 }
 
 inline auto convert_native_to_literal(const wabt_apply_instance_vars&, const uint32_t &val) {
@@ -254,7 +264,10 @@ template<>
 struct wabt_to_rvalue_type<name> {
    static constexpr auto value = Type::I64;
 };
-
+template<>
+struct wabt_to_rvalue_type<account_name> {
+   static constexpr auto value = Type::I64;
+};
 template<>
 struct wabt_to_rvalue_type<char*> {
    static constexpr auto value = Type::I32;
