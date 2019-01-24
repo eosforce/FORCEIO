@@ -7,8 +7,8 @@
 
 namespace eosio {
    //新增一个交易对   
-   void market_maker::addmarket(account_name market_maker,trade_type type,string coinbase_symbol,asset coinbase_amount,account_name coinbase_account,uint64_t base_weight,
-               string coinmarket_symbol,asset coinmarket_amount,account_name coinmarket_account,uint64_t market_weight) {
+   void market::addmarket(account_name market_maker,trade_type type,asset coinbase_amount,account_name coinbase_account,uint64_t base_weight,
+               asset coinmarket_amount,account_name coinmarket_account,uint64_t market_weight) {
          //需要三个账户的权限
          require_auth(market_maker);
          require_auth(coinbase_account);
@@ -33,13 +33,11 @@ namespace eosio {
           //先生成要插入表的对象
          trade_pair trade;
          trade.trade_id = tradepair.available_primary_key();
-         trade.market_maker = market_maker;
-         trade.coin_base.symbol = coinbase_symbol;
-         trade.coin_base.amount = coinbase_amount;
-         trade.coin_base.coin_maker = coinbase_account;
-         trade.coin_market.symbol = coinmarket_symbol;
-         trade.coin_market.amount = coinmarket_amount;
-         trade.coin_market.coin_maker = coinmarket_account;
+         trade.trade_maker = market_maker;
+         trade.base.amount = coinbase_amount;
+         trade.base.coin_maker = coinbase_account;
+         trade.market.amount = coinmarket_amount;
+         trade.market.coin_maker = coinmarket_account;
 
          trade.type = type;
          trade.base_weight = base_weight;
@@ -70,7 +68,7 @@ namespace eosio {
 
    }
 
-   void market_maker::addmortgage(int64_t trade_id,account_name market_maker,account_name recharge_account,asset recharge_amount,coin_type type) {
+   void market::addmortgage(int64_t trade_id,account_name market_maker,account_name recharge_account,asset recharge_amount,coin_type type) {
       require_auth(recharge_account);
       tradepairs tradepair( _self,market_maker);
       auto existing = tradepair.find( trade_id );
@@ -82,10 +80,10 @@ namespace eosio {
       eosio_assert( recharge_amount.amount > 0, "max-supply must be positive");
 
       if (type == coin_type::coin_base) {
-            eosio_assert(coinrecharge_sym == existing->coin_base.amount.symbol,"recharge coin is not the same coin on the market");
+            eosio_assert(coinrecharge_sym == existing->base.amount.symbol,"recharge coin is not the same coin on the market");
       }
       else {
-            eosio_assert(coinrecharge_sym == existing->coin_base.amount.symbol,"recharge coin is not the same coin on the market");
+            eosio_assert(coinrecharge_sym == existing->base.amount.symbol,"recharge coin is not the same coin on the market");
       }     
 
       INLINE_ACTION_SENDER(eosio::token, transfer)( 
@@ -98,15 +96,15 @@ namespace eosio {
 
       tradepair.modify( *existing, 0, [&]( auto& s ) {
             if (type == coin_type::coin_base) {
-                  s.coin_base.amount = s.coin_base.amount + recharge_amount;
+                  s.base.amount = s.base.amount + recharge_amount;
             }
             else {
-                  s.coin_market.amount = s.coin_market.amount + recharge_amount;
+                  s.market.amount = s.market.amount + recharge_amount;
             }
       });
    }
 
-   void market_maker::claimmortgage(int64_t trade_id,account_name market_maker,asset claim_amount,coin_type type) {
+   void market::claimmortgage(int64_t trade_id,account_name market_maker,asset claim_amount,coin_type type) {
       require_auth(market_maker);
       tradepairs tradepair( _self,market_maker);
       auto existing = tradepair.find( trade_id );
@@ -118,20 +116,20 @@ namespace eosio {
       eosio_assert( claim_amount.amount > 0, "max-supply must be positive");
 
       if (type == coin_type::coin_base) {
-            eosio_assert(coinclaim_sym == existing->coin_base.amount.symbol,"recharge coin is not the same coin on the market");
-            eosio_assert(claim_amount <= existing->coin_base.amount,"overdrawn balance");
+            eosio_assert(coinclaim_sym == existing->base.amount.symbol,"recharge coin is not the same coin on the market");
+            eosio_assert(claim_amount <= existing->base.amount,"overdrawn balance");
       }
       else {
-            eosio_assert(coinclaim_sym == existing->coin_market.amount.symbol,"recharge coin is not the same coin on the market");
-             eosio_assert(claim_amount <= existing->coin_market.amount,"overdrawn balance");
+            eosio_assert(coinclaim_sym == existing->market.amount.symbol,"recharge coin is not the same coin on the market");
+             eosio_assert(claim_amount <= existing->market.amount,"overdrawn balance");
       }
 
       tradepair.modify( *existing, 0, [&]( auto& s ) {
             if (type == coin_type::coin_base) {
-                  s.coin_base.amount = s.coin_base.amount - claim_amount;
+                  s.base.amount = s.base.amount - claim_amount;
             }
             else {
-                  s.coin_market.amount = s.coin_market.amount - claim_amount;
+                  s.market.amount = s.market.amount - claim_amount;
             }
       });
       //如何获取self 的active权限
@@ -139,13 +137,13 @@ namespace eosio {
                config::token_account_name, 
                {_self, N(active)},
                { _self, 
-                 type == coin_type::coin_base?existing->coin_base.coin_maker:existing->coin_market.coin_maker, 
+                 type == coin_type::coin_base?existing->base.coin_maker:existing->market.coin_maker, 
                 claim_amount, 
                  std::string("claim market transfer coin market") } );      
 
    }
 
-   void market_maker::frozenmarket(int64_t trade_id,account_name market_maker) {
+   void market::frozenmarket(int64_t trade_id,account_name market_maker) {
       require_auth(market_maker);
 
       tradepairs tradepair( _self,market_maker);
@@ -158,7 +156,7 @@ namespace eosio {
       });
    }
 
-   void market_maker::trawmarket(int64_t trade_id,account_name market_maker) {
+   void market::trawmarket(int64_t trade_id,account_name market_maker) {
       require_auth(market_maker);
 
       tradepairs tradepair( _self,market_maker);
@@ -171,7 +169,7 @@ namespace eosio {
       });
    }
 
-   void market_maker::exchange(int64_t trade_id,account_name market_maker,account_name account_covert,account_name account_recv,asset convert_amount,coin_type type) {
+   void market::exchange(int64_t trade_id,account_name market_maker,account_name account_covert,account_name account_recv,asset convert_amount,coin_type type) {
       //require_auth(_self);
       require_auth(account_covert);
 
@@ -185,7 +183,7 @@ namespace eosio {
       eosio_assert( convert_amount.is_valid(), "invalid supply");
       eosio_assert( convert_amount.amount > 0, "max-supply must be positive");
 
-      asset market_recv_amount = type != coin_type::coin_base ? existing->coin_base.amount : existing->coin_market.amount;
+      asset market_recv_amount = type != coin_type::coin_base ? existing->base.amount : existing->market.amount;
       //这个是固定比例的计算方式    bancor的只有计算方式和这个不一样  但是bancor是否可以自由提币充币有待考量
       auto recv_amount = type != coin_type::coin_base? (convert_amount.amount * existing->base_weight / existing->market_weight) : (convert_amount.amount * existing->market_weight / existing->base_weight);
 
@@ -205,12 +203,12 @@ namespace eosio {
      
       tradepair.modify( *existing, 0, [&]( auto& s ) {
             if (type == coin_type::coin_base) {
-                  s.coin_base.amount = s.coin_base.amount + convert_amount;
-                  s.coin_market.amount = s.coin_market.amount - recv_asset;
+                  s.base.amount = s.base.amount + convert_amount;
+                  s.market.amount = s.market.amount - recv_asset;
             }
             else {
-                  s.coin_market.amount = s.coin_market.amount + convert_amount;
-                  s.coin_base.amount = s.coin_base.amount - recv_asset;
+                  s.market.amount = s.market.amount + convert_amount;
+                  s.base.amount = s.base.amount - recv_asset;
             }
       });
       //两个转账操作
