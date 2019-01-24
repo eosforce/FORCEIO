@@ -502,7 +502,7 @@ BOOST_AUTO_TEST_CASE( actor_blacklist_inline_deferred ) { try {
       if( !t || t->action_traces.size() == 0 ) return;
 
       const auto& act = t->action_traces[0].act;
-      if( act.account == N(eosio) && act.name == N(onblock) ) return;
+      if( act.account == config::system_account_name && act.name == config::action::onblock_name ) return;
 
       if( t->receipt && t->receipt->status == transaction_receipt::executed ) {
          wlog( "${trx_type} ${id} executed (first action is ${code}::${action})",

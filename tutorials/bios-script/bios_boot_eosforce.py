@@ -149,7 +149,6 @@ def stepCreateNodeDirs():
 
 def stepLog():
     run('tail -n 1000 ' + args.nodes_dir + 'biosbpa.log')
-    listProducers()
     run(args.cleos + ' get info')
     print('you can use \"alias cleost=\'%s\'\" to call cleos to testnet' % args.cleos)
 
@@ -171,21 +170,31 @@ def stepMakeGenesis():
     run('mkdir -p ' + os.path.abspath(args.config_dir))
     run('mkdir -p ' + os.path.abspath(args.config_dir) + '/keys/' )
 
-    run('cp ' + args.contracts_dir + '/eosio.token/eosio.token.abi ' + os.path.abspath(args.config_dir))
-    run('cp ' + args.contracts_dir + '/eosio.token/eosio.token.wasm ' + os.path.abspath(args.config_dir))
+    run('cp ' + args.contracts_dir + '/force.token/force.token.abi ' + os.path.abspath(args.config_dir))
+    run('cp ' + args.contracts_dir + '/force.token/force.token.wasm ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/force.system/force.system.abi ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/force.system/force.system.wasm ' + os.path.abspath(args.config_dir))
-    run('cp ' + args.contracts_dir + '/eosio.bios/eosio.bios.abi ' + os.path.abspath(args.config_dir))
-    run('cp ' + args.contracts_dir + '/eosio.bios/eosio.bios.wasm ' + os.path.abspath(args.config_dir))
-    run('cp ' + args.contracts_dir + '/eosio.msig/eosio.msig.abi ' + os.path.abspath(args.config_dir))
-    run('cp ' + args.contracts_dir + '/eosio.msig/eosio.msig.wasm ' + os.path.abspath(args.config_dir))
+    run('cp ' + args.contracts_dir + '/force.msig/force.msig.abi ' + os.path.abspath(args.config_dir))
+    run('cp ' + args.contracts_dir + '/force.msig/force.msig.wasm ' + os.path.abspath(args.config_dir))
 
     #run('cp ./genesis-data/genesis.json ' + os.path.abspath(args.config_dir))
     #replaceFile(os.path.abspath(args.config_dir) + "/genesis.json", "#CORE_SYMBOL#", args.symbol)
     #replaceFile(os.path.abspath(args.config_dir) + "/genesis.json", "#PUB#", args.pr)
     #run('cp ./genesis-data/key.json ' + os.path.abspath(args.config_dir) + '/keys/')
     #run('cp ./genesis-data/sigkey.json ' + os.path.abspath(args.config_dir) + '/keys/')
-    run('echo "" > ' + os.path.abspath(args.config_dir) + '/config.ini')
+    run('''echo "## Notify Plugin
+plugin = eosio::notify_plugin
+# notify-filter-on = account:action
+notify-filter-on = b1:
+notify-filter-on = b1:transfer
+notify-filter-on = eosio:delegatebw
+# http endpoint for each action seen on the chain.
+notify-receive-url = http://127.0.0.1:8080/notify
+# Age limit in seconds for blocks to send notifications. No age limit if set to negative.
+# Used to prevent old actions from trigger HTTP request while on replay (seconds)
+notify-age-limit = -1
+# Retry times of sending http notification if failed.
+notify-retry-times = 3" > ''' + os.path.abspath(args.config_dir) + '/config.ini')
         
     run(args.root + 'build/programs/genesis/genesis')
     run('mv ./genesis.json ' + os.path.abspath(args.config_dir))
@@ -196,7 +205,7 @@ def stepMakeGenesis():
 
 def setFuncStartBlock(func_typ, num):
     run(args.cleos +
-        'push action eosio setconfig ' +
+        'push action force setconfig ' +
         ('\'{"typ":"%s","num":%s,"key":"","fee":"%s"}\' ' % (func_typ, num, intToCurrency(0))) +
         '-p force.config' )
 
@@ -209,9 +218,10 @@ def setFee(account, act, fee, cpu, net, ram):
 
 def stepSetFuncs():
     # we need set some func start block num
-    setFee('eosio', 'setconfig', 100, 100000, 1000000, 1000)
+    # setFee('eosio', 'setconfig', 100, 100000, 1000000, 1000)
 
     # some config to set
+    print('stepSetFuncs')
 
 def clearData():
     stepKillAll()

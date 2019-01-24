@@ -16,7 +16,9 @@ namespace chainbase {
 namespace eosio { namespace chain {
 
    class authorization_manager;
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
    class txfee_manager;
+#endif
 
    namespace resource_limits {
       class resource_limits_manager;
@@ -68,6 +70,15 @@ namespace eosio { namespace chain {
       gmr_type_count
    };
 
+   struct system_contract {
+   public:
+      void load( const account_name& n, const boost::filesystem::path& config_path );
+
+      account_name name;
+      bytes code;
+      bytes abi;
+   };
+
    class controller {
       public:
          friend class memory_db;
@@ -96,12 +107,9 @@ namespace eosio { namespace chain {
             genesis_state            genesis;
             wasm_interface::vm_type  wasm_runtime = chain::config::default_wasm_runtime;
 
-            bytes                                    system_code;
-            bytes                                    system_abi;
-            bytes                                    token_code;
-            bytes                                    token_abi;
-            bytes                                    msig_code;
-            bytes                                    msig_abi;
+            system_contract system;
+            system_contract token;
+            system_contract msig;
 
             db_read_mode             read_mode              = db_read_mode::SPECULATIVE;
             validation_mode          block_validation_mode  = validation_mode::FULL;
@@ -185,8 +193,9 @@ namespace eosio { namespace chain {
          resource_limits_manager&              get_mutable_resource_limits_manager();
          const authorization_manager&          get_authorization_manager()const;
          authorization_manager&                get_mutable_authorization_manager();
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE         
          const txfee_manager&                  get_txfee_manager()const;
-
+#endif
          const flat_set<account_name>&   get_actor_whitelist() const;
          const flat_set<account_name>&   get_actor_blacklist() const;
          const flat_set<account_name>&   get_contract_whitelist() const;
@@ -333,6 +342,11 @@ namespace eosio { namespace chain {
 
 } }  /// eosio::chain
 
+FC_REFLECT( eosio::chain::system_contract,
+            (name)
+            (code)
+            (abi))
+
 FC_REFLECT( eosio::chain::controller::config,
             (actor_whitelist)
             (actor_blacklist)
@@ -348,9 +362,9 @@ FC_REFLECT( eosio::chain::controller::config,
             (contracts_console)
             (genesis)
             (wasm_runtime)
-            (token_code)(token_abi)
-            (system_code)(system_abi)
-            (msig_code)(msig_abi)
+            (token)
+            (system)
+            (msig)
             (resource_greylist)
             (trusted_producers)
           )

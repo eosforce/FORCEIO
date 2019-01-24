@@ -319,33 +319,6 @@ fc::time_point calculate_genesis_timestamp( string tstr ) {
    return genesis_timestamp;
 }
 
-/**
- * load code and abi file to bytes
- * string contract: contract name (eg: System, eosio.token)
- * bytes& code: out param
- * bytes& abi: out param
- */
-void load_contract_code_abi( const string& contract, bytes& code, bytes& abi ) {
-   ilog("load contract : ${contract}", ( "contract", contract ));
-
-   const auto wast_path = app().config_dir() / contract += ".wasm";
-   std::string wast;
-   fc::read_file_contents(wast_path, wast);
-   EOS_ASSERT(!wast.empty(), wasm_file_not_found, "no wast file found ");
-   const string binary_wasm_header("\x00\x61\x73\x6d", 4);
-   if( wast.compare(0, 4, binary_wasm_header) == 0 ) {
-      code = bytes(wast.begin(), wast.end());
-   } else {
-      FC_ASSERT("not support this wast");
-   }
-
-   const auto abi_path = app().config_dir() / contract += ".abi";
-   EOS_ASSERT(fc::exists(abi_path), abi_not_found_exception, "no abi file found ");
-   const auto abijson = fc::json::from_file(abi_path).as<abi_def>();
-   abi = fc::raw::pack(abijson);
-}
-
-
 void clear_directory_contents( const fc::path& p ) {
    using boost::filesystem::directory_iterator;
 
@@ -569,12 +542,14 @@ void chain_plugin::plugin_initialize(const variables_map& options) {
          wlog("The --import-reversible-blocks option should be used by itself.");
       }
 
-      const auto genesis_file = app().config_dir() / "genesis.json";
+      const auto config_path_root = app().config_dir();
+
+      const auto genesis_file = config_path_root / "genesis.json";
       my->chain_config->genesis = fc::json::from_file(genesis_file).as<genesis_state>();
 
-      load_contract_code_abi("force.system", my->chain_config->system_code, my->chain_config->system_abi);
-      load_contract_code_abi("eosio.token", my->chain_config->token_code, my->chain_config->token_abi);
-      load_contract_code_abi("eosio.msig", my->chain_config->msig_code, my->chain_config->msig_abi);
+      my->chain_config->system.load(config::system_account_name, config_path_root / "force.system");
+      my->chain_config->token.load(config::token_account_name, config_path_root / "force.token");
+      my->chain_config->msig.load(config::msig_account_name, config_path_root / "force.msig");
 
       // some config need change
       my->chain_config->genesis.initial_configuration.max_block_cpu_usage = 1000000;
@@ -1906,7 +1881,8 @@ chain::symbol read_only::extract_core_symbol()const {
 
    // The following code makes assumptions about the contract deployed on eosio account (i.e. the system contract) and how it stores its data.
    const auto& d = db.db();
-   const auto* t_id = d.find<chain::table_id_object, chain::by_code_scope_table>(boost::make_tuple( N(eosio), N(eosio), N(rammarket) ));
+   const auto* t_id = d.find<chain::table_id_object, chain::by_code_scope_table>(
+      boost::make_tuple( config::system_account_name, config::system_account_name, N(rammarket) ));
    if( t_id != nullptr ) {
       const auto &idx = d.get_index<key_value_index, by_scope_primary>();
       auto it = idx.find(boost::make_tuple( t_id->id, eosio::chain::string_to_symbol_c(4,"RAMCORE") ));

@@ -22,6 +22,7 @@
 #include <fc/io/json.hpp>
 #include <fc/scoped_exit.hpp>
 #include <fc/variant_object.hpp>
+#include <fc/io/fstream.hpp>
 
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/post.hpp>
@@ -48,7 +49,11 @@ using controller_index_set = index_set<
    block_summary_multi_index,
    transaction_multi_index,
    generated_transaction_multi_index,
-   table_id_multi_index
+   table_id_multi_index,
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
+   action_fee_object_index,
+#endif
+   config_data_object_index
 >;
 
 using contract_database_index_set = index_set<
@@ -135,7 +140,9 @@ struct controller_impl {
    wasm_interface                 wasmif;
    resource_limits_manager        resource_limits;
    authorization_manager          authorization;
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE   
    txfee_manager                  txfee;
+#endif
    controller::config             conf;
    chain_id_type                  chain_id;
    bool                           replaying= false;
@@ -207,30 +214,22 @@ struct controller_impl {
     read_mode( cfg.read_mode )
    {
 
-#define SET_APP_HANDLER( receiver, contract, action) \
-   set_apply_handler( #receiver, #contract, #action, &BOOST_PP_CAT(apply_, BOOST_PP_CAT(contract, BOOST_PP_CAT(_,action) ) ) )
+#define SET_NATIVE_SYSTEM_APP_HANDLER(action) \
+   set_apply_handler( config::system_account_name, config::system_account_name, #action, &BOOST_PP_CAT(apply_system_native_,action) )
 
-   SET_APP_HANDLER( eosio, eosio, newaccount );
-   SET_APP_HANDLER( eosio, eosio, setcode );
-   SET_APP_HANDLER( eosio, eosio, setabi );
-   SET_APP_HANDLER( eosio, eosio, updateauth );
-   SET_APP_HANDLER( eosio, eosio, deleteauth );
-   SET_APP_HANDLER( eosio, eosio, linkauth );
-   SET_APP_HANDLER( eosio, eosio, unlinkauth );
-/*
-   SET_APP_HANDLER( eosio, eosio, postrecovery );
-   SET_APP_HANDLER( eosio, eosio, passrecovery );
-   SET_APP_HANDLER( eosio, eosio, vetorecovery );
-*/
+   SET_NATIVE_SYSTEM_APP_HANDLER( newaccount );
+   SET_NATIVE_SYSTEM_APP_HANDLER( setcode );
+   SET_NATIVE_SYSTEM_APP_HANDLER( setabi );
+   SET_NATIVE_SYSTEM_APP_HANDLER( updateauth );
+   SET_NATIVE_SYSTEM_APP_HANDLER( deleteauth );
+   SET_NATIVE_SYSTEM_APP_HANDLER( linkauth );
+   SET_NATIVE_SYSTEM_APP_HANDLER( unlinkauth );
+   SET_NATIVE_SYSTEM_APP_HANDLER( canceldelay );
+   SET_NATIVE_SYSTEM_APP_HANDLER( setconfig );
 
-   SET_APP_HANDLER( eosio, eosio, canceldelay );
-   SET_APP_HANDLER( eosio, eosio, setconfig );
-   SET_APP_HANDLER( eosio, eosio, setfee );
-   
-   // add a asset if system account is change, if it changed, next SET_APP_HANDLER need also change
-   BOOST_STATIC_ASSERT(N(eosio)       == config::system_account_name);
-   BOOST_STATIC_ASSERT(N(eosio.token) == config::token_account_name);
-
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
+   SET_NATIVE_SYSTEM_APP_HANDLER( setfee );
+#endif
    
    fork_db.irreversible.connect( [&]( auto b ) {
                                  on_irreversible(b);
@@ -452,8 +451,8 @@ struct controller_impl {
       controller_index_set::add_indices(db);
       contract_database_index_set::add_indices(db);
 
-      db.add_index<action_fee_object_index>();
-      db.add_index<config_data_object_index>();
+      //db.add_index<action_fee_object_index>();
+      //db.add_index<config_data_object_index>();
 
       authorization.add_indices();
       resource_limits.add_indices();
@@ -720,36 +719,33 @@ struct controller_impl {
    }
 
    // initialize_contract init sys contract
-   void initialize_contract( const uint64_t& contract,
-                             const bytes& code,
-                             const bytes& abi,
-                             const bool privileged = false ) {
-      const auto& code_id = fc::sha256::hash(code.data(), (uint32_t) code.size());
-      const int64_t code_size = code.size();
-      const int64_t abi_size = abi.size();
+   void initialize_contract( const system_contract& sc, const bool privileged = false ) {
+      const auto code_id = fc::sha256::hash(sc.code.data(), static_cast<uint32_t>(sc.code.size()));
+      const auto code_size = sc.code.size();
+      const auto abi_size = sc.abi.size();
 
-      const auto& account = db.get<account_object, by_name>(contract);
+      const auto& account = db.get<account_object, by_name>(sc.name);
       db.modify(account, [&]( auto& a ) {
          a.last_code_update = conf.genesis.initial_timestamp;
          a.privileged = privileged;
 
          a.code_version = code_id;
          a.code.resize(code_size);
-         memcpy(a.code.data(), code.data(), code_size);
+         memcpy(a.code.data(), sc.code.data(), code_size);
 
          a.abi.resize(abi_size);
          if( abi_size > 0 ) {
-            memcpy(a.abi.data(), abi.data(), abi_size);
+            memcpy(a.abi.data(), sc.abi.data(), abi_size);
          }
       });
 
-      const auto& account_sequence = db.get<account_sequence_object, by_name>(contract);
+      const auto& account_sequence = db.get<account_sequence_object, by_name>(sc.name);
       db.modify(account_sequence, [&]( auto& aso ) {
          aso.code_sequence += 1;
          aso.abi_sequence += 1;
       });
 
-      const auto& usage = db.get<resource_limits::resource_usage_object, resource_limits::by_owner>(contract);
+      const auto& usage = db.get<resource_limits::resource_usage_object, resource_limits::by_owner>(sc.name);
       db.modify(usage, [&]( auto& u ) {
          u.ram_usage += (code_size + abi_size) * config::setcode_ram_bytes_multiplier;
       });
@@ -778,9 +774,9 @@ struct controller_impl {
       create_native_account(config::msig_account_name, system_auth, system_auth, false);
       create_native_account(config::fee_account_name, system_auth, system_auth, false);
 
-      initialize_contract(config::system_account_name, conf.system_code, conf.system_abi, true);
-      initialize_contract(config::token_account_name, conf.token_code, conf.token_abi);
-      initialize_contract(config::msig_account_name, conf.msig_code, conf.msig_abi, true);
+      initialize_contract(conf.system, true);
+      initialize_contract(conf.token);
+      initialize_contract(conf.msig, true);
 
       const auto& sym = symbol(CORE_SYMBOL).to_symbol_code();
       const auto tsum = get_token_sum();
@@ -802,11 +798,11 @@ struct controller_impl {
 
       update_eosio_authority();
       set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
-      set_num_config_on_chain(db, config::func_typ::onfee_action, 1);
    }
 
 
    void initialize_database() {
+      try {
       // Initialize block summary index
       for (int i = 0; i < 0x10000; i++)
          db.create<block_summary_object>([&](block_summary_object&) {});
@@ -863,6 +859,7 @@ struct controller_impl {
                                                                              majority_permission.id,
                                                                              active_producers_authority,
                                                                              conf.genesis.initial_timestamp );
+      } FC_CAPTURE_AND_RETHROW()
    }
 
    void set_resource_gmr() {
@@ -1073,9 +1070,7 @@ struct controller_impl {
          check_action(dtrx.actions);
          trx_context.init_for_deferred_trx( gtrx.published );
 #if RESOURCE_MODEL == RESOURCE_MODEL_FEE
-         if( is_func_has_open(self, config::func_typ::onfee_action) ) {
-            trx_context.set_fee_data();
-         }
+         trx_context.set_fee_data();
 #endif
          if( trx_context.enforce_whiteblacklist && pending->_block_status == controller::block_status::incomplete ) {
             check_actor_list( trx_context.bill_to_accounts ); // Assumes bill_to_accounts is the set of actors authorizing the transaction
@@ -1192,10 +1187,14 @@ struct controller_impl {
       for( const auto& act : actions ) {
          EOS_ASSERT(( !is_stop_chain_for_maintain
                       || ( act.account == config::system_account_name
-                           && (   act.name == N(setconfig)
-                               || act.name == N(onblock)
-                               || act.name == N(onfee))
-                               )),
+                           && (   act.name == config::action::setconfig_name
+                               || act.name == config::action::onblock_name
+                               )
+                      // open in other mode, it is no harm
+                      || ( act.account == config::token_account_name
+                           && (   act.name == config::action::fee_name
+                           )))
+                           ),
                     invalid_action_args_exception,
                     "chain is in maintain now !");
       }
@@ -1335,7 +1334,7 @@ struct controller_impl {
                );
             }
 #if RESOURCE_MODEL == RESOURCE_MODEL_FEE
-            if( !trx->implicit && is_func_has_open(self, config::func_typ::onfee_action)) {
+            if( !trx->implicit ) {
                trx_context.set_fee_data();
             }
 #endif
@@ -1992,7 +1991,7 @@ struct controller_impl {
    {
       action on_block_act;
       on_block_act.account = config::system_account_name;
-      on_block_act.name = N(onblock);
+      on_block_act.name = config::action::onblock_name;
       on_block_act.authorization = vector<permission_level>{{config::system_account_name, config::active_name}};
       on_block_act.data = fc::raw::pack(self.head_block_header());
 
@@ -2023,10 +2022,12 @@ authorization_manager&         controller::get_mutable_authorization_manager()
    return my->authorization;
 }
 
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
 const txfee_manager&   controller::get_txfee_manager()const
 {
    return my->txfee;
 }
+#endif
 
 controller::controller( const controller::config& cfg )
 :my( new controller_impl( cfg, *this ) )
@@ -2552,6 +2553,30 @@ const force_property_object& controller::get_force_property()const {
 
 void controller::set_gmr_config(gmr_type gt,uint64_t value) {
    my->set_gmr_config(gt,value);
+}
+
+void system_contract::load( const account_name& n, const boost::filesystem::path& config_path ) {
+   ilog("load contract for system : ${contract}", ("contract", n));
+
+   const auto path_root = config_path.string();
+   const auto wasm_path = path_root + ".wasm";
+   const auto abi_path = path_root + ".abi";
+
+   name = n;
+
+   std::string wasm;
+   fc::read_file_contents(wasm_path, wasm);
+   EOS_ASSERT(!wasm.empty(), wasm_file_not_found, "no wasm file ${path} found", ("path", wasm_path));
+   const string binary_wasm_header("\x00\x61\x73\x6d", 4);
+   if( wasm.compare(0, 4, binary_wasm_header) == 0 ) {
+      code = bytes(wasm.begin(), wasm.end());
+   } else {
+      EOS_THROW(wasm_serialization_error, "not support this ${path} wasm", ("path", wasm_path));
+   }
+
+   EOS_ASSERT(fc::exists(abi_path), abi_not_found_exception, "no abi file ${path} found", ("path", abi_path));
+   const auto abi_json = fc::json::from_file(abi_path).as<abi_def>();
+   abi = fc::raw::pack(abi_json);
 }
 
 } } /// eosio::chain

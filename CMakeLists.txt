@@ -35,7 +35,7 @@ set( CXX_STANDARD_REQUIRED ON)
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 1)
-set(VERSION_PATCH 0)
+set(VERSION_PATCH 1)
 
 if(VERSION_SUFFIX)
     set(VERSION_FULL "force.${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${VERSION_SUFFIX}")
@@ -253,6 +253,12 @@ if ("${CHAIN_INIT_TIMESTAMP}" STREQUAL "")
 endif()
 
 message( STATUS "Using '${CHAIN_INIT_TIMESTAMP}' as chain init timestamp" )
+
+if ("${ROOT_ACCOUNT}" STREQUAL "")
+    set(ROOT_ACCOUNT "force")
+endif()
+
+message( STATUS "Using '${ROOT_ACCOUNT}' as root account" )
 
 #add contract_config
 if ("${FROZEN_DELAY}" STREQUAL "")

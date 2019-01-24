@@ -94,7 +94,7 @@ private:
 public:
    chainbase::database& db;  ///< database where state is stored
 
-    // eosio.token accounts
+    // force.token accounts
     struct token_account {
        asset    balance = asset{0};
 

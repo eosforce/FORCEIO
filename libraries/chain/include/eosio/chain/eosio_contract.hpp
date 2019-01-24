@@ -15,24 +15,28 @@ namespace eosio { namespace chain {
     * @defgroup native_action_handlers Native Action Handlers
     */
    ///@{
-   void apply_eosio_newaccount(apply_context&);
-   void apply_eosio_updateauth(apply_context&);
-   void apply_eosio_deleteauth(apply_context&);
-   void apply_eosio_linkauth(apply_context&);
-   void apply_eosio_unlinkauth(apply_context&);
+   void apply_system_native_newaccount(apply_context&);
+   void apply_system_native_updateauth(apply_context&);
+   void apply_system_native_deleteauth(apply_context&);
+   void apply_system_native_linkauth(apply_context&);
+   void apply_system_native_unlinkauth(apply_context&);
 
    /*
-   void apply_eosio_postrecovery(apply_context&);
-   void apply_eosio_passrecovery(apply_context&);
-   void apply_eosio_vetorecovery(apply_context&);
+   void apply_system_native_postrecovery(apply_context&);
+   void apply_system_native_passrecovery(apply_context&);
+   void apply_system_native_vetorecovery(apply_context&);
    */
-   void apply_eosio_setconfig(apply_context&);
+   void apply_system_native_setconfig(apply_context&);
    
-   void apply_eosio_setcode(apply_context&);
-   void apply_eosio_setfee(apply_context&);
-   void apply_eosio_setabi(apply_context&);
+   void apply_system_native_setcode(apply_context&);
+   void apply_system_native_setfee(apply_context&);
+   void apply_system_native_setabi(apply_context&);
 
-   void apply_eosio_canceldelay(apply_context&);
+#if RESOURCE_MODEL == RESOURCE_MODEL_FEE
+   void apply_system_native_setfee(apply_context&);
+#endif
+
+   void apply_system_native_canceldelay(apply_context&);
    ///@}  end action handlers
 
 } } /// namespace eosio::chain
