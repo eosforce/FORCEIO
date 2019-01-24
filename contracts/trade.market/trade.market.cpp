@@ -44,6 +44,7 @@ namespace eosio {
          trade.type = type;
          trade.base_weight = base_weight;
          trade.market_weight = market_weight;
+         trade.isactive = true;
          //打币操作
          INLINE_ACTION_SENDER(eosio::token, transfer)( 
                config::token_account_name, 
@@ -106,7 +107,7 @@ namespace eosio {
    }
 
    void market_maker::claimmortgage(int64_t trade_id,account_name market_maker,asset claim_amount,coin_type type) {
-      require_auth(_self);
+      require_auth(market_maker);
       tradepairs tradepair( _self,market_maker);
       auto existing = tradepair.find( trade_id );
       eosio_assert( existing != tradepair.end(), "the market is not exist" );
@@ -144,6 +145,32 @@ namespace eosio {
 
    }
 
+   void market_maker::frozenmarket(int64_t trade_id,account_name market_maker) {
+      require_auth(market_maker);
+
+      tradepairs tradepair( _self,market_maker);
+      auto existing = tradepair.find( trade_id );
+      eosio_assert( existing != tradepair.end(), "the market is not exist" );
+      eosio_assert( existing->isactive == true, "the market is not active" );
+
+      tradepair.modify( *existing, 0, [&]( auto& s ) {
+            s.isactive = false;
+      });
+   }
+
+   void market_maker::trawmarket(int64_t trade_id,account_name market_maker) {
+      require_auth(market_maker);
+
+      tradepairs tradepair( _self,market_maker);
+      auto existing = tradepair.find( trade_id );
+      eosio_assert( existing != tradepair.end(), "the market is not exist" );
+      eosio_assert( existing->isactive == false, "the market is already active" );
+
+      tradepair.modify( *existing, 0, [&]( auto& s ) {
+            s.isactive = true;
+      });
+   }
+
    void market_maker::exchange(int64_t trade_id,account_name market_maker,account_name account_covert,account_name account_recv,asset convert_amount,coin_type type) {
       //require_auth(_self);
       require_auth(account_covert);
@@ -151,6 +178,7 @@ namespace eosio {
       tradepairs tradepair( _self,market_maker);
       auto existing = tradepair.find( trade_id );
       eosio_assert( existing != tradepair.end(), "the market is not exist" );
+      eosio_assert( existing->isactive == true, "the market is not active" );
 
       auto coinconvert_sym = convert_amount.symbol;
       eosio_assert( coinconvert_sym.is_valid(), "invalid symbol name" );
@@ -158,9 +186,7 @@ namespace eosio {
       eosio_assert( convert_amount.amount > 0, "max-supply must be positive");
 
       asset market_recv_amount = type != coin_type::coin_base ? existing->coin_base.amount : existing->coin_market.amount;
-
-      //先做一个简单的乘法
-      
+      //这个是固定比例的计算方式    bancor的只有计算方式和这个不一样  但是bancor是否可以自由提币充币有待考量
       auto recv_amount = type != coin_type::coin_base? (convert_amount.amount * existing->base_weight / existing->market_weight) : (convert_amount.amount * existing->market_weight / existing->base_weight);
 
       eosio_assert(recv_amount < market_recv_amount.amount,
@@ -179,12 +205,12 @@ namespace eosio {
      
       tradepair.modify( *existing, 0, [&]( auto& s ) {
             if (type == coin_type::coin_base) {
-                  s.coin_base.amount = s.coin_base.amount - convert_amount;
-                  s.coin_market.amount = s.coin_market.amount + recv_asset;
+                  s.coin_base.amount = s.coin_base.amount + convert_amount;
+                  s.coin_market.amount = s.coin_market.amount - recv_asset;
             }
             else {
-                  s.coin_market.amount = s.coin_market.amount - convert_amount;
-                  s.coin_base.amount = s.coin_base.amount + recv_asset;
+                  s.coin_market.amount = s.coin_market.amount + convert_amount;
+                  s.coin_base.amount = s.coin_base.amount - recv_asset;
             }
       });
       //两个转账操作

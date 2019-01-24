@@ -132,6 +132,34 @@
       ]
     },
     {
+      "name": "frozenmarket",
+      "base": "",
+      "fields": [
+        {
+          "name": "trade_id",
+          "type": "uint64"
+        },
+        {
+          "name": "market_maker",
+          "type": "account_name"
+        }
+      ]
+    },
+    {
+      "name": "trawmarket",
+      "base": "",
+      "fields": [
+        {
+          "name": "trade_id",
+          "type": "uint64"
+        },
+        {
+          "name": "market_maker",
+          "type": "account_name"
+        }
+      ]
+    },
+    {
       "name": "coin",
       "base": "",
       "fields": [
@@ -180,6 +208,10 @@
         {
           "name": "market_weight",
           "type": "uint64"
+        },
+        {
+          "name": "isactive",
+          "type": "bool"
         }
       ]
     }
@@ -203,6 +235,16 @@
     {
       "name": "exchange",
       "type": "exchange",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "frozenmarket",
+      "type": "frozenmarket",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "trawmarket",
+      "type": "trawmarket",
       "ricardian_contract": ""
     }
   ],

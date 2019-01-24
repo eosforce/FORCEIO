@@ -56,17 +56,21 @@ namespace eosio {
          //需要有一个查询功能  根据做市商查询这个做市商所有的交易对
          //散户使用的功能就是做交易
          void exchange(int64_t trade_id,account_name market_maker,account_name account_base,account_name account_market,asset amount,coin_type type);
+         //冻结交易对
+         void frozenmarket(int64_t trade_id,account_name market_maker);
+         //解冻交易对
+         void trawmarket(int64_t trade_id,account_name market_maker);
       private:
 
          struct coin {
             string symbol;    //币种
             asset  amount;    //抵押数额
             account_name   coin_maker;//做市商账户
-            void operator=(const coin& b){
-               symbol = b.symbol;
-               amount = b.amount;
-               coin_maker = b.coin_maker;
-            }
+            // void operator=(const coin& b){
+            //    symbol = b.symbol;
+            //    amount = b.amount;
+            //    coin_maker = b.coin_maker;
+            // }
          };
 
          struct trade_pair {  //交易对
@@ -77,22 +81,24 @@ namespace eosio {
             account_name   market_maker;// 做市商的账户     抵押中继链资源等都需要这个账户   暂时没有抵押资源这些操作
             uint64_t  base_weight;      //coin_base 比重
             uint64_t  market_weight;      //coin_base 比重
+            bool  isactive =true;      //交易对状态，用于做市商紧急叫停交易对
 
             uint64_t primary_key()const { return trade_id; }
 
-            void operator=(const trade_pair& b){
-               trade_id = b.trade_id;
-               type = b.type;
-               coin_base = b.coin_base;
-               coin_market = b.coin_market;
-               market_maker = b.market_maker;
-               base_weight = b.base_weight;
-               market_weight = b.market_weight;
-            }
+            // void operator=(const trade_pair& b){
+            //    trade_id = b.trade_id;
+            //    type = b.type;
+            //    coin_base = b.coin_base;
+            //    coin_market = b.coin_market;
+            //    market_maker = b.market_maker;
+            //    base_weight = b.base_weight;
+            //    market_weight = b.market_weight;
+            //    isactive = b.isactive;
+            // }
          };
          
          typedef eosio::multi_index<N(tradepairs), trade_pair> tradepairs;
    };
 
-   EOSIO_ABI( market_maker, (addmarket)(addmortgage)(claimmortgage)(exchange) )
+   EOSIO_ABI( market_maker, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket) )
 } /// namespace eosio
