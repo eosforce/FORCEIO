@@ -225,13 +225,6 @@ namespace eosio {
 
    }
 
-   double equal_ratio::GetBuyAmount(double amount) {
-         return amount / dRatio;
-   }
-
-   double equal_ratio::GetSellAmount(double amount) {
-         return amount * dRatio;
-   }
 
 } /// namespace eosio
 

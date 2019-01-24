@@ -28,22 +28,6 @@ namespace eosio {
       trade_type_count
    };
 
-   class base_calculate {  //所有计算的基类
-      public:
-         virtual double GetBuyAmount(double amount);      //获取买的时候的结果
-         virtual double GetSellAmount(double amount);     //获取卖的时候的结果
-         virtual ~base_calculate() {}
-   };
-
-   class equal_ratio : public base_calculate {  //等比例兑换
-      public:
-         double GetBuyAmount(double amount) override;
-         double GetSellAmount(double amount) override;
-         void SetRatio(double ratio) {dRatio = ratio;}
-      private:
-         double dRatio;                         //兑换比例
-   };
-
    class market_maker : public contract {
       public:
          market_maker( account_name self ):contract(self){}
@@ -66,11 +50,7 @@ namespace eosio {
             string symbol;    //币种
             asset  amount;    //抵押数额
             account_name   coin_maker;//做市商账户
-            // void operator=(const coin& b){
-            //    symbol = b.symbol;
-            //    amount = b.amount;
-            //    coin_maker = b.coin_maker;
-            // }
+           
          };
 
          struct trade_pair {  //交易对
@@ -84,17 +64,6 @@ namespace eosio {
             bool  isactive =true;      //交易对状态，用于做市商紧急叫停交易对
 
             uint64_t primary_key()const { return trade_id; }
-
-            // void operator=(const trade_pair& b){
-            //    trade_id = b.trade_id;
-            //    type = b.type;
-            //    coin_base = b.coin_base;
-            //    coin_market = b.coin_market;
-            //    market_maker = b.market_maker;
-            //    base_weight = b.base_weight;
-            //    market_weight = b.market_weight;
-            //    isactive = b.isactive;
-            // }
          };
          
          typedef eosio::multi_index<N(tradepairs), trade_pair> tradepairs;
