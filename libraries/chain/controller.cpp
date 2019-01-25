@@ -1331,7 +1331,7 @@ struct controller_impl {
                );
             }
 #if RESOURCE_MODEL == RESOURCE_MODEL_FEE
-            if( !trx->implicit ) {
+            if( !trx->implicit && trx_context.delay == fc::seconds(0)) {
                trx_context.set_fee_data();
             }
 #endif
