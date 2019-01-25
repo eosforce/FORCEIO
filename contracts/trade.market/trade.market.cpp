@@ -2,35 +2,34 @@
  *  @file
  *  @copyright defined in eos/LICENSE.txt
  */
+#include <math.h>
 #include <force.token/force.token.hpp>
 #include "trade.market.hpp"
 
 namespace eosio {
-   //新增一个交易对   
    void market::addmarket(name trade,account_name trade_maker,trade_type type,asset base_amount,account_name base_account,uint64_t base_weight,
                asset market_amount,account_name market_account,uint64_t market_weight) {
-         //需要三个账户的权限
+         
          require_auth(trade_maker);
          require_auth(base_account);
          require_auth(market_account);
-         //校验币是否可用
+         
         auto coinbase_sym = base_amount.symbol;
          eosio_assert( coinbase_sym.is_valid(), "invalid symbol name" );
          eosio_assert( base_amount.is_valid(), "invalid supply");
          eosio_assert( base_amount.amount > 0, "max-supply must be positive");
-         //校验币是否可用
+        
         auto coinmarket_sym = market_amount.symbol;
          eosio_assert( coinmarket_sym.is_valid(), "invalid symbol name" );
          eosio_assert( market_amount.is_valid(), "invalid supply");
          eosio_assert( market_amount.amount > 0, "max-supply must be positive");
       //暂时先使用相同的代币进行转换
      //    eosio_assert(coinbase_sym != coinmarket_sym,"a market must on two coin");
-         //校验type
+         
          eosio_assert( type < trade_type::trade_type_count, "invalid trade type");
          eosio_assert( market_weight > 0,"invalid market_weight");
           eosio_assert( base_weight > 0,"invalid base_weight");
           tradepairs tradepair( _self,trade_maker);
-          //先生成要插入表的对象
          trade_pair trademarket;
          trademarket.trade_name = trade;
          trademarket.trade_maker = trade_maker;
@@ -43,7 +42,7 @@ namespace eosio {
          trademarket.base_weight = base_weight;
          trademarket.market_weight = market_weight;
          trademarket.isactive = true;
-         //打币操作
+
          INLINE_ACTION_SENDER(eosio::token, transfer)( 
                config::token_account_name, 
                {base_account, N(active)},
@@ -51,7 +50,6 @@ namespace eosio {
                  _self, 
                 base_amount, 
                  std::string("add market transfer coin base") } );
-          //打币操作
           
          INLINE_ACTION_SENDER(eosio::token, transfer)( 
                config::token_account_name, 
@@ -60,9 +58,8 @@ namespace eosio {
                  _self, 
                 market_amount, 
                  std::string("add market transfer coin market") } );
-         //插表的操作
+         
          tradepair.emplace(trade_maker, [&]( trade_pair& s ) {
-            //各种赋值的语句
             s = trademarket;
          });
    }
@@ -131,7 +128,6 @@ namespace eosio {
                   s.market.amount = s.market.amount - claim_amount;
             }
       });
-      //如何获取self 的active权限
       INLINE_ACTION_SENDER(eosio::token, transfer)( 
                config::token_account_name, 
                {_self, N(active)},
@@ -182,12 +178,33 @@ namespace eosio {
       eosio_assert( convert_amount.is_valid(), "invalid supply");
       eosio_assert( convert_amount.amount > 0, "max-supply must be positive");
 
-      asset market_recv_amount = type != coin_type::coin_base ? existing->base.amount : existing->market.amount;
-      //这个是固定比例的计算方式    bancor的只有计算方式和这个不一样  但是bancor是否可以自由提币充币有待考量
-      auto recv_amount = type != coin_type::coin_base? (convert_amount.amount * existing->base_weight / existing->market_weight) : (convert_amount.amount * existing->market_weight / existing->base_weight);
+      if (type == coin_type::coin_base) {
+            eosio_assert(coinconvert_sym == existing->base.amount.symbol,"covert coin is not the same coin on the base");
+      }
+      else {
+            eosio_assert(coinconvert_sym == existing->market.amount.symbol,"covert coin is not the same coin on the market");
+      }
 
+      asset market_recv_amount = type != coin_type::coin_base ? existing->base.amount : existing->market.amount;
+      uint64_t recv_amount;
+      if (existing->type == trade_type::equal_ratio) 
+            recv_amount = type != coin_type::coin_base? (convert_amount.amount * existing->base_weight / existing->market_weight) : (convert_amount.amount * existing->market_weight / existing->base_weight);
+      else if(existing->type == trade_type::bancor) 
+      {
+            if (type != coin_type::coin_base) { 
+                  auto tempa = 1 + (double)convert_amount.amount/existing->market.amount.amount;
+                  auto cw = (double)existing->market_weight/existing->base_weight;
+                  recv_amount = existing->base.amount.amount * (pow(tempa,cw) - 1);
+            }
+            else {
+                  auto tempa = 1 + (double)convert_amount.amount/existing->base.amount.amount;
+                  auto cw = (double)existing->base_weight/existing->market_weight;
+                  recv_amount = existing->market.amount.amount * (pow(tempa,cw) - 1);
+            }
+      }
+      
       eosio_assert(recv_amount < market_recv_amount.amount,
-      "the market do not has enouth dest coin");
+      "the market do not has enough dest coin");
 
       auto recv_asset = asset(recv_amount,market_recv_amount.symbol);
 

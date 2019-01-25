@@ -19,6 +19,7 @@ namespace eosio {
 
    enum  class trade_type:int64_t {
       equal_ratio=1,
+      bancor,
       trade_type_count
    };
 
