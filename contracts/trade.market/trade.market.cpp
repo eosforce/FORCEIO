@@ -7,71 +7,70 @@
 
 namespace eosio {
    //新增一个交易对   
-   void market::addmarket(account_name market_maker,trade_type type,asset coinbase_amount,account_name coinbase_account,uint64_t base_weight,
-               asset coinmarket_amount,account_name coinmarket_account,uint64_t market_weight) {
+   void market::addmarket(name trade,account_name trade_maker,trade_type type,asset base_amount,account_name base_account,uint64_t base_weight,
+               asset market_amount,account_name market_account,uint64_t market_weight) {
          //需要三个账户的权限
-         require_auth(market_maker);
-         require_auth(coinbase_account);
-         require_auth(coinmarket_account);
+         require_auth(trade_maker);
+         require_auth(base_account);
+         require_auth(market_account);
          //校验币是否可用
-        auto coinbase_sym = coinbase_amount.symbol;
+        auto coinbase_sym = base_amount.symbol;
          eosio_assert( coinbase_sym.is_valid(), "invalid symbol name" );
-         eosio_assert( coinbase_amount.is_valid(), "invalid supply");
-         eosio_assert( coinbase_amount.amount > 0, "max-supply must be positive");
+         eosio_assert( base_amount.is_valid(), "invalid supply");
+         eosio_assert( base_amount.amount > 0, "max-supply must be positive");
          //校验币是否可用
-        auto coinmarket_sym = coinmarket_amount.symbol;
+        auto coinmarket_sym = market_amount.symbol;
          eosio_assert( coinmarket_sym.is_valid(), "invalid symbol name" );
-         eosio_assert( coinmarket_amount.is_valid(), "invalid supply");
-         eosio_assert( coinmarket_amount.amount > 0, "max-supply must be positive");
+         eosio_assert( market_amount.is_valid(), "invalid supply");
+         eosio_assert( market_amount.amount > 0, "max-supply must be positive");
       //暂时先使用相同的代币进行转换
      //    eosio_assert(coinbase_sym != coinmarket_sym,"a market must on two coin");
          //校验type
          eosio_assert( type < trade_type::trade_type_count, "invalid trade type");
          eosio_assert( market_weight > 0,"invalid market_weight");
           eosio_assert( base_weight > 0,"invalid base_weight");
-          tradepairs tradepair( _self,market_maker);
+          tradepairs tradepair( _self,trade_maker);
           //先生成要插入表的对象
-         trade_pair trade;
-         trade.trade_id = tradepair.available_primary_key();
-         trade.trade_maker = market_maker;
-         trade.base.amount = coinbase_amount;
-         trade.base.coin_maker = coinbase_account;
-         trade.market.amount = coinmarket_amount;
-         trade.market.coin_maker = coinmarket_account;
+         trade_pair trademarket;
+         trademarket.trade_name = trade;
+         trademarket.trade_maker = trade_maker;
+         trademarket.base.amount = base_amount;
+         trademarket.base.coin_maker = base_account;
+         trademarket.market.amount = market_amount;
+         trademarket.market.coin_maker = market_account;
 
-         trade.type = type;
-         trade.base_weight = base_weight;
-         trade.market_weight = market_weight;
-         trade.isactive = true;
+         trademarket.type = type;
+         trademarket.base_weight = base_weight;
+         trademarket.market_weight = market_weight;
+         trademarket.isactive = true;
          //打币操作
          INLINE_ACTION_SENDER(eosio::token, transfer)( 
                config::token_account_name, 
-               {coinbase_account, N(active)},
-               { coinbase_account, 
+               {base_account, N(active)},
+               { base_account, 
                  _self, 
-                coinbase_amount, 
+                base_amount, 
                  std::string("add market transfer coin base") } );
           //打币操作
           
          INLINE_ACTION_SENDER(eosio::token, transfer)( 
                config::token_account_name, 
-               {coinmarket_account, N(active)},
-               { coinmarket_account, 
+               {market_account, N(active)},
+               { market_account, 
                  _self, 
-                coinmarket_amount, 
+                market_amount, 
                  std::string("add market transfer coin market") } );
          //插表的操作
-         tradepair.emplace(market_maker, [&]( trade_pair& s ) {
+         tradepair.emplace(trade_maker, [&]( trade_pair& s ) {
             //各种赋值的语句
-            s = trade;
+            s = trademarket;
          });
-
    }
 
-   void market::addmortgage(int64_t trade_id,account_name market_maker,account_name recharge_account,asset recharge_amount,coin_type type) {
+   void market::addmortgage(name trade,account_name trade_maker,account_name recharge_account,asset recharge_amount,coin_type type) {
       require_auth(recharge_account);
-      tradepairs tradepair( _self,market_maker);
-      auto existing = tradepair.find( trade_id );
+      tradepairs tradepair( _self,trade_maker);
+      auto existing = tradepair.find( trade );
       eosio_assert( existing != tradepair.end(), "the market is not exist" );
 
        auto coinrecharge_sym = recharge_amount.symbol;
@@ -104,10 +103,10 @@ namespace eosio {
       });
    }
 
-   void market::claimmortgage(int64_t trade_id,account_name market_maker,asset claim_amount,coin_type type) {
-      require_auth(market_maker);
-      tradepairs tradepair( _self,market_maker);
-      auto existing = tradepair.find( trade_id );
+   void market::claimmortgage(name trade,account_name trade_maker,asset claim_amount,coin_type type) {
+      require_auth(trade_maker);
+      tradepairs tradepair( _self,trade_maker);
+      auto existing = tradepair.find( trade );
       eosio_assert( existing != tradepair.end(), "the market is not exist" );
 
        auto coinclaim_sym = claim_amount.symbol;
@@ -143,11 +142,11 @@ namespace eosio {
 
    }
 
-   void market::frozenmarket(int64_t trade_id,account_name market_maker) {
-      require_auth(market_maker);
+   void market::frozenmarket(name trade,account_name trade_maker) {
+      require_auth(trade_maker);
 
-      tradepairs tradepair( _self,market_maker);
-      auto existing = tradepair.find( trade_id );
+      tradepairs tradepair( _self,trade_maker);
+      auto existing = tradepair.find( trade );
       eosio_assert( existing != tradepair.end(), "the market is not exist" );
       eosio_assert( existing->isactive == true, "the market is not active" );
 
@@ -156,11 +155,11 @@ namespace eosio {
       });
    }
 
-   void market::trawmarket(int64_t trade_id,account_name market_maker) {
-      require_auth(market_maker);
+   void market::trawmarket(name trade,account_name trade_maker) {
+      require_auth(trade_maker);
 
-      tradepairs tradepair( _self,market_maker);
-      auto existing = tradepair.find( trade_id );
+      tradepairs tradepair( _self,trade_maker);
+      auto existing = tradepair.find( trade );
       eosio_assert( existing != tradepair.end(), "the market is not exist" );
       eosio_assert( existing->isactive == false, "the market is already active" );
 
@@ -169,12 +168,12 @@ namespace eosio {
       });
    }
 
-   void market::exchange(int64_t trade_id,account_name market_maker,account_name account_covert,account_name account_recv,asset convert_amount,coin_type type) {
+   void market::exchange(name trade,account_name trade_maker,account_name account_covert,account_name account_recv,asset convert_amount,coin_type type) {
       //require_auth(_self);
       require_auth(account_covert);
 
-      tradepairs tradepair( _self,market_maker);
-      auto existing = tradepair.find( trade_id );
+      tradepairs tradepair( _self,trade_maker);
+      auto existing = tradepair.find( trade );
       eosio_assert( existing != tradepair.end(), "the market is not exist" );
       eosio_assert( existing->isactive == true, "the market is not active" );
 

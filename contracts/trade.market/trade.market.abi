@@ -12,7 +12,11 @@
       "base": "",
       "fields": [
         {
-          "name": "market_maker",
+          "name": "trade",
+          "type": "name"
+        },
+        {
+          "name": "trade_maker",
           "type": "account_name"
         },
         {
@@ -20,15 +24,11 @@
           "type": "uint64"
         },
         {
-          "name": "coinbase_symbol",
-          "type": "string"
-        },
-        {
-          "name": "coinbase_amount",
+          "name": "base_amount",
           "type": "asset"
         },
         {
-          "name": "coinbase_account",
+          "name": "base_account",
           "type": "account_name"
         },
         {
@@ -36,15 +36,11 @@
           "type": "uint64"
         },
         {
-          "name": "coinmarket_symbol",
-          "type": "string"
-        },
-        {
-          "name": "coinmarket_amount",
+          "name": "market_amount",
           "type": "asset"
         },
         {
-          "name": "coinmarket_account",
+          "name": "market_account",
           "type": "account_name"
         },
         {
@@ -58,11 +54,11 @@
       "base": "",
       "fields": [
         {
-          "name": "trade_id",
-          "type": "uint64"
+          "name": "trade",
+          "type": "name"
         },
         {
-          "name": "market_maker",
+          "name": "trade_maker",
           "type": "account_name"
         },
         {
@@ -84,11 +80,11 @@
       "base": "",
       "fields": [
         {
-          "name": "trade_id",
-          "type": "uint64"
+          "name": "trade",
+          "type": "name"
         },
         {
-          "name": "market_maker",
+          "name": "trade_maker",
           "type": "account_name"
         },
         {
@@ -106,11 +102,11 @@
       "base": "",
       "fields": [
         {
-          "name": "trade_id",
-          "type": "uint64"
+          "name": "trade",
+          "type": "name"
         },
         {
-          "name": "market_maker",
+          "name": "trade_maker",
           "type": "account_name"
         },
         {
@@ -136,11 +132,11 @@
       "base": "",
       "fields": [
         {
-          "name": "trade_id",
-          "type": "uint64"
+          "name": "trade",
+          "type": "name"
         },
         {
-          "name": "market_maker",
+          "name": "trade_maker",
           "type": "account_name"
         }
       ]
@@ -150,11 +146,11 @@
       "base": "",
       "fields": [
         {
-          "name": "trade_id",
-          "type": "uint64"
+          "name": "trade",
+          "type": "name"
         },
         {
-          "name": "market_maker",
+          "name": "trade_maker",
           "type": "account_name"
         }
       ]
@@ -163,10 +159,6 @@
       "name": "coin",
       "base": "",
       "fields": [
-        {
-          "name": "symbol",
-          "type": "string"
-        },
         {
           "name": "amount",
           "type": "asset"
@@ -182,23 +174,23 @@
       "base": "",
       "fields": [
         {
-          "name": "trade_id",
-          "type": "uint64"
+          "name": "trade_name",
+          "type": "name"
         },
         {
           "name": "type",
           "type": "uint64"
         },
         {
-          "name": "coin_base",
+          "name": "base",
           "type": "coin"
         },
         {
-          "name": "coin_market",
+          "name": "market",
           "type": "coin"
         },
         {
-          "name": "market_maker",
+          "name": "trade_maker",
           "type": "account_name"
         },
         {
@@ -253,8 +245,8 @@
       "name": "tradepairs",
       "type": "trade_pair",
       "index_type": "i64",
-      "key_names": [ "trade_id" ],
-      "key_types": [ "uint64" ]
+      "key_names": [ "trade" ],
+      "key_types": [ "name" ]
     }
   ],
   "ricardian_clauses": [],
