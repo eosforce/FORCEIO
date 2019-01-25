@@ -602,7 +602,7 @@ chain::action create_setabi(const name& account, const bytes& abi) {
 }
 
 #if RESOURCE_MODEL == RESOURCE_MODEL_FEE
-chain::action create_setfee(const name& account, const name &act, const asset fee, const uint32_t cpu, const uint32_t net, const uint32_t ram) {
+chain::action create_setfee(const account_name& account, const name &act, const asset fee, const uint32_t cpu, const uint32_t net, const uint32_t ram) {
    const auto permission_account =
          ((cpu == 0)&&(net == 0)&&(ram == 0))
          ? account             // if no set res limit, just need account permission
