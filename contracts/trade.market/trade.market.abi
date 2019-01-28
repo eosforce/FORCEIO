@@ -156,6 +156,42 @@
       ]
     },
     {
+      "name": "setfixedfee",
+      "base": "",
+      "fields": [
+        {
+          "name": "trade",
+          "type": "name"
+        },
+        {
+          "name": "trade_maker",
+          "type": "account_name"
+        },
+        {
+          "name": "base",
+          "type": "asset"
+        },
+        {
+          "name": "market",
+          "type": "asset"
+        }
+      ]
+    },
+    {
+      "name": "trade_fee",
+      "base": "",
+      "fields": [
+        {
+          "name": "base",
+          "type": "asset"
+        },
+        {
+          "name": "market",
+          "type": "asset"
+        }
+      ]
+    },
+    {
       "name": "coin",
       "base": "",
       "fields": [
@@ -204,6 +240,10 @@
         {
           "name": "isactive",
           "type": "bool"
+        },
+        {
+          "name": "fee",
+          "type": "trade_fee"
         }
       ]
     }
@@ -237,6 +277,11 @@
     {
       "name": "trawmarket",
       "type": "trawmarket",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "setfixedfee",
+      "type": "setfixedfee",
       "ricardian_contract": ""
     }
   ],

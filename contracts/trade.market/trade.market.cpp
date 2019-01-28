@@ -28,8 +28,8 @@ namespace eosio {
          
          eosio_assert( type < trade_type::trade_type_count, "invalid trade type");
          eosio_assert( market_weight > 0,"invalid market_weight");
-          eosio_assert( base_weight > 0,"invalid base_weight");
-          tradepairs tradepair( _self,trade_maker);
+         eosio_assert( base_weight > 0,"invalid base_weight");
+         tradepairs tradepair( _self,trade_maker);
          trade_pair trademarket;
          trademarket.trade_name = trade;
          trademarket.trade_maker = trade_maker;
@@ -42,6 +42,9 @@ namespace eosio {
          trademarket.base_weight = base_weight;
          trademarket.market_weight = market_weight;
          trademarket.isactive = true;
+
+         trademarket.fee.base = asset(0,coinbase_sym);
+         trademarket.fee.market = asset(0,coinmarket_sym);
 
          INLINE_ACTION_SENDER(eosio::token, transfer)( 
                config::token_account_name, 
@@ -164,6 +167,31 @@ namespace eosio {
       });
    }
 
+   void market::setfixedfee(name trade,account_name trade_maker,asset base,asset market) {
+      require_auth(trade_maker); 
+      tradepairs tradepair( _self,trade_maker);
+      auto existing = tradepair.find( trade );
+      eosio_assert( existing != tradepair.end(), "the market is not exist" );
+      
+      auto base_sym = base.symbol;
+      eosio_assert( base_sym.is_valid(), "invalid symbol name" );
+      eosio_assert( base.is_valid(), "invalid supply");
+      eosio_assert( base.amount >= 0, "max-supply must be positive");
+
+      auto market_sym = market.symbol;
+      eosio_assert( market_sym.is_valid(), "invalid symbol name" );
+      eosio_assert( market.is_valid(), "invalid supply");
+      eosio_assert( market.amount >= 0, "max-supply must be positive");
+
+      eosio_assert(existing->fee.base.symbol == base_sym,"base asset is different coin with fee base");
+      eosio_assert(existing->fee.market.symbol == market_sym,"base asset is different coin with fee base");
+
+      tradepair.modify( *existing, 0, [&]( auto& s ) {
+            s.fee.base = base;
+            s.fee.market = market;
+      });
+   }
+
    void market::exchange(name trade,account_name trade_maker,account_name account_covert,account_name account_recv,asset convert_amount,coin_type type) {
       //require_auth(_self);
       require_auth(account_covert);
@@ -187,8 +215,10 @@ namespace eosio {
 
       asset market_recv_amount = type != coin_type::coin_base ? existing->base.amount : existing->market.amount;
       uint64_t recv_amount;
-      if (existing->type == trade_type::equal_ratio) 
-            recv_amount = type != coin_type::coin_base? (convert_amount.amount * existing->base_weight / existing->market_weight) : (convert_amount.amount * existing->market_weight / existing->base_weight);
+      if (existing->type == trade_type::equal_ratio) {
+            recv_amount = type != coin_type::coin_base? (convert_amount.amount * existing->base_weight / existing->market_weight) :
+             (convert_amount.amount * existing->market_weight / existing->base_weight);
+      }
       else if(existing->type == trade_type::bancor) 
       {
             if (type != coin_type::coin_base) { 
@@ -202,6 +232,16 @@ namespace eosio {
                   recv_amount = existing->market.amount.amount * (pow(tempa,cw) - 1);
             }
       }
+
+      //fee
+      if (type != coin_type::coin_base) { 
+            recv_amount -= existing->fee.base.amount;
+      }
+      else
+      {
+            recv_amount -= existing->fee.market.amount;
+      }
+      
       
       eosio_assert(recv_amount < market_recv_amount.amount,
       "the market do not has enough dest coin");
@@ -227,7 +267,6 @@ namespace eosio {
                   s.base.amount = s.base.amount - recv_asset;
             }
       });
-      //两个转账操作
  
       INLINE_ACTION_SENDER(eosio::token, transfer)( 
             config::token_account_name, 

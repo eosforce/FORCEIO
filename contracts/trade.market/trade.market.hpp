@@ -85,7 +85,17 @@ namespace eosio {
           * trade_maker : the account make the trade market 
           */
          void trawmarket(name trade,account_name trade_maker);
+         /**
+          * 
+          */
+         void setfixedfee(name trade,account_name trade_maker,asset base,asset market);
       private:
+         //fixed cost      think about the Proportionate fee
+         struct trade_fee {
+            asset base;             //
+            asset market;
+            asset maker;
+         };
 
          struct coin {
             asset  amount;             //the coin amont
@@ -101,6 +111,7 @@ namespace eosio {
             uint64_t  base_weight;      //coin_base weight 
             uint64_t  market_weight;      //coin_base weight 
             bool  isactive =true;      //the sattus of the trade market when isactive is false ,it can exchange
+            trade_fee fee;
 
             uint64_t primary_key()const { return trade_name; }
          };
@@ -108,5 +119,5 @@ namespace eosio {
          typedef eosio::multi_index<N(tradepairs), trade_pair> tradepairs;
    };
 
-   EOSIO_ABI( market, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket) )
+   EOSIO_ABI( market, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket)(setfixedfee) ) 
 } /// namespace eosio
