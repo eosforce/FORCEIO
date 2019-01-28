@@ -83,31 +83,16 @@ private:
 
 public:
    /// @abi action
-   void commit( const name chain, const account_name transfer, const block_type& block ) {
-      print( "commit ", chain );
-
-   }
-
+   void commit( const name chain, const account_name transfer, const block_type& block );
    /// @abi action
    void confirm( const name chain,
                  const account_name checker,
                  const checksum256 id,
-                 const checksum256 mroot ) {
-      print( "confirm ", chain );
-   }
-
+                 const checksum256 mroot );
    /// @abi action
-   void newchannel( const name chain,
-                    const checksum256 id ) {
-      print( "newchannel ", chain );
-   }
-
+   void newchannel( const name chain, const checksum256 id );
    /// @abi action
-   void newmap( const name chain,
-                const name type,
-                const account_name account ) {
-      print( "newchannel ", chain );
-   }
+   void newmap( const name chain, const name type, const account_name account );
 };
 
 
