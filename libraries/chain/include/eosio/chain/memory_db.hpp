@@ -31,7 +31,7 @@ public:
    constexpr static size_t max_stack_buffer_size = 512;
 
    template <typename T>
-   void insert(const uint64_t &code,
+   void insert(const account_name &code,
                const uint64_t &scope,
                const uint64_t &table,
                const account_name& payer,
@@ -44,7 +44,7 @@ public:
    }
 
    template <typename T>
-   bool get( const uint64_t &code,
+   bool get( const account_name &code,
              const uint64_t &scope,
              const uint64_t &table,
              const uint64_t &id,
@@ -77,7 +77,7 @@ public:
    }
 
 private:
-   int db_store_i64( uint64_t code,
+   int db_store_i64( account_name code,
                      uint64_t scope,
                      uint64_t table,
                      const account_name& payer,
@@ -161,7 +161,7 @@ public:
 
    // vote_info
    struct vote_info {
-      account_name    bpname         = 0;
+      account_name    bpname;
       asset           staked         = asset{0};
       uint32_t        voteage_update_height = 0;
       int64_t         voteage        = 0;
