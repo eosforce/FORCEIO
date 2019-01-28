@@ -154,10 +154,6 @@
             {
                "name":"mroot",
                "type":"checksum256"
-            },
-            {
-               "name":"actions",
-               "type":"action[]"
             }
          ]
       },
@@ -220,6 +216,10 @@
             {
                "name":"block",
                "type":"block_type"
+            },
+            {
+                "name":"actions",
+                "type":"action[]"
             }
          ]
       },

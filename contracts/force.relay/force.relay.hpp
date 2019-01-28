@@ -47,12 +47,10 @@ public:
       checksum256             action_mroot;
       checksum256             mroot;
 
-      vector<action>          actions;
-
       EOSLIB_SERIALIZE( block_type,
             (producer)(id)(previous)(confirmed)
-            (transaction_mroot)(action_mroot)(action_mroot)(mroot)
-            (actions) )
+            (transaction_mroot)(action_mroot)(mroot)
+             )
    };
 
    // map_handler
@@ -84,12 +82,12 @@ public:
    typedef eosio::multi_index<N(handlers), map_handler> handlers_table;
 
 private:
-   void onblock( const name chain, const account_name transfer, const block_type& block );
+   void onblock( const name chain, const account_name transfer, const block_type& block, const vector<action>& actions );
    void onaction( const block_type& block, const action& act, const map_handler& handler );
 
 public:
    /// @abi action
-   void commit( const name chain, const account_name transfer, const block_type& block );
+   void commit( const name chain, const account_name transfer, const block_type& block, const vector<action>& actions );
    /// @abi action
    void confirm( const name chain,
                  const account_name checker,

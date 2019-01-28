@@ -1,11 +1,11 @@
 #include "force.relay.hpp"
 namespace force {
 
-void relay::commit( const name chain, const account_name transfer, const relay::block_type& block ) {
-   print("commit ", chain);
+void relay::commit( const name chain, const account_name transfer, const relay::block_type& block, const vector<action>& actions ) {
+   print("commit ", chain, "\n");
 
    // TODO confirm
-   onblock(chain, transfer, block);
+   onblock(chain, transfer, block, actions);
 
 }
 
@@ -68,21 +68,22 @@ void relay::newmap( const name chain, const name type,
    }
 }
 
-void relay::onblock( const name chain, const account_name transfer, const block_type& block ){
-   print("onblock ", chain);
+void relay::onblock( const name chain, const account_name transfer, const block_type& block, const vector<action>& actions ){
+   print("onblock ", chain, "\n");
 
    account_name acc{ chain };
    channels_table channels(_self, acc);
    eosio_assert(channels.find(chain) != channels.end(), "channel not created");
 
    handlers_table handlers(_self, acc);
-   std::map<std::pair<account_name, action_name>, map_handler> handler_map;
 
+   std::map<std::pair<account_name, action_name>, map_handler> handler_map;
    for(const auto& h : handlers){
       handler_map[std::make_pair(h.actaccount, h.actname)] = h;
    }
 
-   for(const auto& act : block.actions){
+   for(const auto& act : actions){
+      //print("check act ", act.account, " ", act.name, "\n");
       const auto& h = handler_map.find(std::make_pair(act.account, act.name));
       if(h != handler_map.end()){
          onaction(block, act, h->second);
@@ -92,7 +93,7 @@ void relay::onblock( const name chain, const account_name transfer, const block_
 }
 
 void relay::onaction( const block_type& block, const action& act, const map_handler& handler ){
-   print("onaction ", act.account, " ", act.name, " ", handler.account);
+   print("onaction ", act.account, "\n");
 }
 
 } // namespace force
