@@ -21,7 +21,9 @@ void relay::newchannel( const name chain, const checksum256 id ) {
 }
 
 /// @abi action
-void relay::newmap( const name chain, const name type, const account_name account ) {
+void relay::newmap( const name chain, const name type,
+                    const account_name act_account, const action_name act_name,
+                    const account_name account ) {
    print( "newchannel ", chain );
 }
 
