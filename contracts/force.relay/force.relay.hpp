@@ -84,6 +84,8 @@ public:
    typedef eosio::multi_index<N(handlers), map_handler> handlers_table;
 
 private:
+   void onblock( const name chain, const account_name transfer, const block_type& block );
+   void onaction( const block_type& block, const action& act, const map_handler& handler );
 
 public:
    /// @abi action
