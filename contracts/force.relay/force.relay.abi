@@ -166,19 +166,23 @@
          "base":"",
          "fields":[
             {
+               "name":"chain",
+               "type":"name"
+            },
+            {
                "name":"name",
                "type":"name"
             },
             {
-               "name":"action_account",
+               "name":"actaccount",
                "type":"account_name"
             },
             {
-               "name":"action_name",
+               "name":"actname",
                "type":"action_name"
             },
             {
-               "name":"contract_account",
+               "name":"account",
                "type":"account_name"
             },
             {
@@ -198,10 +202,6 @@
             {
                "name":"id",
                "type":"checksum256"
-            },
-            {
-               "name":"handers",
-               "type":"map_handler[]"
             }
          ]
       },
@@ -282,6 +282,10 @@
             {
                "name":"account",
                "type":"account_name"
+            },
+            {
+               "name":"data",
+               "type":"bytes"
             }
          ]
       }
@@ -315,6 +319,17 @@
          "index_type":"i64",
          "key_names":[
             "chain"
+         ],
+         "key_types":[
+            "name"
+         ]
+      },
+      {
+         "name":"handlers",
+         "type":"map_handler",
+         "index_type":"i64",
+         "key_names":[
+            "name"
          ],
          "key_types":[
             "name"

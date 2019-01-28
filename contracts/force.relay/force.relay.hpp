@@ -57,14 +57,17 @@ public:
 
    // map_handler
    struct map_handler {
+      name         chain;
       name         name;
-      account_name action_account;
-      action_name  action_name;
+      account_name actaccount;
+      action_name  actname;
 
-      account_name contract_account;
+      account_name account;
       bytes        data;
 
-      EOSLIB_SERIALIZE( map_handler, (name)(action_account)(action_name)(contract_account)(data) )
+      uint64_t primary_key() const { return name; }
+
+      EOSLIB_SERIALIZE( map_handler, (chain)(name)(actaccount)(actname)(account)(data) )
    };
 
    // channel
@@ -72,12 +75,13 @@ public:
       name        chain;
       checksum256 id;
 
-      vector<map_handler> handers;
+      uint64_t primary_key() const { return chain; }
 
-      EOSLIB_SERIALIZE( channel, (chain)(id)(handers) )
+      EOSLIB_SERIALIZE( channel, (chain)(id) )
    };
 
    typedef eosio::multi_index<N(channels), channel> channels_table;
+   typedef eosio::multi_index<N(handlers), map_handler> handlers_table;
 
 private:
 
@@ -94,7 +98,7 @@ public:
    /// @abi action
    void newmap( const name chain, const name type,
                 const account_name act_account, const action_name act_name,
-                const account_name account );
+                const account_name account, const bytes data );
 };
 
 
