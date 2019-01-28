@@ -55,13 +55,16 @@ public:
             (actions) )
    };
 
-   // map
-   struct map {
+   // map_handler
+   struct map_handler {
       name         name;
-      account_name account;
+      account_name action_account;
+      action_name  action_name;
+
+      account_name contract_account;
       bytes        data;
 
-      EOSLIB_SERIALIZE( map, (name)(account)(data) )
+      EOSLIB_SERIALIZE( map_handler, (name)(action_account)(action_name)(contract_account)(data) )
    };
 
    // channel
@@ -69,10 +72,12 @@ public:
       name        chain;
       checksum256 id;
 
-      vector<map> maps;
+      vector<map_handler> handers;
 
-      EOSLIB_SERIALIZE( channel, (chain)(id)(maps) )
+      EOSLIB_SERIALIZE( channel, (chain)(id)(handers) )
    };
+
+   typedef eosio::multi_index<N(channels), channel> channels_table;
 
 private:
 
@@ -80,6 +85,7 @@ public:
    /// @abi action
    void commit( const name chain, const account_name transfer, const block_type& block ) {
       print( "commit ", chain );
+
    }
 
    /// @abi action
