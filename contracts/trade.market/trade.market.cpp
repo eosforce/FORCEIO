@@ -17,14 +17,14 @@ namespace eosio {
         auto coinbase_sym = base_amount.symbol;
          eosio_assert( coinbase_sym.is_valid(), "invalid symbol name" );
          eosio_assert( base_amount.is_valid(), "invalid supply");
-         eosio_assert( base_amount.amount > 0, "max-supply must be positive");
+         eosio_assert( base_amount.amount >= 0, "max-supply must be positive");
         
         auto coinmarket_sym = market_amount.symbol;
          eosio_assert( coinmarket_sym.is_valid(), "invalid symbol name" );
          eosio_assert( market_amount.is_valid(), "invalid supply");
-         eosio_assert( market_amount.amount > 0, "max-supply must be positive");
+         eosio_assert( market_amount.amount >= 0, "max-supply must be positive");
       //暂时先使用相同的代币进行转换
-     //    eosio_assert(coinbase_sym != coinmarket_sym,"a market must on two coin");
+      //    eosio_assert(coinbase_sym != coinmarket_sym,"a market must on two coin");
          
          eosio_assert( type < trade_type::trade_type_count, "invalid trade type");
          eosio_assert( market_weight > 0,"invalid market_weight");
@@ -45,6 +45,7 @@ namespace eosio {
 
          trademarket.fee.base = asset(0,coinbase_sym);
          trademarket.fee.market = asset(0,coinmarket_sym);
+         trademarket.fee.fee_type = fee_type::fixed;
 
          INLINE_ACTION_SENDER(eosio::token, transfer)( 
                config::token_account_name, 
@@ -189,9 +190,57 @@ namespace eosio {
       tradepair.modify( *existing, 0, [&]( auto& s ) {
             s.fee.base = base;
             s.fee.market = market;
+            s.fee.fee_type = fee_type::fixed;
       });
    }
 
+   void market::setprofee(name trade,account_name trade_maker,uint64_t base_ratio,uint64_t market_ratio) {
+      require_auth(trade_maker); 
+      tradepairs tradepair( _self,trade_maker);
+      auto existing = tradepair.find( trade );
+      eosio_assert( existing != tradepair.end(), "the market is not exist" );
+
+      eosio_assert(base_ratio >= 0 && base_ratio < PROPORTION_CARD,"base_ratio must between 0 and 10000");
+      eosio_assert(market_ratio >= 0 && market_ratio < PROPORTION_CARD,"market_ratio must between 0 and 10000");
+      print("xuyapeng add for setprofee\n");
+      tradepair.modify( *existing, 0, [&]( auto& s ) {
+            print("xuyapeng add for setprofee\n");
+            s.fee.base_ratio = base_ratio;
+            s.fee.market_ratio = market_ratio;
+            s.fee.fee_type = fee_type::proportion;
+      });
+   }
+
+   void market::setprominfee(name trade,account_name trade_maker,uint64_t base_ratio,uint64_t market_ratio,asset base,asset market) {
+      require_auth(trade_maker); 
+      tradepairs tradepair( _self,trade_maker);
+      auto existing = tradepair.find( trade );
+      eosio_assert( existing != tradepair.end(), "the market is not exist" );
+      
+      auto base_sym = base.symbol;
+      eosio_assert( base_sym.is_valid(), "invalid symbol name" );
+      eosio_assert( base.is_valid(), "invalid supply");
+      eosio_assert( base.amount >= 0, "max-supply must be positive");
+
+      auto market_sym = market.symbol;
+      eosio_assert( market_sym.is_valid(), "invalid symbol name" );
+      eosio_assert( market.is_valid(), "invalid supply");
+      eosio_assert( market.amount >= 0, "max-supply must be positive");
+
+      eosio_assert(existing->fee.base.symbol == base_sym,"base asset is different coin with fee base");
+      eosio_assert(existing->fee.market.symbol == market_sym,"base asset is different coin with fee base");
+
+      eosio_assert(base_ratio >= 0 && base_ratio < PROPORTION_CARD,"base_ratio must between 0 and 10000");
+      eosio_assert(market_ratio >= 0 && market_ratio < PROPORTION_CARD,"market_ratio must between 0 and 10000");
+
+      tradepair.modify( *existing, 0, [&]( auto& s ) {
+            s.fee.base_ratio = base_ratio;
+            s.fee.market_ratio = market_ratio;
+            s.fee.base = base;
+            s.fee.market = market;
+            s.fee.fee_type = fee_type::proportion_mincost;
+      });
+   }
    void market::exchange(name trade,account_name trade_maker,account_name account_covert,account_name account_recv,asset convert_amount,coin_type type) {
       //require_auth(_self);
       require_auth(account_covert);
@@ -235,11 +284,39 @@ namespace eosio {
 
       //fee
       if (type != coin_type::coin_base) { 
+         if(existing->fee.fee_type == fee_type::fixed) {
             recv_amount -= existing->fee.base.amount;
+         }
+         else if(existing->fee.fee_type == fee_type::proportion) {
+            recv_amount -= recv_amount*existing->fee.base_ratio/PROPORTION_CARD;
+         }
+         else if(existing->fee.fee_type == fee_type::proportion_mincost){
+            if (recv_amount*existing->fee.base_ratio/PROPORTION_CARD > existing->fee.base.amount)
+               recv_amount -= recv_amount*existing->fee.base_ratio/PROPORTION_CARD;
+            else
+            {
+                  recv_amount -= existing->fee.base.amount;
+            }
+            
+         }
       }
       else
       {
+            if(existing->fee.fee_type == fee_type::fixed) {
             recv_amount -= existing->fee.market.amount;
+         }
+         else if(existing->fee.fee_type == fee_type::proportion) {
+            recv_amount -= recv_amount*existing->fee.market_ratio/PROPORTION_CARD;
+         }
+         else if(existing->fee.fee_type == fee_type::proportion_mincost){
+            if (recv_amount*existing->fee.market_ratio/PROPORTION_CARD > existing->fee.market.amount)
+               recv_amount -= recv_amount*existing->fee.market_ratio/PROPORTION_CARD;
+            else
+            {
+                  recv_amount -= existing->fee.market.amount;
+            }
+            
+         }
       }
       
       

@@ -17,6 +17,15 @@ namespace eosio {
 
    using std::string;
 
+   const int64_t PROPORTION_CARD = 10000;  
+
+   enum  class fee_type:int64_t {
+      fixed=1,                //fixed
+      proportion,             // proportion
+      proportion_mincost,      // proportion and have a Minimum cost
+      fee_type_count
+   };
+
    enum  class trade_type:int64_t {
       equal_ratio=1,
       bancor,
@@ -86,15 +95,28 @@ namespace eosio {
           */
          void trawmarket(name trade,account_name trade_maker);
          /**
-          * 
+          * set fixed fee
           */
          void setfixedfee(name trade,account_name trade_maker,asset base,asset market);
+         /**
+          * set proportion fee
+          */
+         void setprofee(name trade,account_name trade_maker,uint64_t base_ratio,uint64_t market_ratio);
+         /**
+          * set proportion with a Minimum fee
+          */
+         void setprominfee(name trade,account_name trade_maker,uint64_t base_ratio,uint64_t market_ratio,asset base,asset market);
       private:
          //fixed cost      think about the Proportionate fee
          struct trade_fee {
-            asset base;             //
+            asset base;             //fixed
             asset market;
-            asset maker;
+            
+            uint64_t    base_ratio;    //Proportionate
+            uint64_t    market_ratio;
+
+            fee_type  fee_type;
+            
          };
 
          struct coin {
@@ -119,5 +141,5 @@ namespace eosio {
          typedef eosio::multi_index<N(tradepairs), trade_pair> tradepairs;
    };
 
-   EOSIO_ABI( market, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket)(setfixedfee) ) 
+   EOSIO_ABI( market, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket)(setfixedfee)(setprofee)(setprominfee) ) 
 } /// namespace eosio

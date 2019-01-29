@@ -178,6 +178,58 @@
       ]
     },
     {
+      "name": "setprofee",
+      "base": "",
+      "fields": [
+        {
+          "name": "trade",
+          "type": "name"
+        },
+        {
+          "name": "trade_maker",
+          "type": "account_name"
+        },
+        {
+          "name": "base_ratio",
+          "type": "uint64"
+        },
+        {
+          "name": "market_ratio",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
+      "name": "setprominfee",
+      "base": "",
+      "fields": [
+        {
+          "name": "trade",
+          "type": "name"
+        },
+        {
+          "name": "trade_maker",
+          "type": "account_name"
+        },
+        {
+          "name": "base_ratio",
+          "type": "uint64"
+        },
+        {
+          "name": "market_ratio",
+          "type": "uint64"
+        },
+        {
+          "name": "base",
+          "type": "asset"
+        },
+        {
+          "name": "market",
+          "type": "asset"
+        }
+      ]
+    },
+    {
       "name": "trade_fee",
       "base": "",
       "fields": [
@@ -188,6 +240,18 @@
         {
           "name": "market",
           "type": "asset"
+        },
+        {
+          "name": "base_ratio",
+          "type": "uint64"
+        },
+        {
+          "name": "market_ratio",
+          "type": "uint64"
+        },
+        {
+          "name": "fee_type",
+          "type": "uint64"
         }
       ]
     },
@@ -282,6 +346,16 @@
     {
       "name": "setfixedfee",
       "type": "setfixedfee",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "setprofee",
+      "type": "setprofee",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "setprominfee",
+      "type": "setprominfee",
       "ricardian_contract": ""
     }
   ],
