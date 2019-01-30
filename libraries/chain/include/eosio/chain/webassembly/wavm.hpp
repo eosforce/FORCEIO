@@ -140,14 +140,6 @@ struct native_to_wasm<name> {
    using type = I64;
 };
 template<>
-struct native_to_wasm<const account_name &> {
-   using type = I64;
-};
-template<>
-struct native_to_wasm<account_name> {
-   using type = I64;
-};
-template<>
 struct native_to_wasm<const fc::time_point_sec &> {
    using type = I32;
 };
@@ -168,10 +160,6 @@ inline auto convert_native_to_wasm(const running_instance_context& ctx, T val) {
 
 inline auto convert_native_to_wasm(const running_instance_context& ctx, const name &val) {
    return native_to_wasm_t<const name &>(val.value);
-}
-
-inline auto convert_native_to_wasm(const running_instance_context& ctx, const account_name &val) {
-   return native_to_wasm_t<const account_name &>(val.get_value());
 }
 
 inline auto convert_native_to_wasm(const running_instance_context& ctx, const fc::time_point_sec& val) {
@@ -249,14 +237,6 @@ struct wasm_to_rvalue_type<name> {
    static constexpr auto value = ResultType::i64;
 };
 template<>
-struct wasm_to_rvalue_type<const account_name&> {
-	static constexpr auto value = ResultType::i64;
-};
-template<>
-struct wasm_to_rvalue_type<account_name> {
-	static constexpr auto value = ResultType::i64;
-};
-template<>
 struct wasm_to_rvalue_type<char*> {
    static constexpr auto value = ResultType::i32;
 };
@@ -278,10 +258,6 @@ struct is_reference_from_value {
 template<>
 struct is_reference_from_value<name> {
    static constexpr bool value = true;
-};
-template<>
-struct is_reference_from_value<account_name> {
-	static constexpr bool value = true;
 };
 
 template<>
@@ -593,22 +569,7 @@ struct intrinsic_invoker_impl<Ret, std::tuple<const name&, Inputs...>, std::tupl
       return next_step::template fn<translate_one<Then>>();
    }
 };
-template<typename Ret, typename... Inputs, typename ...Translated>
-struct intrinsic_invoker_impl<Ret, std::tuple<const account_name&, Inputs...>, std::tuple<Translated...>> {
-using next_step = intrinsic_invoker_impl<Ret, std::tuple<Inputs...>, std::tuple<Translated..., native_to_wasm_t<const account_name&> >>;
-using then_type = Ret (*)(running_instance_context&, const account_name&, Inputs..., Translated...);
 
-template<then_type Then>
-static Ret translate_one(running_instance_context& ctx, Inputs... rest, Translated... translated, native_to_wasm_t<const account_name&> wasm_value) {
-	auto value = account_name(wasm_value);
-	return Then(ctx, value, rest..., translated...);
-}
-
-template<then_type Then>
-static const auto fn() {
-	return next_step::template fn<translate_one<Then>>();
-}
-};
 /**
  * Specialization for transcribing  a reference type in the native method signature
  *    This type transcribes into an int32  pointer checks the validity of that memory
