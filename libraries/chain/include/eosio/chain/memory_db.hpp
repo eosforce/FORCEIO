@@ -101,13 +101,6 @@ public:
        uint64_t primary_key()const { return balance.get_symbol().to_symbol_code().value; }
     };
 
-    struct eoslock_account {
-        account_name owner;
-        asset     balance;
-
-        uint64_t primary_key()const { return owner; }
-    };
-
    struct vote4ram_info {
       account_name voter;
       asset staked = asset{0};
@@ -281,7 +274,6 @@ public:
 FC_REFLECT(eosio::chain::memory_db::bp_info, (name)(producer_key)
             (commission_rate)(total_staked)(rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(isactive))
 FC_REFLECT(eosio::chain::memory_db::token_account, (balance))
-FC_REFLECT(eosio::chain::memory_db::eoslock_account, (owner)(balance))
 FC_REFLECT(eosio::chain::memory_db::chain_status, (name)(emergency))
 FC_REFLECT(eosio::chain::memory_db::currency_stats, (supply)(max_supply)(issuer))
 FC_REFLECT(eosio::chain::memory_db::vote_info,

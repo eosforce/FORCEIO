@@ -118,7 +118,7 @@ namespace eosio { namespace chain {
 
    using action_name      = name;
    using scope_name       = name;
-   using account_name     = struct account_name;
+   using account_name     = account_name;
    using permission_name  = name;
    using table_name       = name;
 
