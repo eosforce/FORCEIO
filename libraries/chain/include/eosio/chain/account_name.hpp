@@ -2,135 +2,117 @@
 
 #include <string>
 #include <fc/reflect/reflect.hpp>
+#include <fc/array.hpp>
 #include <iosfwd>
 
 namespace eosio {
-   namespace chain {
-      using std::string;
+	namespace chain {
+		using std::string;
 
-      #define AN(X) eosio::chain::account::string_to_name(#X)
+#define AN(X) eosio::chain::account_name(#X)
+#define MAX_NAME_LENGH 64
+
+		enum chain_enum {
+			force,
+			eos
+		};
+		static const auto force_chain_name = "FORCE";
+
+		static const auto eos_chain_name = "EOS";
+
+		const static chain_enum get_chain_by_name(const string &chain_s);
+
+		struct account_name {
+
+			bool empty() const { return 0 == value[0]; }
+
+			bool good() const { return !empty(); }
+
+			account_name() {}
+
+			account_name(const char *str, chain_enum c = force) {
+				set_value(str);
+				chain = c;
+			}
+
+			account_name(const string &str, chain_enum c = force) {
+				set_value(str.c_str());
+				chain = c;
+			}
+
+			void set(const char *str);
+
+			//TODO:
+			const char *get_value() const {
+				return value;
+			}
+
+			const chain_enum get_chain() const {
+				return chain_enum(chain);
+			}
+
+			const string get_chain_name() const;
 
 
-         struct account_name {
+			explicit operator string() const;
 
-            uint64_t value = 0;
+			string to_string() const { return string(*this); }
 
-            bool empty() const { return 0 == value; }
+			account_name &operator=(const string &n) {
+				set(n.c_str());
+				return *this;
+			}
 
-            bool good() const { return !empty(); }
+			account_name &operator=(const char *n) {
+				set(n);
+				return *this;
+			}
 
-            account_name(const char *str) { set(str); }
+			friend std::ostream &operator<<(std::ostream &out, const account_name &n) {
+				return out << string(n);
+			}
 
-            account_name(const string &str) { set(str.c_str()); }
+			int compare(const account_name &b) const;
 
-            void set(const char *str);
+			friend bool operator<(const account_name &a, const account_name &b) { return a.compare(b) < 0; }
 
-            template<typename T>
-            account_name(T v):value(v) {}
+			friend bool operator<=(const account_name &a, const account_name &b) { return a.compare(b) <= 0; }
 
-            account_name() {}
+			friend bool operator>(const account_name &a, const account_name &b) { return a.compare(b) > 0; }
 
-            uint64_t get_value() const {
-               return this->value;
-            }
+			friend bool operator>=(const account_name &a, const account_name &b) { return a.compare(b) >= 0; }
 
-            static constexpr uint64_t char_to_symbol(char c) {
-               if (c >= 'a' && c <= 'z')
-                  return (c - 'a') + 6;
-               if (c >= '1' && c <= '5')
-                  return (c - '1') + 1;
-               return 0;
-            }
+			friend bool operator==(const account_name &a, const account_name &b) { return a.compare(b) == 0; }
 
-            // Each char of the string is encoded into 5-bit chunk and left-shifted
-            // to its 5-bit slot starting with the highest slot for the first char.
-            // The 13th char, if str is long enough, is encoded into 4-bit chunk
-            // and placed in the lowest 4 bits. 64 = 12 * 5 + 4
-            static constexpr uint64_t string_to_name(const char *str) {
-               uint64_t name = 0;
-               int i = 0;
-               for (; str[i] && i < 12; ++i) {
-                  // NOTE: char_to_symbol() returns char type, and without this explicit
-                  // expansion to uint64 type, the compilation fails at the point of usage
-                  // of string_to_name(), where the usage requires constant (compile time) expression.
-                  name |= (char_to_symbol(str[i]) & 0x1f) << (64 - 5 * (i + 1));
-               }
+			friend bool operator!=(const account_name &a, const account_name &b) { return a.compare(b) != 0; }
 
-               // The for-loop encoded up to 60 high bits into uint64 'name' variable,
-               // if (strlen(str) > 12) then encode str[12] into the low (remaining)
-               // 4 bits of 'name'
-               if (i == 12)
-                  name |= char_to_symbol(str[12]) & 0x0F;
-               return name;
-            }
 
-            explicit operator string() const;
+			char* value;
 
-            string to_string() const { return string(*this); }
+			uint64_t chain;
 
-            account_name &operator=(uint64_t v) {
-               value = v;
-               return *this;
-            }
+		private:
 
-            account_name &operator=(const string &n) {
-               value = account_name(n).value;
-               return *this;
-            }
-
-            account_name &operator=(const char *n) {
-               value = account_name(n).value;
-               return *this;
-            }
-
-            friend std::ostream &operator<<(std::ostream &out, const account_name &n) {
-               return out << string(n);
-            }
-
-            friend bool operator<(const account_name &a, const account_name &b) { return a.value < b.value; }
-
-            friend bool operator<=(const account_name &a, const account_name &b) { return a.value <= b.value; }
-
-            friend bool operator>(const account_name &a, const account_name &b) { return a.value > b.value; }
-
-            friend bool operator>=(const account_name &a, const account_name &b) { return a.value >= b.value; }
-
-            friend bool operator==(const account_name &a, const account_name &b) { return a.value == b.value; }
-
-            friend bool operator==(const account_name &a, uint64_t b) { return a.value == b; }
-
-            friend bool operator!=(const account_name &a, uint64_t b) { return a.value != b; }
-
-            friend bool operator!=(const account_name &a, const account_name &b) { return a.value != b.value; }
-
-            operator bool() const { return value; }
-
-            operator uint64_t() const { return value; }
-
-            operator unsigned __int128() const { return value; }
-         };
-   }
+			void set_value(const char *str);
+		};
+	}
 } // eosio::chain
 
 namespace std {
-   template<>
-   struct hash<eosio::chain::account_name> : private hash<uint64_t> {
-      typedef eosio::chain::account_name argument_type;
-      typedef typename hash<uint64_t>::result_type result_type;
-
-      result_type operator()(const argument_type &name) const noexcept {
-         return hash<uint64_t>::operator()(name.get_value());
-      }
-   };
+	template<>
+	struct hash<eosio::chain::account_name> : private hash<string> {
+		hash<string>::result_type operator()(const eosio::chain::account_name &name) const noexcept {
+			return hash<string>::operator()(name.to_string());
+		}
+	};
 };
 
 namespace fc {
-   class variant;
+	class variant;
 
-   void to_variant(const eosio::chain::account_name &c, fc::variant &v);
+	void to_variant(const eosio::chain::account_name &c, fc::variant &v);
 
-   void from_variant(const fc::variant &v, eosio::chain::account_name &check);
+	void from_variant(const fc::variant &v, eosio::chain::account_name &check);
 } // fc
 
-
-FC_REFLECT( eosio::chain::account_name, (value) )
+FC_REFLECT(eosio::chain::account_name, (value)(chain))
