@@ -12,4 +12,8 @@ void hello::apply( apply_context& context ) const {
    ilog("apply_native_hello ${h}", ("h", actor));
 }
 
+void stransfer::apply( eosio::chain::apply_context& context ) const {
+
+}
+
 } }

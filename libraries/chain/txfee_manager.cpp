@@ -53,6 +53,18 @@ namespace eosio { namespace chain {
       const auto &db = ctl.db();
       const auto block_num = ctl.head_block_num();
 
+      // TODO use func in native cpp
+      if(act.account == config::native_account_name){
+         switch(act.name.value) {
+            case N(stransfer):
+               return asset{10};
+            case N(hello):
+               return asset{10};
+            default:
+               return asset{10};
+         }
+      }
+
       // first check if changed fee
       try{
          const auto fee_in_db = db.find<action_fee_object, by_action_name>(

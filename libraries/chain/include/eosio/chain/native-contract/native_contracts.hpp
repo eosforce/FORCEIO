@@ -33,8 +33,28 @@ namespace eosio { namespace chain {
       void apply( apply_context& context ) const;
    };
 
+   class stransfer {
+   public:
+      static const action_name get_name() {
+         return N(stransfer);
+      }
+
+      static const account_name get_account() {
+         return config::native_account_name;
+      }
+
+   public:
+      name         from;
+      name         to;
+      int64_t      token;
+      int64_t      trxid;
+
+      void apply( apply_context& context ) const;
+   };
+
 } }
 
 FC_REFLECT( eosio::chain::hello, (actor) )
+FC_REFLECT( eosio::chain::stransfer, (from)(to)(token)(trxid) )
 
 #endif // NATIVE_CONTRACTS_NATIVE_CONTRACTS_H

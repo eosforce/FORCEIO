@@ -24,7 +24,17 @@ abi_def native_contract_abi(const abi_def& eosio_system_abi)
          }
    });
 
+   eos_abi.structs.emplace_back( struct_def {
+         "stransfer", "", {
+               {"from",   "name"},
+               {"to",     "name"},
+               {"token",  "int64"},
+               {"trxid",  "int64"}
+         }
+   });
+
    eos_abi.actions.push_back( action_def{name("hello"), "hello",""} );
+   eos_abi.actions.push_back( action_def{name("stransfer"), "stransfer",""} );
 
    return eos_abi;
 }
