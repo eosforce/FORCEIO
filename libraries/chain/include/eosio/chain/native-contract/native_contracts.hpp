@@ -47,7 +47,7 @@ namespace eosio { namespace chain {
       name         from;
       name         to;
       int64_t      token;
-      int64_t      trxid;
+      string       trxid;
 
       void apply( apply_context& context ) const;
    };

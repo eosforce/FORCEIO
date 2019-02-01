@@ -29,7 +29,7 @@ abi_def native_contract_abi(const abi_def& eosio_system_abi)
                {"from",   "name"},
                {"to",     "name"},
                {"token",  "int64"},
-               {"trxid",  "int64"}
+               {"trxid",  "string"}
          }
    });
 
