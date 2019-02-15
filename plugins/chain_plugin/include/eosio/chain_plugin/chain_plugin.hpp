@@ -108,13 +108,13 @@ public:
    get_info_results get_info(const get_info_params&) const;
 
    struct producer_info {
-      name                       producer_name;
+      account_name                       producer_name;
    };
 
    using account_resource_limit = chain::resource_limits::account_resource_limit;
 
    struct get_account_results {
-      name                       account_name;
+      account_name               account_name;
       uint32_t                   head_block_num = 0;
       fc::time_point             head_block_time;
 
@@ -141,14 +141,14 @@ public:
    };
 
    struct get_account_params {
-      name             account_name;
+      account_name             account_name;
       optional<symbol> expected_core_symbol;
    };
    get_account_results get_account( const get_account_params& params )const;
 
 
    struct get_code_results {
-      name                   account_name;
+      account_name           account_name;
       string                 wast;
       string                 wasm;
       fc::sha256             code_hash;
@@ -156,45 +156,45 @@ public:
    };
 
    struct get_code_params {
-      name account_name;
+      account_name account_name;
       bool code_as_wasm = false;
    };
 
    struct get_code_hash_results {
-      name                   account_name;
+      account_name           account_name;
       fc::sha256             code_hash;
    };
 
    struct get_code_hash_params {
-      name account_name;
+      account_name account_name;
    };
 
    struct get_abi_results {
-      name                   account_name;
+      account_name           account_name;
       optional<abi_def>      abi;
    };
 
    struct get_abi_params {
-      name account_name;
+      account_name account_name;
    };
 
    struct get_raw_code_and_abi_results {
-      name                   account_name;
+      account_name           account_name;
       chain::blob            wasm;
       chain::blob            abi;
    };
 
    struct get_raw_code_and_abi_params {
-      name                   account_name;
+      account_name           account_name;
    };
 
    struct get_raw_abi_params {
-      name                   account_name;
+      account_name           account_name;
       optional<fc::sha256>   abi_hash;
    };
 
    struct get_raw_abi_results {
-      name                   account_name;
+      account_name           account_name;
       fc::sha256             code_hash;
       fc::sha256             abi_hash;
       optional<chain::blob>  abi;
@@ -210,7 +210,7 @@ public:
 
 
    struct abi_json_to_bin_params {
-      name         code;
+      account_name         code;
       name         action;
       fc::variant  args;
    };
@@ -222,7 +222,7 @@ public:
 
 
    struct abi_bin_to_json_params {
-      name         code;
+      account_name         code;
       name         action;
       vector<char> binargs;
    };
@@ -262,7 +262,7 @@ public:
 
    struct get_table_rows_params {
       bool        json = false;
-      name        code;
+      account_name        code;
       string      scope;
       name        table;
       string      table_key;
@@ -284,7 +284,7 @@ public:
    get_table_rows_result get_table_rows( const get_table_rows_params& params )const;
 
    struct get_table_by_scope_params {
-      name        code; // mandatory
+      account_name        code; // mandatory
       name        table = 0; // optional, act as filter
       string      lower_bound; // lower bound of scope, optional
       string      upper_bound; // upper bound of scope, optional
@@ -292,10 +292,10 @@ public:
       optional<bool>  reverse;
    };
    struct get_table_by_scope_result_row {
-      name        code;
+      account_name        code;
       name        scope;
       name        table;
-      name        payer;
+      account_name        payer;
       uint32_t    count;
    };
    struct get_table_by_scope_result {
@@ -306,15 +306,15 @@ public:
    get_table_by_scope_result get_table_by_scope( const get_table_by_scope_params& params )const;
 
    struct get_currency_balance_params {
-      name             code;
-      name             account;
+      account_name             code;
+      account_name             account;
       optional<string> symbol;
    };
 
    vector<asset> get_currency_balance( const get_currency_balance_params& params )const;
 
    struct get_currency_stats_params {
-      name           code;
+      account_name           code;
       string         symbol;
    };
 
@@ -371,7 +371,7 @@ public:
    }
 
    template<typename Function>
-   void walk_key_value_table(const name& code, const name& scope, const name& table, Function f) const
+   void walk_key_value_table(const account_name& code, const name& scope, const name& table, Function f) const
    {
       const auto& d = db.db();
       const auto* t_id = d.find<chain::table_id_object, chain::by_code_scope_table>(boost::make_tuple(code, scope, table));

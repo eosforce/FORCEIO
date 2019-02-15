@@ -971,8 +971,8 @@ class action_api : public context_aware_api {
          return context.act.data.size();
       }
 
-      name current_receiver() {
-         return context.receiver;
+      int64_t current_receiver() {
+         return context.receiver.get_value();
       }
 };
 
@@ -1793,7 +1793,7 @@ REGISTER_INTRINSICS(context_free_system_api,
 REGISTER_INTRINSICS(action_api,
    (read_action_data,       int(int, int)  )
    (action_data_size,       int()          )
-   (current_receiver,   int64_t()          )
+   (current_receiver,       int64_t() )
 );
 
 REGISTER_INTRINSICS(authorization_api,

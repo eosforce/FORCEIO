@@ -196,8 +196,7 @@ namespace eosio {
                  if ((filter_out.find({ act.receipt.receiver, 0, 0 }) == filter_out.end()) &&
                      (filter_out.find({ act.receipt.receiver, 0, a.actor }) == filter_out.end()) &&
                      (filter_out.find({ act.receipt.receiver, act.act.name, 0 }) == filter_out.end()) &&
-                     (filter_out.find({ act.receipt.receiver, act.act.name, a.actor }) == filter_out.end()) &&
-                     (act.act.name != N(onfee))) {
+                     (filter_out.find({ act.receipt.receiver, act.act.name, a.actor }) == filter_out.end())) {
                    result.insert( a.actor );
                  }
                }
@@ -210,7 +209,7 @@ namespace eosio {
             chainbase::database& db = const_cast<chainbase::database&>( chain.db() ); // Override read-only access to state DB (highly unrecommended practice!)
 
             const auto& idx = db.get_index<account_history_index, by_account_action_seq>();
-            auto itr = idx.lower_bound( boost::make_tuple( name(n.value+1), 0 ) );
+            auto itr = idx.lower_bound( boost::make_tuple( name(n.get_value()+1), 0 ) );
 
             uint64_t asn = 0;
             if( itr != idx.begin() ) --itr;
@@ -232,10 +231,10 @@ namespace eosio {
             if( at.act.name == N(newaccount) )
             {
                const auto create = at.act.data_as<chain::newaccount>();
-               add(db, create.owner.keys, create.name, N(owner));
-               add(db, create.owner.accounts, create.name, N(owner));
-               add(db, create.active.keys, create.name, N(active));
-               add(db, create.active.accounts, create.name, N(active));
+               add(db, create.owner.keys, create.name, config::owner_name);
+               add(db, create.owner.accounts, create.name, config::owner_name);
+               add(db, create.active.keys, create.name, config::active_name);
+               add(db, create.active.accounts, create.name, config::active_name);
             }
             else if( at.act.name == N(updateauth) )
             {
@@ -408,7 +407,7 @@ namespace eosio {
         auto n = params.account_name;
         idump((pos));
         if( pos == -1 ) {
-            auto itr = idx.lower_bound( boost::make_tuple( name(n.value+1), 0 ) );
+            auto itr = idx.lower_bound( boost::make_tuple( name(n.get_value()+1), 0 ) );
             if( itr == idx.begin() ) {
                if( itr->account == n )
                   pos = itr->account_sequence_num+1;

@@ -114,7 +114,7 @@ namespace eosio { namespace chain {
          int64_t                       billed_cpu_time_us = 0;
          bool                          explicit_billed_cpu_time = false;
 
-         account_name                  fee_payer      = name{};
+         account_name                  fee_payer      = account_name{};
          asset                         fee_costed     = asset{0};
          asset                         max_fee_to_pay = asset{0};
 

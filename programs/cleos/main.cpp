@@ -602,11 +602,11 @@ chain::action create_setabi(const name& account, const bytes& abi) {
 }
 
 #if RESOURCE_MODEL == RESOURCE_MODEL_FEE
-chain::action create_setfee(const name& account, const name &act, const asset fee, const uint32_t cpu, const uint32_t net, const uint32_t ram) {
+chain::action create_setfee(const account_name& account, const name &act, const asset fee, const uint32_t cpu, const uint32_t net, const uint32_t ram) {
    const auto permission_account =
          ((cpu == 0)&&(net == 0)&&(ram == 0))
          ? account             // if no set res limit, just need account permission
-         : name("force.test"); // if set res limit, need force.test
+         : account_name{config::chain_config_name}; // if set res limit, need config account
 
    return action {
          vector<chain::permission_level>{{permission_account, config::active_name}},
@@ -3201,14 +3201,14 @@ int main( int argc, char** argv ) {
                                           ("scope", "eosio.msig")
                                           ("table", "invals")
                                           ("table_key", "")
-                                          ("lower_bound", a.first.value)
-                                          ("upper_bound", a.first.value + 1)
+                                          ("lower_bound", a.first.get_value())
+                                          ("upper_bound", a.first.get_value() + 1)
                                           // Less than ideal upper_bound usage preserved so cleos can still work with old buggy nodeos versions
                                           // Change to name(proposal_name).value when cleos no longer needs to support nodeos versions older than 1.5.0
                                           ("limit", 1)
                                     );
                const auto& rows4 = result4.get_object()["rows"].get_array();
-               if( rows4.empty() || rows4[0].get_object()["account"].as<eosio::name>() != a.first ) {
+               if( rows4.empty() || rows4[0].get_object()["account"].as<eosio::account_name>() != a.first ) {
                   continue;
                }
 

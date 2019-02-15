@@ -64,7 +64,7 @@ namespace eosio { namespace chain {
           * @param type The type of message
           */
          optional<permission_name> lookup_minimum_permission( account_name authorizer_account,
-                                                              scope_name code_account,
+                                                              account_name code_account,
                                                               action_name type
                                                             )const;
 
@@ -129,7 +129,7 @@ namespace eosio { namespace chain {
          fc::microseconds check_canceldelay_authorization( const canceldelay& cancel, const vector<permission_level>& auths )const;
 
          optional<permission_name> lookup_linked_permission( account_name authorizer_account,
-                                                             scope_name code_account,
+                                                             account_name code_account,
                                                              action_name type
                                                            )const;
    };

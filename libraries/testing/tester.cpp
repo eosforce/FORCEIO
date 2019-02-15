@@ -746,7 +746,7 @@ namespace eosio { namespace testing {
       const auto& idx = db.get_index<chain::key_value_index, chain::by_scope_primary>();
 
       auto itr = idx.lower_bound( boost::make_tuple( t_id->id, act ) );
-      if ( itr == idx.end() || itr->t_id != t_id->id || act.value != itr->primary_key ) {
+      if ( itr == idx.end() || itr->t_id != t_id->id || act.get_value() != itr->primary_key ) {
          return data;
       }
 

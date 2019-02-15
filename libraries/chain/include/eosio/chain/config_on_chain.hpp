@@ -25,7 +25,6 @@ namespace config{
    };
 
    namespace func_typ{
-      static const auto onfee_action        = N(f.onfeeact);
       static const auto chain_maintain_stat = N(f.maintain);
    };
 
@@ -48,7 +47,7 @@ class config_data_object : public chainbase::object<config_data_object_type, con
    OBJECT_CTOR(config_data_object);
 
    id_type id;
-   account_name typ;
+   name typ;
    int64_t num = 0;
    account_name key; // TBD By FanYang will use for cfg future
    asset fee; // TBD By FanYang will use for cfg future

@@ -33,10 +33,10 @@ namespace eosio { namespace chain {
       init_native_fee(config::token_account_name, N(create),   asset(10*10000));
 
       init_native_fee(config::system_account_name, N(setabi),  asset(1000));
-      init_native_fee(config::system_account_name, N(setfee),  asset(1000));
+      init_native_fee(config::system_account_name, config::action::setfee_name,  asset(1000));
       init_native_fee(config::system_account_name, N(setcode), asset(1000));
 
-      init_native_fee(config::system_account_name, N(setconifg), asset(100));
+      init_native_fee(config::system_account_name, config::action::setconfig_name, asset(100));
 
       init_native_fee(config::system_account_name, N(canceldelay), asset(5000));
       init_native_fee(config::system_account_name, N(linkauth),    asset(5000));
