@@ -165,6 +165,11 @@ def stepMkConfig():
         datas["initAccountsKeys"] = a['keymap']
     datas["maxClients"] = len(datas["initProducers"]) + 10
 
+def cpContract(account):
+    run('mkdir -p %s/%s/' % (os.path.abspath(args.config_dir), account))
+    run('cp ' + args.contracts_dir + ('/%s/%s.abi ' % (account, account)) + os.path.abspath(args.config_dir) + "/" + account + "/")
+    run('cp ' + args.contracts_dir + ('/%s/%s.wasm ' % (account, account)) + os.path.abspath(args.config_dir) + "/" + account + "/")
+
 def stepMakeGenesis():
     run('rm -rf ' + os.path.abspath(args.config_dir))
     run('mkdir -p ' + os.path.abspath(args.config_dir))
@@ -178,6 +183,8 @@ def stepMakeGenesis():
     run('cp ' + args.contracts_dir + '/force.msig/force.msig.wasm ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/force.relay/force.relay.abi ' + os.path.abspath(args.config_dir))
     run('cp ' + args.contracts_dir + '/force.relay/force.relay.wasm ' + os.path.abspath(args.config_dir))
+
+    cpContract('relay.token')
 
     #run('cp ./genesis-data/genesis.json ' + os.path.abspath(args.config_dir))
     #replaceFile(os.path.abspath(args.config_dir) + "/genesis.json", "#CORE_SYMBOL#", args.symbol)
@@ -205,6 +212,9 @@ notify-retry-times = 3" > ''' + os.path.abspath(args.config_dir) + '/config.ini'
     run('mv ./key.json ' + os.path.abspath(args.config_dir) + '/keys/')
     run('mv ./sigkey.json ' + os.path.abspath(args.config_dir) + '/keys/')
 
+def cleos(cmd):
+    run(args.cleos + cmd)
+
 def setFuncStartBlock(func_typ, num):
     run(args.cleos +
         'push action force setconfig ' +
@@ -218,12 +228,23 @@ def setFee(account, act, fee, cpu, net, ram):
         '"' + intToCurrency(fee) + '" ' +
         ('%d %d %d' % (cpu, net, ram)))
 
+def getRAM(account, ram):
+    cleos("push action force freeze '{\"voter\":\"%s\", \"stake\":\"%s\"}' -p %s" % (account, intToCurrency(ram), account))
+    cleos("push action force vote4ram '{\"voter\":\"%s\",\"bpname\":\"biosbpa\",\"stake\":\"%s\"}' -p %s" % (account, intToCurrency(ram), account))
+
+def setContract(account):
+    getRAM(account, 1000 * 10000)
+    cleos('set contract %s %s/%s/' % (account, os.path.abspath(args.config_dir), account))
+
 def stepSetFuncs():
     # we need set some func start block num
     # setFee('eosio', 'setconfig', 100, 100000, 1000000, 1000)
 
     # some config to set
     print('stepSetFuncs')
+
+    setContract('relay.token')
+    setFee('relay.token', 'on', 5000, 0, 0, 0)
 
 def clearData():
     stepKillAll()
