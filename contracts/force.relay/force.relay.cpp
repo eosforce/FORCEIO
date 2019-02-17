@@ -1,8 +1,11 @@
 #include "force.relay.hpp"
+
 namespace force {
 
 void relay::commit( const name chain, const account_name transfer, const relay::block_type& block, const vector<action>& actions ) {
    print("commit ", chain, "\n");
+
+   require_auth(transfer);
 
    // TODO confirm
    onblock(chain, transfer, block, actions);
@@ -86,14 +89,24 @@ void relay::onblock( const name chain, const account_name transfer, const block_
       //print("check act ", act.account, " ", act.name, "\n");
       const auto& h = handler_map.find(std::make_pair(act.account, act.name));
       if(h != handler_map.end()){
-         onaction(block, act, h->second);
+         onaction(transfer, block, act, h->second);
       }
    }
 
 }
 
-void relay::onaction( const block_type& block, const action& act, const map_handler& handler ){
-   print("onaction ", act.account, "\n");
+void relay::onaction( const account_name transfer, const block_type& block, const action& act, const map_handler& handler ){
+   print("onaction ", act.account, " ", act.name, "\n");
+   eosio::action{
+         vector<eosio::permission_level>{},
+         handler.account,
+         N(on),
+         handler_action{
+               handler.chain,
+               block.id,
+               act
+         }
+   }.send();
 }
 
 } // namespace force

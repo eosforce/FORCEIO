@@ -68,6 +68,14 @@ public:
       EOSLIB_SERIALIZE( map_handler, (chain)(name)(actaccount)(actname)(account)(data) )
    };
 
+   struct handler_action {
+      name        chain;
+      checksum256 block_id;
+      action      act;
+
+      EOSLIB_SERIALIZE( handler_action, (chain)(block_id)(act) )
+   };
+
    // channel
    struct channel {
       name        chain;
@@ -83,7 +91,7 @@ public:
 
 private:
    void onblock( const name chain, const account_name transfer, const block_type& block, const vector<action>& actions );
-   void onaction( const block_type& block, const action& act, const map_handler& handler );
+   void onaction(  const account_name transfer, const block_type& block, const action& act, const map_handler& handler );
 
 public:
    /// @abi action

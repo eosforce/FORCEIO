@@ -30,6 +30,7 @@ add_subdirectory(payloadless)
 add_subdirectory(integration_test)
 
 add_subdirectory(force.relay)
+add_subdirectory(relay.token)
 
 file(GLOB SKELETONS RELATIVE ${CMAKE_SOURCE_DIR}/contracts "skeleton/*")
 
