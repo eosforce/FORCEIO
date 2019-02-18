@@ -24,6 +24,7 @@
 #include <eosio/chain/genesis_state.hpp>
 #include <grpcpp/grpcpp.h>
 #include "block.grpc.pb.h"
+#include "relay_commit.grpc.pb.h"
 
 namespace fc { class variant; }
 
@@ -48,6 +49,13 @@ using force_block::BlockTransRequest;
 using force_block::BlockRequest;
 using force_block::BlockReply;
 
+using force_relay_commit::relay_commit;
+using force_relay_commit::RelayCommitRequest;
+using force_relay_commit::RelayBlock;
+using force_relay_commit::RelayAction;
+using force_relay_commit::RelayPermission_level;
+using force_relay_commit::RelayCommitReply;
+
 
 static appbase::abstract_plugin& _bus_plugin = app().register_plugin<bus_plugin>();
 
@@ -55,11 +63,13 @@ class grpc_stub
 {
 public:
   grpc_stub(std::shared_ptr<Channel> channel)
-      : block_stub_(grpc_block::NewStub(channel)) {}
+      : block_stub_(grpc_block::NewStub(channel)), relay_stub_(relay_commit::NewStub(channel)){}
   std::string PutBlockRequest(int blocknum,vector<BlockTransRequest> &blockTrans);
+  std::string PutRelayCommitRequest(RelayBlock &relayCommitRequest,vector<RelayAction> &action);
   ~grpc_stub(){}
 private:
   std::unique_ptr<grpc_block::Stub> block_stub_;
+  std::unique_ptr<relay_commit::Stub> relay_stub_;
 };
 
 class bus_plugin_impl {
@@ -137,8 +147,7 @@ private:
    
 };
 
-std::string grpc_stub::PutBlockRequest(int blocknum,vector<BlockTransRequest> &blockTrans)
-{
+std::string grpc_stub::PutBlockRequest(int blocknum,vector<BlockTransRequest> &blockTrans) {
    try{
     BlockRequest request;
     request.set_blocknum(blocknum);
@@ -155,6 +164,34 @@ std::string grpc_stub::PutBlockRequest(int blocknum,vector<BlockTransRequest> &b
     Status status = block_stub_->rpc_sendaction(&context, request, &reply);
     if (status.ok()) {
        ilog("bus_plug send blockRequest success block_num:${num}",("num",blocknum));
+      return reply.message();
+    } else {
+      elog("PutBlockRequest error error_code:${error_code},error_message:${message}",("error_code",(int)(status.error_code()))("message",status.error_message()));
+      return "RPC failed";
+    }
+   }catch(std::exception& e)
+   {
+     elog( "Exception on grpc_stub PutRequest: ${e}", ("e", e.what()));
+     return "exception " + string(e.what());
+   }
+}
+
+std::string grpc_stub::PutRelayCommitRequest(RelayBlock &block,vector<RelayAction> &action) {
+   try{
+    RelayCommitRequest request;
+    request.set_allocated_block(&block);
+    int nsize = action.size();
+    for (int i=0;i!=nsize;++i)
+    {
+       RelayAction *actiontemp = request.add_action();
+       *actiontemp = action[i];
+    }
+    
+    RelayCommitReply reply;
+    ClientContext context;
+    Status status = relay_stub_->rpc_sendaction(&context, request, &reply);
+    if (status.ok()) {
+       ilog("bus_plug send blockRequest success block_num");
       return reply.message();
     } else {
       elog("PutBlockRequest error error_code:${error_code},error_message:${message}",("error_code",(int)(status.error_code()))("message",status.error_message()));
@@ -295,22 +332,24 @@ void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& 
             const auto& id = trx.id();
             trx_id_str = id.str();
 
-            auto v = to_variant_with_abi( trx );
-            string trx_json = fc::json::to_string( v );
-            //将transaction的信息发过去  block的信息额外再添加
-           // auto reply = _grpc_stub->PutTransactionRequest(block_num,trx_json,trx_id_str);
-
-            BlockTransRequest tempBlockTrans;
-            tempBlockTrans.set_trx(trx_json);
-            tempBlockTrans.set_trxid(trx_id_str);
-            blockTans.push_back(tempBlockTrans);
-            HasTransaction = true;
+            for (auto &act: trx.actions)
+            {
+               if(act.name == N(transfer)){
+                  //目前只处理transfer 的信息
+               }
+            }
            
          } else {
             const auto& id = receipt.trx.get<transaction_id_type>();
             trx_id_str = id.str();
          }
 
+      }
+
+      for( const auto& receipt : bs->block->transactions ) {
+         if( receipt.trx.contains<packed_transaction>() ) {
+            
+         }
       }
       if (HasTransaction)
          auto reply = _grpc_stub->PutBlockRequest(block_num,blockTans);
