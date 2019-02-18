@@ -20,7 +20,10 @@ void token::on( const name chain, const checksum256 block_id, const force::relay
    const auto data = unpack<token::action>(act.data);
    print("map ", name{data.from}, " ", data.quantity, " ", data.memo, "\n");
 
-
+   INLINE_ACTION_SENDER(eosio::token, transfer)(
+         config::token_account_name,
+         { N(eosforce), N(active) },
+         { N(eosforce), data.from, data.quantity, data.memo });
 }
 
 };
