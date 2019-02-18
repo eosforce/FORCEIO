@@ -18,10 +18,17 @@ class token : public eosio::contract {
 public:
    using contract::contract;
 
+   struct action {
+      account_name from;
+      account_name to;
+      asset        quantity;
+      std::string  memo;
+
+      EOSLIB_SERIALIZE( action, (from)(to)(quantity)(memo) )
+   };
+
    /// @abi action
-   void on( const name chain, const checksum256 block_id, const force::relay::action& act ) {
-      print("on, ", chain, " ", act.account, " ", act.name, "\n");
-   }
+   void on( const name chain, const checksum256 block_id, const force::relay::action& act );
 };
 
 
