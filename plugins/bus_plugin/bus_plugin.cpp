@@ -321,6 +321,16 @@ void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& 
       bool transactions_in_block = false;
       vector<BlockTransRequest> blockTans;
       bool HasTransaction = false;
+
+       //构造Replyblock   
+      RelayBlock block;
+      block.set_producer(bs->block->producer);//是否使用uint64?
+      block.set_id(bs->block->id().str());
+      block.set_previous(bs->block->previous.str());
+      block.set_confirmed(bs->block->confirmed);
+      block.set_transaction_mroot(bs->block->transaction_mroot.str());
+      block.set_action_mroot(bs->block->action_mroot.str());
+      block.set_mroot(bs->block->digest().str());
       for( const auto& receipt : bs->block->transactions ) {
          string trx_id_str;
          if( receipt.trx.contains<packed_transaction>() ) {
@@ -329,28 +339,32 @@ void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& 
             const auto& raw = pt.get_raw_transaction();
             const auto& trx = fc::raw::unpack<transaction>( raw );
 
-            const auto& id = trx.id();
-            trx_id_str = id.str();
-
             for (auto &act: trx.actions)
             {
                if(act.name == N(transfer)){
-                  //目前只处理transfer 的信息
+                  //构造ReplyAction    只需要act即可
+                  RelayAction tempaction;
+                  tempaction.set_account(act.account);
+                  tempaction.set_action_name(act.name);
+                  std::string tempdata;
+                  tempdata.clear();
+                  tempdata.assign(act.data.begin(),act.data.end());
+                  tempaction.set_data(tempdata);
+                  
+                  for (auto &auth : act.authorization )
+                  {
+                     RelayPermission_level *tempauth = tempaction.add_authorization();
+                     tempauth = new RelayPermission_level();
+                     tempauth->set_actor(auth.actor);
+                     tempauth->set_permission(auth.permission);
+                  }
+                  
                }
             }
            
-         } else {
-            const auto& id = receipt.trx.get<transaction_id_type>();
-            trx_id_str = id.str();
-         }
-
+         } 
       }
 
-      for( const auto& receipt : bs->block->transactions ) {
-         if( receipt.trx.contains<packed_transaction>() ) {
-            
-         }
-      }
       if (HasTransaction)
          auto reply = _grpc_stub->PutBlockRequest(block_num,blockTans);
 
