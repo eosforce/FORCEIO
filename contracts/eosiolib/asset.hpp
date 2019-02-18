@@ -383,7 +383,7 @@ namespace eosio {
        *
        * @brief The owner of the asset
        */
-      account_name contract;
+      uint64_t contract;
 
       /**
        * Get the extended symbol of the asset
@@ -411,7 +411,7 @@ namespace eosio {
        *
        * @brief Construct a new extended asset object
        */
-      extended_asset( asset a, account_name c ):asset(a),contract(c){}
+      extended_asset( asset a, uint64_t c ):asset(a),contract(c){}
 
       /**
        * %Print the extended asset

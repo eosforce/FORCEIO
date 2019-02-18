@@ -21,7 +21,7 @@
 account_name global_receiver;
 
 extern "C" {
-   void apply( uint64_t receiver, uint64_t code, uint64_t action ) {
+   void apply( uint64_t receiver, account_name code, uint64_t action ) {
       if( code == ::config::system_account_name && action == N(onerror) ) {
          auto error = eosio::onerror::from_current_action();
          eosio::print("onerror called\n");

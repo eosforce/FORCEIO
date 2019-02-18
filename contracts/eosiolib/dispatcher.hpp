@@ -11,7 +11,7 @@
 namespace eosio {
 
    template<typename Contract, typename FirstAction>
-   bool dispatch( uint64_t code, uint64_t act ) {
+   bool dispatch( account_name code, uint64_t act ) {
       if( code == FirstAction::get_account() && FirstAction::get_name() == act ) {
          Contract().on( unpack_action_data<FirstAction>() );
          return true;
@@ -31,7 +31,7 @@ namespace eosio {
     *
     */
    template<typename Contract, typename FirstAction, typename SecondAction, typename... Actions>
-   bool dispatch( uint64_t code, uint64_t act ) {
+   bool dispatch( account_name code, uint64_t act ) {
       if( code == FirstAction::get_account() && FirstAction::get_name() == act ) {
          Contract().on( unpack_action_data<FirstAction>() );
          return true;
@@ -120,7 +120,7 @@ namespace eosio {
  */
 #define EOSIO_ABI( TYPE, MEMBERS ) \
 extern "C" { \
-   void apply( uint64_t receiver, uint64_t code, uint64_t action ) { \
+   void apply( uint64_t receiver, account_name code, uint64_t action ) { \
       auto self = receiver; \
       if( action == N(onerror)) { \
          /* onerror is only valid if it is for the "eosio" code account and authorized by "eosio"'s "active permission */ \

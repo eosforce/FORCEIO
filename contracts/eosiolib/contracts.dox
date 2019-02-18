@@ -26,7 +26,7 @@
   ```
   extern "C" {
      void init();
-     void apply( uint64_t code, uint64_t action );
+     void apply( account_name code, uint64_t action );
   }
   ```
 
@@ -46,7 +46,7 @@
 
   ```
   extern "C" {
-     void apply( uint64_t code, uint64_t action ) {
+     void apply( account_name code, uint64_t action ) {
         if( code == N(currency) ) {
            if( action == N(transfer) ) 
               currency::apply_currency_transfer( current_action< currency::transfer >() );

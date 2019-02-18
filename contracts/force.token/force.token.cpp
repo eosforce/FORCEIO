@@ -87,7 +87,7 @@ void token::transfer( account_name from,
 
 void token::fee( account_name payer, asset quantity ){
    // account to get fee, TODO By FanYang : need use conf
-   const auto fee_account = N(force.fee);
+   const auto fee_account = AN(force.fee);
 
    require_auth( payer );
 

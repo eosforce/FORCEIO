@@ -161,7 +161,7 @@ void test_action::test_cf_action() {
 
 }
 
-void test_action::require_notice(uint64_t receiver, uint64_t code, uint64_t action) {
+void test_action::require_notice(uint64_t receiver, account_name code, uint64_t action) {
    (void)code;(void)action;
    if( receiver == N(testapi) ) {
       eosio::require_recipient( N(acc1) );
@@ -174,7 +174,7 @@ void test_action::require_notice(uint64_t receiver, uint64_t code, uint64_t acti
    eosio_assert(false, "Should've failed");
 }
 
-void test_action::require_notice_tests(uint64_t receiver, uint64_t code, uint64_t action) {
+void test_action::require_notice_tests(uint64_t receiver, account_name code, uint64_t action) {
    eosio::print( "require_notice_tests" );
    if( receiver == N( testapi ) ) {
       eosio::print( "require_recipient( N(acc5) )" );
@@ -215,7 +215,7 @@ void test_action::test_publication_time() {
    eosio_assert( pub_time == publication_time(), "pub_time == publication_time()" );
 }
 
-void test_action::test_current_receiver(uint64_t receiver, uint64_t code, uint64_t action) {
+void test_action::test_current_receiver(uint64_t receiver, account_name code, uint64_t action) {
    (void)code;(void)action;
    account_name cur_rec;
    read_action_data(&cur_rec, sizeof(account_name));
@@ -237,13 +237,13 @@ void test_action::test_assert_code() {
    eosio_assert_code( false, code );
 }
 
-void test_action::test_ram_billing_in_notify(uint64_t receiver, uint64_t code, uint64_t action) {
+void test_action::test_ram_billing_in_notify(uint64_t receiver, account_name code, uint64_t action) {
    uint128_t tmp = 0;
    uint32_t total = read_action_data(&tmp, sizeof(uint128_t));
    eosio_assert( total == sizeof(uint128_t), "total == sizeof(uint128_t)");
 
    uint64_t to_notify = tmp >> 64;
-   uint64_t payer = tmp & 0xFFFFFFFFFFFFFFFFULL;
+   account_name payer = tmp & 0xFFFFFFFFFFFFFFFFULL;
 
    if( code == receiver ) {
       eosio::require_recipient( to_notify );

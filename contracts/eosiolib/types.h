@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <wchar.h>
+#include <eosiolib/account_name.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,7 +24,7 @@ extern "C" {
  * @brief Name of an account
  * @details Name of an account
  */
-typedef uint64_t account_name;
+typedef eosio::account_name account_name;
 
 /**
  * @brief Name of a permission
@@ -113,7 +114,7 @@ typedef struct checksum256 transaction_id_type;
 typedef struct checksum256 block_id_type;
 
 struct account_permission {
-   account_name account;
+   eosio::account_name account;
    permission_name permission;
 };
 

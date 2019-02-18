@@ -70,7 +70,7 @@ namespace snapshot_test {
 namespace multi_index_test {
    extern "C" {
       /// The apply method implements the dispatch of events to this contract
-      void apply( uint64_t self, uint64_t code, uint64_t action ) {
+      void apply( uint64_t self, account_name code, uint64_t action ) {
          require_auth(code);
          eosio_assert(action == N(increment), "unsupported action");
          snapshot_test::exec(self, unpack_action_data<snapshot_test::increment>().value);

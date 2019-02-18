@@ -54,10 +54,7 @@ namespace eosio {
 			const auto len = strnlen(str, MAX_NAME_LENGH + 1);
 			EOS_ASSERT(len <= MAX_NAME_LENGH, name_type_exception, "Name is longer than 64 characters (${name}) ",
 						  ("name", string(str)));
-			int i = 0;
-			for (; str[i] && i < MAX_NAME_LENGH; ++i) {
-				value[i] = str[i];
-			}
+			value = str;
 		}
 
 		int account_name::compare(const account_name &b) const {
@@ -79,6 +76,8 @@ namespace eosio {
 			if (b.value[i] && !a.value[i]) return -1;
 			return 0;
 		}
+
+
 
 	}
 } /// eosio::chain

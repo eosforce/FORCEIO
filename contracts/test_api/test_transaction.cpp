@@ -318,7 +318,7 @@ void test_transaction::active_new_feature() {
    activate_feature((int64_t)N(newfeature));
 }
 
-void test_transaction::repeat_deferred_transaction(uint64_t receiver, uint64_t code, uint64_t action) {
+void test_transaction::repeat_deferred_transaction(uint64_t receiver, account_name code, uint64_t action) {
    using namespace eosio;
 
    uint128_t sender_id = 0;

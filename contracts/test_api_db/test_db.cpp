@@ -83,7 +83,7 @@ extern "C" {
   }
 }
 
-void test_db::primary_i64_general(uint64_t receiver, uint64_t code, uint64_t action)
+void test_db::primary_i64_general(uint64_t receiver, account_name code, uint64_t action)
 {
    (void)code; (void)action;
    auto table1 = N(table1);
@@ -180,7 +180,7 @@ void test_db::primary_i64_general(uint64_t receiver, uint64_t code, uint64_t act
    }
 }
 
-void test_db::primary_i64_lowerbound(uint64_t receiver, uint64_t code, uint64_t action)
+void test_db::primary_i64_lowerbound(uint64_t receiver, account_name code, uint64_t action)
 {
    (void)code;(void)action;
    auto table = N(mytable);
@@ -215,7 +215,7 @@ void test_db::primary_i64_lowerbound(uint64_t receiver, uint64_t code, uint64_t 
    }
 }
 
-void test_db::primary_i64_upperbound(uint64_t receiver, uint64_t code, uint64_t action)
+void test_db::primary_i64_upperbound(uint64_t receiver, account_name code, uint64_t action)
 {
    (void)code;(void)action;
    auto table = N(mytable);
@@ -242,7 +242,7 @@ void test_db::primary_i64_upperbound(uint64_t receiver, uint64_t code, uint64_t 
    }
 }
 
-void test_db::idx64_general(uint64_t receiver, uint64_t code, uint64_t action)
+void test_db::idx64_general(uint64_t receiver, account_name code, uint64_t action)
 {
    (void)code;(void)action;
    const auto table = N(myindextable);
@@ -361,7 +361,7 @@ void test_db::idx64_general(uint64_t receiver, uint64_t code, uint64_t action)
    }
 }
 
-void test_db::idx64_lowerbound(uint64_t receiver, uint64_t code, uint64_t action)
+void test_db::idx64_lowerbound(uint64_t receiver, account_name code, uint64_t action)
 {
    (void)code;(void)action;
    const auto table = N(myindextable);
@@ -400,7 +400,7 @@ void test_db::idx64_lowerbound(uint64_t receiver, uint64_t code, uint64_t action
    }
 }
 
-void test_db::idx64_upperbound(uint64_t receiver, uint64_t code, uint64_t action)
+void test_db::idx64_upperbound(uint64_t receiver, account_name code, uint64_t action)
 {
    (void)code;(void)action;
    const auto table = N(myindextable);
@@ -438,7 +438,7 @@ void test_db::idx64_upperbound(uint64_t receiver, uint64_t code, uint64_t action
    }
 }
 
-void test_db::test_invalid_access(uint64_t receiver, uint64_t code, uint64_t action)
+void test_db::test_invalid_access(uint64_t receiver, account_name code, uint64_t action)
 {
    (void)code;(void)action;
    auto act = eosio::get_action(1, 0);

@@ -153,7 +153,7 @@ namespace eosio {
        *
        * @brief Internal Representation of the account name
        */
-      account_name value = 0;
+		uint64_t value = 0;
 
    private:
       static void trim_right_dots(std::string& str ) {

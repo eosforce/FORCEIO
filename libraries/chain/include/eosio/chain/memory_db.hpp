@@ -187,15 +187,15 @@ private:
 
    apply_context &_ctx;
 
-   uint64_t _code;
+   account_name _code;
    uint64_t _scope;
 
 public:
-   native_multi_index( apply_context &ctx, uint64_t code, uint64_t scope )
+   native_multi_index( apply_context &ctx, account_name code, uint64_t scope )
    :_ctx(ctx), _code(code), _scope(scope)
    {}
 
-   uint64_t get_code()const  { return _code; }
+   account_name get_code()const  { return _code; }
    uint64_t get_scope()const { return _scope; }
 
    const bool get( uint64_t primary, T& out, const char* error_msg = "unable to find key" )const {
@@ -237,8 +237,8 @@ public:
    }
 
    template<typename Lambda>
-   void modify( const int32_t &itr, const T& obj, uint64_t payer, Lambda&& updater ) {
-      eosio_contract_assert( _code == current_receiver().get_value(),
+   void modify( const int32_t &itr, const T& obj, account_name payer, Lambda&& updater ) {
+      eosio_contract_assert( _code == current_receiver(),
             "cannot modify objects in table of another contract" );
       // Quick fix for mutating db using multi_index that shouldn't allow mutation. Real fix can come in RC2.
 

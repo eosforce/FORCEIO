@@ -175,9 +175,9 @@ namespace eosio {
       *
       * @brief The owner of the symbol
       */
-     account_name contract;
+     uint64_t contract;
 
-     extended_symbol( symbol_name sym = 0, account_name acc = 0 ):symbol_type{sym},contract(acc){}
+     extended_symbol( symbol_name sym = 0, uint64_t acc = 0 ):symbol_type{sym},contract(acc){}
 
       /**
        * %Print the extended symbol

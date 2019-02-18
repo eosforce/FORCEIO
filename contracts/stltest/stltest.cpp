@@ -262,7 +262,7 @@ namespace stltest {
 
 extern "C" {
 /// The apply method implements the dispatch of events to this contract
-void apply( uint64_t receiver, uint64_t code, uint64_t action ) {
+void apply( uint64_t receiver, account_name code, uint64_t action ) {
     (void)receiver;
     stltest::contract::apply( code, action );
 }

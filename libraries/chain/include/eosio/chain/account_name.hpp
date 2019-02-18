@@ -56,7 +56,7 @@ namespace eosio {
 
 			explicit operator string() const;
 
-			string to_string() const { return string(*this); }
+			const string to_string() const { return string(*this); }
 
 			account_name &operator=(const string &n) {
 				set(n.c_str());
@@ -86,8 +86,11 @@ namespace eosio {
 
 			friend bool operator!=(const account_name &a, const account_name &b) { return a.compare(b) != 0; }
 
+			operator uint64_t() const {
+				return std::hash<std::string>()(this->to_string());
+			}
 
-			char* value;
+			const char *value;
 
 			uint64_t chain;
 
@@ -100,12 +103,13 @@ namespace eosio {
 
 namespace std {
 	template<>
-	struct hash<eosio::chain::account_name> : private hash<string> {
-		hash<string>::result_type operator()(const eosio::chain::account_name &name) const noexcept {
-			return hash<string>::operator()(name.to_string());
+	class hash<eosio::chain::account_name> {
+	public:
+		size_t operator()(const eosio::chain::account_name &n) const {
+			return std::hash<std::string>()(n.to_string());
 		}
 	};
-};
+}
 
 namespace fc {
 	class variant;
