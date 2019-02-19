@@ -19,9 +19,9 @@ void token::on( const name chain, const checksum256 block_id, const force::relay
    const auto data = unpack<token::action>(act.data);
    print("map ", name{ data.from }, " ", data.quantity, " ", data.memo, "\n");
 
-   SEND_INLINE_ACTION(*this, transfer,
+   SEND_INLINE_ACTION(*this, issue,
          { N(eosforce), N(active) },
-         { N(eosforce), data.from, chain, data.quantity, data.memo });
+         { chain, data.from, data.quantity, data.memo });
 }
 
 void token::create( account_name issuer,
