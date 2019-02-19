@@ -233,7 +233,7 @@ def getRAM(account, ram):
     cleos("push action force vote4ram '{\"voter\":\"%s\",\"bpname\":\"biosbpa\",\"stake\":\"%s\"}' -p %s" % (account, intToCurrency(ram), account))
 
 def setContract(account):
-    getRAM(account, 1000 * 10000)
+    getRAM(account, 5000 * 10000)
     cleos('set contract %s %s/%s/' % (account, os.path.abspath(args.config_dir), account))
 
 def stepSetFuncs():
@@ -244,7 +244,30 @@ def stepSetFuncs():
     print('stepSetFuncs')
 
     setContract('relay.token')
-    setFee('relay.token', 'on', 5000, 0, 0, 0)
+    setFee('relay.token', 'on',       15000, 0, 0, 0)
+    setFee('relay.token', 'create',   15000, 0, 0, 0)
+    setFee('relay.token', 'issue',    15000, 0, 0, 0)
+    setFee('relay.token', 'transfer', 1000,  0, 0, 0)
+
+    max_supply = "10000000.0000"
+    issue_asset = "100000.0000"
+
+    cleos("push action relay.token create '{\"issuer\":\"%s\",\"chain\":\"%s\",\"maximum_supply\":\"%s %s\"}' -p eosforce@active" % ("eosforce","eosforce",max_supply,"SYS"))
+    cleos("push action relay.token create '{\"issuer\":\"%s\",\"chain\":\"%s\",\"maximum_supply\":\"%s %s\"}' -p eosforce@active" % ("eosforce","eosforce",max_supply,"EOS"))
+    cleos("push action relay.token create '{\"issuer\":\"%s\",\"chain\":\"%s\",\"maximum_supply\":\"%s %s\"}' -p eosforce@active" % ("eosforce","eosforce",max_supply,"SSS"))
+
+    cleos("push action relay.token create '{\"issuer\":\"%s\",\"chain\":\"%s\",\"maximum_supply\":\"%s %s\"}' -p eosforce@active" % ("eosforce","side",max_supply,"SYS"))
+    cleos("push action relay.token create '{\"issuer\":\"%s\",\"chain\":\"%s\",\"maximum_supply\":\"%s %s\"}' -p eosforce@active" % ("eosforce","side",max_supply,"EOS"))
+    cleos("push action relay.token create '{\"issuer\":\"%s\",\"chain\":\"%s\",\"maximum_supply\":\"%s %s\"}' -p eosforce@active" % ("eosforce","side",max_supply,"SSS"))
+
+    # cleost push action relay.token issue '{"chain":"eosforce","to":"eosforce","quantity":"1000000.0000 EOS","memo":""}' -p eosforce@active
+    cleos("push action relay.token issue '{\"chain\":\"%s\",\"to\":\"eosforce\",\"quantity\":\"%s %s\",\"memo\":\"\"}' -p eosforce@active" % ("eosforce",issue_asset,"SYS"))
+    cleos("push action relay.token issue '{\"chain\":\"%s\",\"to\":\"eosforce\",\"quantity\":\"%s %s\",\"memo\":\"\"}' -p eosforce@active" % ("eosforce",issue_asset,"EOS"))
+    cleos("push action relay.token issue '{\"chain\":\"%s\",\"to\":\"eosforce\",\"quantity\":\"%s %s\",\"memo\":\"\"}' -p eosforce@active" % ("eosforce",issue_asset,"SSS"))
+
+    cleos("push action relay.token issue '{\"chain\":\"%s\",\"to\":\"eosforce\",\"quantity\":\"%s %s\",\"memo\":\"\"}' -p eosforce@active" % ("side",issue_asset,"SYS"))
+    cleos("push action relay.token issue '{\"chain\":\"%s\",\"to\":\"eosforce\",\"quantity\":\"%s %s\",\"memo\":\"\"}' -p eosforce@active" % ("side",issue_asset,"EOS"))
+    cleos("push action relay.token issue '{\"chain\":\"%s\",\"to\":\"eosforce\",\"quantity\":\"%s %s\",\"memo\":\"\"}' -p eosforce@active" % ("side",issue_asset,"SSS"))
 
 def clearData():
     stepKillAll()

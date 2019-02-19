@@ -140,6 +140,126 @@
                "type":"action"
             }
          ]
+      },
+      {
+         "name":"transfer",
+         "base":"",
+         "fields":[
+            {
+               "name":"from",
+               "type":"account_name"
+            },
+            {
+               "name":"to",
+               "type":"account_name"
+            },
+            {
+               "name":"chain",
+               "type":"name"
+            },
+            {
+               "name":"quantity",
+               "type":"asset"
+            },
+            {
+               "name":"memo",
+               "type":"string"
+            }
+         ]
+      },
+      {
+         "name":"create",
+         "base":"",
+         "fields":[
+            {
+               "name":"issuer",
+               "type":"account_name"
+            },
+            {
+               "name":"chain",
+               "type":"name"
+            },
+            {
+               "name":"maximum_supply",
+               "type":"asset"
+            }
+         ]
+      },
+      {
+         "name":"issue",
+         "base":"",
+         "fields":[
+            {
+               "name":"chain",
+               "type":"name"
+            },
+            {
+               "name":"to",
+               "type":"account_name"
+            },
+            {
+               "name":"quantity",
+               "type":"asset"
+            },
+            {
+               "name":"memo",
+               "type":"string"
+            }
+         ]
+      },
+      {
+         "name":"account",
+         "base":"",
+         "fields":[
+            {
+               "name":"id",
+               "type":"uint64"
+            },
+            {
+               "name":"balance",
+               "type":"asset"
+            },
+            {
+               "name":"chain",
+               "type":"name"
+            }
+         ]
+      },
+      {
+         "name":"account_next_id",
+         "base":"",
+         "fields":[
+            {
+               "name":"id",
+               "type":"uint64"
+            },
+            {
+               "name":"account",
+               "type":"account_name"
+            }
+         ]
+      },
+      {
+         "name":"currency_stats",
+         "base":"",
+         "fields":[
+            {
+               "name":"supply",
+               "type":"asset"
+            },
+            {
+               "name":"max_supply",
+               "type":"asset"
+            },
+            {
+               "name":"issuer",
+               "type":"account_name"
+            },
+            {
+               "name":"chain",
+               "type":"name"
+            }
+         ]
       }
    ],
    "actions":[
@@ -147,10 +267,57 @@
          "name":"on",
          "type":"on",
          "ricardian_contract":""
+      },
+      {
+         "name":"create",
+         "type":"create",
+         "ricardian_contract":""
+      },
+      {
+         "name":"issue",
+         "type":"issue",
+         "ricardian_contract":""
+      },
+      {
+         "name":"transfer",
+         "type":"transfer",
+         "ricardian_contract":""
       }
    ],
    "tables":[
-
+      {
+         "name":"accounts",
+         "type":"account",
+         "index_type":"i64",
+         "key_names":[
+            "currency"
+         ],
+         "key_types":[
+            "uint64"
+         ]
+      },
+      {
+         "name":"accountid",
+         "type":"account_next_id",
+         "index_type":"i64",
+         "key_names":[
+            "account"
+         ],
+         "key_types":[
+            "account_name"
+         ]
+      },
+      {
+         "name":"stat",
+         "type":"currency_stats",
+         "index_type":"i64",
+         "key_names":[
+            "currency"
+         ],
+         "key_types":[
+            "uint64"
+         ]
+      }
    ],
    "ricardian_clauses":[
 
