@@ -10,9 +10,11 @@
 #include <eosiolib/eosio.hpp>
 #include "force.relay/force.relay.hpp"
 
-using namespace eosio;
+
 
 namespace relay {
+
+using namespace eosio;
 
 using std::string;
 

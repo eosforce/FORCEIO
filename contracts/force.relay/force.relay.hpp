@@ -14,9 +14,11 @@
 #include <eosiolib/contract_config.hpp>
 #include <vector>
 
-using namespace eosio;
+
 
 namespace force {
+
+using namespace eosio;
 
 class relay : public eosio::contract {
 public:
