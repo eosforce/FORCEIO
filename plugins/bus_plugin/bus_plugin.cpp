@@ -323,13 +323,13 @@ void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& 
 
        //构造Replyblock   
       RelayBlock *block = new RelayBlock;
-      block->set_producer(bs->block->producer);//是否使用uint64?
-      block->set_id(bs->block->id().str());
-      block->set_previous(bs->block->previous.str());
+      block->set_producer(bs->block->producer.to_string());//是否使用uint64?
+      block->set_id(bs->block->id().data(),bs->block->id().data_size());
+      block->set_previous(bs->block->previous.data(),bs->block->previous.data_size());
       block->set_confirmed(bs->block->confirmed);
-      block->set_transaction_mroot(bs->block->transaction_mroot.str());
-      block->set_action_mroot(bs->block->action_mroot.str());
-      block->set_mroot(bs->block->digest().str());
+      block->set_transaction_mroot(bs->block->transaction_mroot.data(),bs->block->transaction_mroot.data_size());
+      block->set_action_mroot(bs->block->action_mroot.data(),bs->block->action_mroot.data_size());
+      block->set_mroot(bs->block->digest().data(),bs->block->digest().data_size());
       vector<RelayAction> relayAction;
       relayAction.clear();
       for( const auto& receipt : bs->block->transactions ) {
@@ -345,8 +345,8 @@ void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& 
                if(act.name == N(transfer)){
                   //构造ReplyAction    只需要act即可
                   RelayAction tempaction;
-                  tempaction.set_account(act.account);
-                  tempaction.set_action_name(act.name);
+                  tempaction.set_account(act.account.to_string());
+                  tempaction.set_action_name(act.name.to_string());
                   std::string tempdata;
                   tempdata.clear();
                   tempdata.assign(act.data.begin(),act.data.end());
@@ -355,8 +355,8 @@ void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& 
                   for (auto &auth : act.authorization )
                   {
                      RelayPermission_level *tempauth = tempaction.add_authorization();
-                     tempauth->set_actor(auth.actor);
-                     tempauth->set_permission(auth.permission);
+                     tempauth->set_actor(auth.actor.to_string());
+                     tempauth->set_permission(auth.permission.to_string());
                   }
                   relayAction.push_back(tempaction);
                }

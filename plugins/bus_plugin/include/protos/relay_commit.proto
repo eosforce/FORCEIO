@@ -33,25 +33,25 @@ message RelayCommitRequest {
 }
 
 message RelayBlock {
-  uint64 producer = 1;
-  string id = 2;
-  string previous = 3;
+  string producer = 1;
+  bytes id = 2;
+  bytes previous = 3;
   int32 confirmed = 4;
-  string transaction_mroot = 5;
-  string action_mroot = 6;
-  string mroot = 7;
+  bytes transaction_mroot = 5;
+  bytes action_mroot = 6;
+  bytes mroot = 7;
 }
 
 message RelayAction {
-  uint64 account = 1;
-  uint64 action_name = 2;
+  string account = 1;
+  string action_name = 2;
   repeated RelayPermission_level authorization = 3;
   bytes data = 4;
 }
 
 message RelayPermission_level {
-  uint64 actor = 1;
-  uint64 permission = 2;
+  string actor = 1;
+  string permission = 2;
 }
 
 // The response message containing the greetings
