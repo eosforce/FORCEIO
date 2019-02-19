@@ -162,7 +162,7 @@ namespace exchange {
                                 config::token_account_name, N(transfer),
                                 std::make_tuple(escrow, payer, quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();
-                        quant_after_fee = convert(itr1->quote, price) * base.amount / precision(base.symbol.precision());
+                        quant_after_fee = convert(itr1->quote, itr->price) * base.amount / precision(base.symbol.precision());
                         quant_after_fee = to_asset(config::token_account_name, quant_after_fee);
                         action(
                                 permission_level{ escrow, N(active) },
@@ -172,6 +172,18 @@ namespace exchange {
                         idx_orderbook.modify(itr, _self, [&]( auto& o ) {
                             o.base          -= convert(itr1->base, base);
                         });
+                        // refund the difference to payer
+                        if ( price > itr->price) {
+                            quant_after_fee = convert(itr1->quote, price - itr->price) * base.amount / precision(base.symbol.precision());
+                            //print("bid step1: quant_after_fee=",quant_after_fee);
+                            quant_after_fee = to_asset(config::token_account_name, quant_after_fee);
+                            //print("bid step2: quant_after_fee=",quant_after_fee);
+                            action(
+                                    permission_level{ escrow, N(active) },
+                                    config::token_account_name, N(transfer),
+                                    std::make_tuple(escrow, payer, quant_after_fee, std::string("send EOS fee to fee_account:"))
+                            ).send();
+                        }
                         return;
                     } else if ( base == itr->base ) { // full match
                         quant_after_fee = to_asset(config::token_account_name, base);
@@ -180,7 +192,7 @@ namespace exchange {
                                 config::token_account_name, N(transfer),
                                 std::make_tuple(escrow, payer, quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();
-                        quant_after_fee = convert(itr1->quote, price) * base.amount / precision(base.symbol.precision());
+                        quant_after_fee = convert(itr1->quote, itr->price) * base.amount / precision(base.symbol.precision());
                         quant_after_fee = to_asset(config::token_account_name, quant_after_fee);
                         action(
                                 permission_level{ escrow, N(active) },
@@ -188,6 +200,18 @@ namespace exchange {
                                 std::make_tuple(escrow, itr->maker, quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();
                         idx_orderbook.erase(itr);
+                        // refund the difference to payer
+                        if ( price > itr->price) {
+                            quant_after_fee = convert(itr1->quote, price - itr->price) * base.amount / precision(base.symbol.precision());
+                            //print("bid step1: quant_after_fee=",quant_after_fee);
+                            quant_after_fee = to_asset(config::token_account_name, quant_after_fee);
+                            //print("bid step2: quant_after_fee=",quant_after_fee);
+                            action(
+                                    permission_level{ escrow, N(active) },
+                                    config::token_account_name, N(transfer),
+                                    std::make_tuple(escrow, payer, quant_after_fee, std::string("send EOS fee to fee_account:"))
+                            ).send();
+                        }
                         return;
                     } else { // partial match
                         quant_after_fee = to_asset(config::token_account_name, itr->base);
@@ -196,7 +220,7 @@ namespace exchange {
                                 config::token_account_name, N(transfer),
                                 std::make_tuple(escrow, payer, quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();
-                        quant_after_fee = convert(itr1->quote, price) * itr->base.amount / precision(itr->base.symbol.precision()) ;
+                        quant_after_fee = convert(itr1->quote, itr->price) * itr->base.amount / precision(itr->base.symbol.precision()) ;
                         quant_after_fee = to_asset(config::token_account_name, quant_after_fee);
                         action(
                                 permission_level{ escrow, N(active) },
@@ -205,16 +229,31 @@ namespace exchange {
                         ).send();
                         base -= convert(itr1->base, itr->base);
                         idx_orderbook.erase(itr);
+                        // refund the difference to payer
+                        if ( price > itr->price) {
+                            quant_after_fee = convert(itr1->quote, price - itr->price) * itr->base.amount / precision(itr->base.symbol.precision());
+                            //print("bid step1: quant_after_fee=",quant_after_fee);
+                            quant_after_fee = to_asset(config::token_account_name, quant_after_fee);
+                            //print("bid step2: quant_after_fee=",quant_after_fee);
+                            action(
+                                    permission_level{ escrow, N(active) },
+                                    config::token_account_name, N(transfer),
+                                    std::make_tuple(escrow, payer, quant_after_fee, std::string("send EOS fee to fee_account:"))
+                            ).send();
+                        }
                     }
                 }
             };
             
-            auto lower = idx_orderbook.lower_bound( lookup_key );
-            auto upper_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::max();
-            auto upper = idx_orderbook.upper_bound( upper_key );
-                
-            if (lower == idx_orderbook.cend()) {
-                prints("buy: orderbook empty");
+            //auto lower = idx_orderbook.lower_bound( lookup_key );
+            //auto upper_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::max();
+            //auto upper = idx_orderbook.upper_bound( upper_key );
+            auto lower_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::lowest();
+            auto lower = idx_orderbook.lower_bound( lower_key );
+            auto upper = idx_orderbook.upper_bound( lookup_key );
+ 
+            if (lower == upper) {
+                prints("\n buy: orderbook empty");
                 auto pk = orders.available_primary_key();
                 orders.emplace( _self, [&]( auto& o ) {
                     o.id            = pk;
@@ -277,6 +316,19 @@ namespace exchange {
                         idx_orderbook.modify(end_itr, _self, [&]( auto& o ) {
                             o.base          -= convert(itr1->base, base);
                         });
+                        // refund the difference
+                        if ( end_itr->price > price) {
+                            quant_after_fee = convert(itr1->quote, end_itr->price - price) * base.amount / precision(base.symbol.precision());
+                            //print("bid step1: quant_after_fee=",quant_after_fee);
+                            quant_after_fee = to_asset(config::token_account_name, quant_after_fee);
+                            //print("bid step2: quant_after_fee=",quant_after_fee);
+                            action(
+                                    permission_level{ escrow, N(active) },
+                                    config::token_account_name, N(transfer),
+                                    std::make_tuple(escrow, end_itr->maker, quant_after_fee, std::string("send EOS fee to fee_account:"))
+                            ).send();
+                        }
+                        
                         return;
                     } else if ( base == end_itr->base ) { // full match
                         quant_after_fee = convert(itr1->quote, price) * base.amount / precision(base.symbol.precision());
@@ -293,6 +345,18 @@ namespace exchange {
                                 std::make_tuple(escrow, end_itr->maker, quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();
                         idx_orderbook.erase(end_itr);
+                        // refund the difference
+                        if ( end_itr->price > price) {
+                            quant_after_fee = convert(itr1->quote, end_itr->price - price) * base.amount / precision(base.symbol.precision());
+                            //print("bid step1: quant_after_fee=",quant_after_fee);
+                            quant_after_fee = to_asset(config::token_account_name, quant_after_fee);
+                            //print("bid step2: quant_after_fee=",quant_after_fee);
+                            action(
+                                    permission_level{ escrow, N(active) },
+                                    config::token_account_name, N(transfer),
+                                    std::make_tuple(escrow, end_itr->maker, quant_after_fee, std::string("send EOS fee to fee_account:"))
+                            ).send();
+                        }
                         return;
                     } else { // partial match
                         quant_after_fee = convert(itr1->quote, price) * end_itr->base.amount / precision(end_itr->base.symbol.precision());
@@ -310,6 +374,18 @@ namespace exchange {
                         ).send();
                         base -= convert(itr1->base, end_itr->base);
                         idx_orderbook.erase(end_itr);
+                        // refund the difference
+                        if ( end_itr->price > price) {
+                            quant_after_fee = convert(itr1->quote, end_itr->price - price) * end_itr->base.amount / precision(end_itr->base.symbol.precision());
+                            //print("bid step1: quant_after_fee=",quant_after_fee);
+                            quant_after_fee = to_asset(config::token_account_name, quant_after_fee);
+                            //print("bid step2: quant_after_fee=",quant_after_fee);
+                            action(
+                                    permission_level{ escrow, N(active) },
+                                    config::token_account_name, N(transfer),
+                                    std::make_tuple(escrow, end_itr->maker, quant_after_fee, std::string("send EOS fee to fee_account:"))
+                            ).send();
+                        }
                     }
                 }
             };
