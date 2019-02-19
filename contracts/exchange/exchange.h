@@ -34,6 +34,8 @@ namespace exchange {
         void create(symbol_type base, symbol_type quote);
 
         void trade( account_name payer, asset base, asset price, uint32_t bid_or_ask);
+        
+        void cancel(uint64_t order_id);
 
 
     private:

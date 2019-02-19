@@ -394,7 +394,6 @@ namespace exchange {
             auto lower = idx_orderbook.lower_bound( lower_key );
             auto upper = idx_orderbook.lower_bound( lookup_key );
             
-            
             if (lower == idx_orderbook.cend()) {
                 print("\n sell: orderbook empty, lookup_key=", lookup_key);
                 auto pk = orders.available_primary_key();
@@ -461,8 +460,50 @@ namespace exchange {
         return;
     }
 
+    void exchange::cancel(uint64_t order_id) {
+        trading_pairs   trading_pairs_table(_self,_self);
+        orderbook       orders(_self,_self);
+        asset           quant_after_fee;
+        
+        auto itr = orders.find(order_id);
+        eosio_assert(itr != orders.cend(), "order record not found");
+        require_auth( itr->maker );
+        
+        uint128_t idxkey = (uint128_t(itr->base.symbol.name()) << 64) | itr->price.symbol.name();
 
+        //print("idxkey=",idxkey,",contract=",token_contract,",symbol=",token_symbol.value);
+
+        auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
+        auto itr1 = idx_pair.find(idxkey);
+        eosio_assert(itr1 != idx_pair.end(), "trading pair does not exist");
+        
+        // refund the escrow
+        if (itr->bid_or_ask) {
+            quant_after_fee = convert(itr1->quote, itr->price) * itr->base.amount / precision(itr->base.symbol.precision());
+            //print("bid step1: quant_after_fee=",quant_after_fee);
+            quant_after_fee = to_asset(config::token_account_name, quant_after_fee);
+            //print("bid step2: quant_after_fee=",quant_after_fee);
+            action(
+                    permission_level{ escrow, N(active) },
+                    config::token_account_name, N(transfer),
+                    std::make_tuple(escrow, itr->maker, quant_after_fee, std::string("send EOS fee to fee_account:"))
+            ).send();
+        } else {
+            quant_after_fee = to_asset(config::token_account_name, itr->base);
+            //print("bid step2: quant_after_fee=",quant_after_fee);
+            action(
+                    permission_level{ escrow, N(active) },
+                    config::token_account_name, N(transfer),
+                    std::make_tuple(escrow, itr->maker, quant_after_fee, std::string("send EOS fee to fee_account:"))
+            ).send();
+        }
+        
+        orders.erase(itr);
+
+        return;
+    }
+        
 }
 
 
-EOSIO_ABI( exchange::exchange, (create)(trade))
+EOSIO_ABI( exchange::exchange, (create)(trade)(cancel))

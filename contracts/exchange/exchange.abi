@@ -26,6 +26,12 @@
         {"name": "bid_or_ask","type": "uint32"}
        ]
      },{
+       "name": "cancel",
+       "base": "",
+       "fields": [
+        {"name": "order_id","type": "uint64"}
+       ]
+     },{
       "name": "trading_pair",
       "base": "",
       "fields": [
@@ -53,6 +59,10 @@
     },{
       "name": "trade",
       "type": "trade",
+      "ricardian_contract": ""
+    },{
+      "name": "cancel",
+      "type": "cancel",
       "ricardian_contract": ""
     }
   ],
