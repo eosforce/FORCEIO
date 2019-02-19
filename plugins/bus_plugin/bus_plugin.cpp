@@ -65,7 +65,7 @@ public:
   grpc_stub(std::shared_ptr<Channel> channel)
       : block_stub_(grpc_block::NewStub(channel)), relay_stub_(relay_commit::NewStub(channel)){}
   std::string PutBlockRequest(int blocknum,vector<BlockTransRequest> &blockTrans);
-  std::string PutRelayCommitRequest(RelayBlock &relayCommitRequest,vector<RelayAction> &action);
+  std::string PutRelayCommitRequest(RelayBlock *block,vector<RelayAction> &action);
   ~grpc_stub(){}
 private:
   std::unique_ptr<grpc_block::Stub> block_stub_;
@@ -176,10 +176,10 @@ std::string grpc_stub::PutBlockRequest(int blocknum,vector<BlockTransRequest> &b
    }
 }
 
-std::string grpc_stub::PutRelayCommitRequest(RelayBlock &block,vector<RelayAction> &action) {
+std::string grpc_stub::PutRelayCommitRequest(RelayBlock *block,vector<RelayAction> &action) {
    try{
     RelayCommitRequest request;
-    request.set_allocated_block(&block);
+    request.set_allocated_block(block);
     int nsize = action.size();
     for (int i=0;i!=nsize;++i)
     {
@@ -320,17 +320,18 @@ void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& 
       const auto block_num = bs->block->block_num();
       bool transactions_in_block = false;
       vector<BlockTransRequest> blockTans;
-      bool HasTransaction = false;
 
        //构造Replyblock   
-      RelayBlock block;
-      block.set_producer(bs->block->producer);//是否使用uint64?
-      block.set_id(bs->block->id().str());
-      block.set_previous(bs->block->previous.str());
-      block.set_confirmed(bs->block->confirmed);
-      block.set_transaction_mroot(bs->block->transaction_mroot.str());
-      block.set_action_mroot(bs->block->action_mroot.str());
-      block.set_mroot(bs->block->digest().str());
+      RelayBlock *block = new RelayBlock;
+      block->set_producer(bs->block->producer);//是否使用uint64?
+      block->set_id(bs->block->id().str());
+      block->set_previous(bs->block->previous.str());
+      block->set_confirmed(bs->block->confirmed);
+      block->set_transaction_mroot(bs->block->transaction_mroot.str());
+      block->set_action_mroot(bs->block->action_mroot.str());
+      block->set_mroot(bs->block->digest().str());
+      vector<RelayAction> relayAction;
+      relayAction.clear();
       for( const auto& receipt : bs->block->transactions ) {
          string trx_id_str;
          if( receipt.trx.contains<packed_transaction>() ) {
@@ -354,21 +355,17 @@ void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& 
                   for (auto &auth : act.authorization )
                   {
                      RelayPermission_level *tempauth = tempaction.add_authorization();
-                     tempauth = new RelayPermission_level();
                      tempauth->set_actor(auth.actor);
                      tempauth->set_permission(auth.permission);
                   }
-                  
+                  relayAction.push_back(tempaction);
                }
             }
            
          } 
       }
 
-      if (HasTransaction)
-         auto reply = _grpc_stub->PutBlockRequest(block_num,blockTans);
-
-
+      auto reply = _grpc_stub->PutRelayCommitRequest(block,relayAction);
 }
 
 void bus_plugin_impl::process_accepted_block( const chain::block_state_ptr& bs ) {
@@ -612,7 +609,6 @@ void bus_plugin::plugin_initialize(const variables_map& options)
             EOS_ASSERT( my->abi_cache_size > 0, chain::plugin_config_exception, "mongodb-abi-cache-size > 0 required" );
          }
          my->abi_serializer_max_time = app().get_plugin<chain_plugin>().get_abi_serializer_max_time();
-
 // hook up to signals on controller
          chain_plugin* chain_plug = app().find_plugin<chain_plugin>();
          EOS_ASSERT( chain_plug, chain::missing_chain_plugin_exception, ""  );
