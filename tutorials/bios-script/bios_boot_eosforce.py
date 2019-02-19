@@ -215,11 +215,12 @@ notify-retry-times = 3" > ''' + os.path.abspath(args.config_dir) + '/config.ini'
 def cleos(cmd):
     run(args.cleos + cmd)
 
+def pushAction(account, action, auth, data ):
+    cleos("push action %s %s '%s' -p %s" % (account, action, data, auth))
+
 def setFuncStartBlock(func_typ, num):
-    run(args.cleos +
-        'push action force setconfig ' +
-        ('\'{"typ":"%s","num":%s,"key":"","fee":"%s"}\' ' % (func_typ, num, intToCurrency(0))) +
-        '-p force.config' )
+    pushAction("force", "setconfig", "force.config", 
+        '{"typ":"%s","num":%s,"key":"","fee":"%s"}' % (func_typ, num, intToCurrency(0)))
 
 def setFee(account, act, fee, cpu, net, ram):
     run(args.cleos +
@@ -236,6 +237,17 @@ def setContract(account):
     getRAM(account, 5000 * 10000)
     cleos('set contract %s %s/%s/' % (account, os.path.abspath(args.config_dir), account))
 
+def createMap(chain, token_account):
+    pushAction("force.relay", "newchannel", "eosforce", 
+        '{"chain":"%s","checker":"biosbpa","id":"","mroot":""}' % (chain))
+    pushAction("force.relay", "newmap", "eosforce", 
+        '{"chain":"%s","type":"token","id":"","act_account":"%s","act_name":"transfer","account":"relay.token","data":""}' % (chain, token_account))
+
+def createMapToken(chain, issuer, asset):
+    pushAction('relay.token', 'create', issuer,
+        '{"issuer":"%s","chain":"%s","maximum_supply":"%s"}' % (issuer,chain,asset))
+
+
 def stepSetFuncs():
     # we need set some func start block num
     # setFee('eosio', 'setconfig', 100, 100000, 1000000, 1000)
@@ -243,31 +255,30 @@ def stepSetFuncs():
     # some config to set
     print('stepSetFuncs')
 
+    pubKeys = {}
+    for a in datas["initAccounts"]:
+        pubKeys[a['name']] = str(a['key'])
+    print(pubKeys['eosforce'])
+
+    cleos(('set account permission %s active ' + 
+          '\'{"threshold": 1,"keys": [{"key": "%s","weight": 1}],"accounts": [{"permission":{"actor":"relay.token","permission":"force.code"},"weight":1}]}\'') % 
+          ("eosforce", pubKeys['eosforce']))
+
     setContract('relay.token')
     setFee('relay.token', 'on',       15000, 0, 0, 0)
     setFee('relay.token', 'create',   15000, 0, 0, 0)
     setFee('relay.token', 'issue',    15000, 0, 0, 0)
     setFee('relay.token', 'transfer', 1000,  0, 0, 0)
 
-    max_supply = "10000000.0000"
-    issue_asset = "100000.0000"
+    createMap("eosforce", "force.token")
+    #createMap("side", "force.token")
 
-    cleos("push action relay.token create '{\"issuer\":\"%s\",\"chain\":\"%s\",\"maximum_supply\":\"%s %s\"}' -p eosforce@active" % ("eosforce","eosforce",max_supply,"SYS"))
-    cleos("push action relay.token create '{\"issuer\":\"%s\",\"chain\":\"%s\",\"maximum_supply\":\"%s %s\"}' -p eosforce@active" % ("eosforce","eosforce",max_supply,"EOS"))
-    cleos("push action relay.token create '{\"issuer\":\"%s\",\"chain\":\"%s\",\"maximum_supply\":\"%s %s\"}' -p eosforce@active" % ("eosforce","eosforce",max_supply,"SSS"))
-
-    cleos("push action relay.token create '{\"issuer\":\"%s\",\"chain\":\"%s\",\"maximum_supply\":\"%s %s\"}' -p eosforce@active" % ("eosforce","side",max_supply,"SYS"))
-    cleos("push action relay.token create '{\"issuer\":\"%s\",\"chain\":\"%s\",\"maximum_supply\":\"%s %s\"}' -p eosforce@active" % ("eosforce","side",max_supply,"EOS"))
-    cleos("push action relay.token create '{\"issuer\":\"%s\",\"chain\":\"%s\",\"maximum_supply\":\"%s %s\"}' -p eosforce@active" % ("eosforce","side",max_supply,"SSS"))
-
-    # cleost push action relay.token issue '{"chain":"eosforce","to":"eosforce","quantity":"1000000.0000 EOS","memo":""}' -p eosforce@active
-    cleos("push action relay.token issue '{\"chain\":\"%s\",\"to\":\"eosforce\",\"quantity\":\"%s %s\",\"memo\":\"\"}' -p eosforce@active" % ("eosforce",issue_asset,"SYS"))
-    cleos("push action relay.token issue '{\"chain\":\"%s\",\"to\":\"eosforce\",\"quantity\":\"%s %s\",\"memo\":\"\"}' -p eosforce@active" % ("eosforce",issue_asset,"EOS"))
-    cleos("push action relay.token issue '{\"chain\":\"%s\",\"to\":\"eosforce\",\"quantity\":\"%s %s\",\"memo\":\"\"}' -p eosforce@active" % ("eosforce",issue_asset,"SSS"))
-
-    cleos("push action relay.token issue '{\"chain\":\"%s\",\"to\":\"eosforce\",\"quantity\":\"%s %s\",\"memo\":\"\"}' -p eosforce@active" % ("side",issue_asset,"SYS"))
-    cleos("push action relay.token issue '{\"chain\":\"%s\",\"to\":\"eosforce\",\"quantity\":\"%s %s\",\"memo\":\"\"}' -p eosforce@active" % ("side",issue_asset,"EOS"))
-    cleos("push action relay.token issue '{\"chain\":\"%s\",\"to\":\"eosforce\",\"quantity\":\"%s %s\",\"memo\":\"\"}' -p eosforce@active" % ("side",issue_asset,"SSS"))
+    createMapToken('eosforce','eosforce', "10000000.0000 EOS")
+    createMapToken('eosforce','eosforce', "10000000.0000 SYS")
+    createMapToken('eosforce','eosforce', "10000000.0000 SSS")
+    createMapToken('side','eosforce', "10000000.0000 EOS")
+    createMapToken('side','eosforce', "10000000.0000 SYS")
+    createMapToken('side','eosforce', "10000000.0000 SSS")
 
 def clearData():
     stepKillAll()
