@@ -20,22 +20,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
   set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:grpc_cpp_plugin>)
 
 
-get_filename_component(hw_proto "./include/protos/block.proto" ABSOLUTE)
-get_filename_component(hw_proto_path "${hw_proto}" PATH)
-set(hw_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/block.pb.cc")
-set(hw_proto_hdrs "${CMAKE_CURRENT_BINARY_DIR}/block.pb.h")
-set(hw_grpc_srcs "${CMAKE_CURRENT_BINARY_DIR}/block.grpc.pb.cc")
-set(hw_grpc_hdrs "${CMAKE_CURRENT_BINARY_DIR}/block.grpc.pb.h")
-add_custom_command(
-      OUTPUT "${hw_proto_srcs}" "${hw_proto_hdrs}" "${hw_grpc_srcs}" "${hw_grpc_hdrs}"
-      COMMAND ${_PROTOBUF_PROTOC}
-      ARGS --grpc_out "${CMAKE_CURRENT_BINARY_DIR}"
-        --cpp_out "${CMAKE_CURRENT_BINARY_DIR}"
-        -I "${hw_proto_path}"
-        --plugin=protoc-gen-grpc="${_GRPC_CPP_PLUGIN_EXECUTABLE}"
-        "${hw_proto}"
-      DEPENDS "${hw_proto}")
-
 get_filename_component(hw_proto "./include/protos/relay_commit.proto" ABSOLUTE)
 get_filename_component(hw_proto_path "${hw_proto}" PATH)
 set(hw_proto_srcs "${CMAKE_CURRENT_BINARY_DIR}/relay_commit.pb.cc")
@@ -61,8 +45,6 @@ include_directories("/usr/local/include/google/protobuf")
 LINK_LIBRARIES("/usr/local/lib/libgrpc++.so" "/usr/local/lib/libgrpc++.so.1")
 add_library( bus_plugin
              bus_plugin.cpp
-             block.grpc.pb.cc
-             block.pb.cc
              relay_commit.grpc.pb.cc
              relay_commit.pb.cc
              ${HEADERS} )
