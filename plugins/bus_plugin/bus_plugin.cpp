@@ -23,7 +23,6 @@
 #include <queue>
 #include <eosio/chain/genesis_state.hpp>
 #include <grpcpp/grpcpp.h>
-#include "block.grpc.pb.h"
 #include "relay_commit.grpc.pb.h"
 
 namespace fc { class variant; }
@@ -44,11 +43,6 @@ using grpc::Status;
 using grpc::Channel;
 using grpc::ClientContext;
 
-using force_block::grpc_block;
-using force_block::BlockTransRequest;
-using force_block::BlockRequest;
-using force_block::BlockReply;
-
 using force_relay_commit::relay_commit;
 using force_relay_commit::RelayCommitRequest;
 using force_relay_commit::RelayBlock;
@@ -63,12 +57,10 @@ class grpc_stub
 {
 public:
   grpc_stub(std::shared_ptr<Channel> channel)
-      : block_stub_(grpc_block::NewStub(channel)), relay_stub_(relay_commit::NewStub(channel)){}
-  std::string PutBlockRequest(int blocknum,vector<BlockTransRequest> &blockTrans);
+      :relay_stub_(relay_commit::NewStub(channel)){}
   std::string PutRelayCommitRequest(RelayBlock *block,vector<RelayAction> &action);
   ~grpc_stub(){}
 private:
-  std::unique_ptr<grpc_block::Stub> block_stub_;
   std::unique_ptr<relay_commit::Stub> relay_stub_;
 };
 
@@ -77,6 +69,7 @@ public:
    bus_plugin_impl(){}
    ~bus_plugin_impl();
    std::string client_address = std::string("");
+   std::string bus_transfer_account = std::string("");
    void init();
    boost::thread client_thread;
    void consume_blocks();
@@ -147,35 +140,6 @@ private:
    
 };
 
-std::string grpc_stub::PutBlockRequest(int blocknum,vector<BlockTransRequest> &blockTrans) {
-   try{
-    BlockRequest request;
-    request.set_blocknum(blocknum);
-    int nsize = blockTrans.size();
-    for (int i=0;i!=nsize;++i)
-    {
-       BlockTransRequest *blockTranstemp = request.add_trans();
-       *blockTranstemp = blockTrans[i];
-    }
-    
-
-    BlockReply reply;
-    ClientContext context;
-    Status status = block_stub_->rpc_sendaction(&context, request, &reply);
-    if (status.ok()) {
-       ilog("bus_plug send blockRequest success block_num:${num}",("num",blocknum));
-      return reply.message();
-    } else {
-      elog("PutBlockRequest error error_code:${error_code},error_message:${message}",("error_code",(int)(status.error_code()))("message",status.error_message()));
-      return "RPC failed";
-    }
-   }catch(std::exception& e)
-   {
-     elog( "Exception on grpc_stub PutRequest: ${e}", ("e", e.what()));
-     return "exception " + string(e.what());
-   }
-}
-
 std::string grpc_stub::PutRelayCommitRequest(RelayBlock *block,vector<RelayAction> &action) {
    try{
     RelayCommitRequest request;
@@ -191,7 +155,7 @@ std::string grpc_stub::PutRelayCommitRequest(RelayBlock *block,vector<RelayActio
     ClientContext context;
     Status status = relay_stub_->rpc_sendaction(&context, request, &reply);
     if (status.ok()) {
-       ilog("bus_plug send blockRequest success block_num");
+       //ilog("bus_plug send blockRequest success block_num");
       return reply.message();
     } else {
       elog("PutBlockRequest error error_code:${error_code},error_message:${message}",("error_code",(int)(status.error_code()))("message",status.error_message()));
@@ -319,7 +283,6 @@ void bus_plugin_impl::process_irreversible_block(const chain::block_state_ptr& b
 void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& bs) {
       const auto block_num = bs->block->block_num();
       bool transactions_in_block = false;
-      vector<BlockTransRequest> blockTans;
 
        //构造Replyblock   
       RelayBlock *block = new RelayBlock;
@@ -344,6 +307,12 @@ void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& 
             {
                if(act.name == N(transfer)){
                   //构造ReplyAction    只需要act即可
+                  auto v = to_variant_with_abi(act);
+                  auto transfer_to = v["data"]["to"].as_string();
+                  if(bus_transfer_account.empty() || strcmp(bus_transfer_account.c_str(),transfer_to.c_str()) != 0) {
+                     continue;
+                  }
+
                   RelayAction tempaction;
                   tempaction.set_account(act.account.to_string());
                   tempaction.set_action_name(act.name.to_string());
@@ -382,7 +351,7 @@ void bus_plugin_impl::process_accepted_block( const chain::block_state_ptr& bs )
 
 void bus_plugin_impl::consume_blocks() {
    try {
-      //insert_default_abi();
+      insert_default_abi();
       while (true) {
          boost::mutex::scoped_lock lock(mtx);
          while ( transaction_metadata_queue.empty() &&
@@ -594,6 +563,8 @@ void bus_plugin::set_program_options(options_description& cli, options_descripti
          "grpc-client-address string.grcp server bind ip and port. Example:127.0.0.1:21005")
          ("grpc-abi-cache-size", bpo::value<uint32_t>()->default_value(2048),
           "The maximum size of the abi cache for serializing data.")
+         ("bus_transfer_account", bpo::value<std::string>(),
+          "the account name for Map tokens to the relay chain")
          ;
 }
 
@@ -604,32 +575,36 @@ void bus_plugin::plugin_initialize(const variables_map& options)
             my->client_address = options.at( "grpc-client-address" ).as<std::string>();
             //b_need_start = true;
 
-         if( options.count( "grpc-abi-cache-size" )) {
-            my->abi_cache_size = options.at( "grpc-abi-cache-size" ).as<uint32_t>();
-            EOS_ASSERT( my->abi_cache_size > 0, chain::plugin_config_exception, "mongodb-abi-cache-size > 0 required" );
-         }
-         my->abi_serializer_max_time = app().get_plugin<chain_plugin>().get_abi_serializer_max_time();
-// hook up to signals on controller
-         chain_plugin* chain_plug = app().find_plugin<chain_plugin>();
-         EOS_ASSERT( chain_plug, chain::missing_chain_plugin_exception, ""  );
-         auto& chain = chain_plug->chain();
-         //my->chain_id.emplace( chain.get_chain_id());
+            if( options.count( "grpc-abi-cache-size" )) {
+               my->abi_cache_size = options.at( "grpc-abi-cache-size" ).as<uint32_t>();
+               EOS_ASSERT( my->abi_cache_size > 0, chain::plugin_config_exception, "mongodb-abi-cache-size > 0 required" );
+            }
 
-         my->accepted_block_connection.emplace( chain.accepted_block.connect( [&]( const chain::block_state_ptr& bs ) {
-            my->accepted_block( bs );
-         } ));
-         my->irreversible_block_connection.emplace(
-               chain.irreversible_block.connect( [&]( const chain::block_state_ptr& bs ) {
-                  my->applied_irreversible_block( bs );
-               } ));
-         my->accepted_transaction_connection.emplace(
-               chain.accepted_transaction.connect( [&]( const chain::transaction_metadata_ptr& t ) {
-                  my->accepted_transaction( t );
-               } ));
-         my->applied_transaction_connection.emplace(
-               chain.applied_transaction.connect( [&]( const chain::transaction_trace_ptr& t ) {
-                  my->applied_transaction( t );
-               } ));
+            if( options.count( "bus_transfer_account" )) {
+               my->bus_transfer_account = options.at( "bus_transfer_account" ).as<std::string>();
+            }
+            my->abi_serializer_max_time = app().get_plugin<chain_plugin>().get_abi_serializer_max_time();
+            // hook up to signals on controller
+            chain_plugin* chain_plug = app().find_plugin<chain_plugin>();
+            EOS_ASSERT( chain_plug, chain::missing_chain_plugin_exception, ""  );
+            auto& chain = chain_plug->chain();
+            //my->chain_id.emplace( chain.get_chain_id());
+
+            my->accepted_block_connection.emplace( chain.accepted_block.connect( [&]( const chain::block_state_ptr& bs ) {
+               my->accepted_block( bs );
+            } ));
+            my->irreversible_block_connection.emplace(
+                  chain.irreversible_block.connect( [&]( const chain::block_state_ptr& bs ) {
+                     my->applied_irreversible_block( bs );
+                  } ));
+            my->accepted_transaction_connection.emplace(
+                  chain.accepted_transaction.connect( [&]( const chain::transaction_metadata_ptr& t ) {
+                     my->accepted_transaction( t );
+                  } ));
+            my->applied_transaction_connection.emplace(
+                  chain.applied_transaction.connect( [&]( const chain::transaction_trace_ptr& t ) {
+                     my->applied_transaction( t );
+                  } ));
 
             my->init();
          } 
