@@ -69,7 +69,7 @@ trade_maker：the account who create the market
 
 ### 7. set the fixed fee
 Function：void setfixedfee(name trade,account_name trade_maker,asset base,asset market);
-Example：cleos push action market setfixedfee '["eos.eosc","maker"，"0.1000 SYS","0.2000 SYS"]' -p maker@active
+Example：cleos push action market setfixedfee '["eos.eosc","maker","0.1000 SYS","0.2000 SYS"]' -p maker@active
 Parameter Description：
 trade:the name of market
 trade_maker：the account who create the market
@@ -78,7 +78,7 @@ market：the fee when buy the market coin
 
 ### 8. set proportion fee
 Function：void setprofee(name trade,account_name trade_maker,uint64_t base_ratio,uint64_t market_ratio);
-Example：cleos push action market setprofee '["eos.eosc","maker"，20,30]' -p maker@active
+Example：cleos push action market setprofee '["eos.eosc","maker",20,30]' -p maker@active
 Parameter Description：
 trade:the name of market
 trade_maker：the account who create the market
@@ -87,7 +87,7 @@ market：Proportion of fees charged when purchasing market_coin  The base is 100
 
 ### 9. set proportion with a Minimum fee
 Function：void setprominfee(name trade,account_name trade_maker,uint64_t base_ratio,uint64_t market_ratio,asset base,asset market);
-Example：cleos push action market setprominfee '["eos.eosc","maker"，20,30,"0.1000 SYS","0.2000 SYS"]' -p maker@active
+Example：cleos push action market setprominfee '["eos.eosc","maker",20,30,"0.1000 SYS","0.2000 SYS"]' -p maker@active
 Parameter Description：
 trade:the name of market
 trade_maker：the account who create the market

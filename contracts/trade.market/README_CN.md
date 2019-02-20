@@ -10,7 +10,7 @@ trade.market目前只提供两种功能：1.等比例兑换。2.bancor兑换
 ### 1. 创建交易对
 功能：addmarket(name trade,account_name trade_maker,trade_type type,asset base_amount,account_name base_account,uint64_t base_weight,
                asset market_amount,account_name market_account,uint64_t market_weight)
-示例：cleos push action market addmarket '["eos.eosc","maker",1,"500.0000 SYS","maker",1,"1000.0000 SYS","maker",2]' -p maker@active
+示例：cleos push action market addmarket '["eos.eosc","maker",1,"500.0000 SYS","maker",1,"1000.0000 SYS","maker",2]' -p market@active maker@active
 参数说明:
 trade:交易对名称
 trade_maker：创建交易对的账户的名称
@@ -70,7 +70,7 @@ trade_maker：创建交易对的账户的名称
 
 ### 7. 设置固定费用
 功能：void setfixedfee(name trade,account_name trade_maker,asset base,asset market);
-示例：cleos push action market setfixedfee '["eos.eosc","maker"，"0.1000 SYS","0.2000 SYS"]' -p maker@active
+示例：cleos push action market setfixedfee '["eos.eosc","maker","0.1000 SYS","0.2000 SYS"]' -p maker@active
 参数说明：
 trade:交易对名称
 trade_maker：创建交易对的账户的名称
@@ -79,7 +79,7 @@ market：购买market_coin时收取的费用
 
 ### 8. 设置固定比例费用
 功能：void setprofee(name trade,account_name trade_maker,uint64_t base_ratio,uint64_t market_ratio);
-示例：cleos push action market setprofee '["eos.eosc","maker"，20,30]' -p maker@active
+示例：cleos push action market setprofee '["eos.eosc","maker",20,30]' -p maker@active
 参数说明：
 trade:交易对名称
 trade_maker：创建交易对的账户的名称
@@ -88,7 +88,7 @@ market：购买market_coin时收取的费用比例  基数为10000
 
 ### 9. 设置固定比例费用含最低收费
 功能：void setprominfee(name trade,account_name trade_maker,uint64_t base_ratio,uint64_t market_ratio,asset base,asset market);
-示例：cleos push action market setprominfee '["eos.eosc","maker"，20,30,"0.1000 SYS","0.2000 SYS"]' -p maker@active
+示例：cleos push action market setprominfee '["eos.eosc","maker",20,30,"0.1000 SYS","0.2000 SYS"]' -p maker@active
 参数说明：
 trade:交易对名称
 trade_maker：创建交易对的账户的名称
