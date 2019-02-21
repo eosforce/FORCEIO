@@ -89,7 +89,7 @@ namespace eosio {
             chain_name = existing->base.chain;
       }
       else {
-            eosio_assert(coinrecharge_sym == existing->base.amount.symbol,"recharge coin is not the same coin on the market");
+            eosio_assert(coinrecharge_sym == existing->market.amount.symbol,"recharge coin is not the same coin on the market");
             chain_name = existing->market.chain;
       }     
 
