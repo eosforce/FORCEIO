@@ -8,8 +8,8 @@ Trade.market currently only offers two functions: 1. Equal conversion. 2.bancor 
 ## Instructions
 
 ### 1. Create market
-Function：addmarket(name trade,account_name trade_maker,trade_type type,asset base_amount,account_name base_account,uint64_t base_weight,
-               asset market_amount,account_name market_account,uint64_t market_weight)
+Function：void addmarket(name trade,account_name trade_maker,trade_type type,name base_chain,asset base_amount,account_name base_account,uint64_t base_weight,
+               name market_chain,asset market_amount,account_name market_account,uint64_t market_weight);
 Example：cleos push action market addmarket '["eos.eosc","maker",1,"500.0000 SYS","maker",1,"1000.0000 SYS","maker",2]' -p maker@active
 Parameter Description:
 trade:the name of market
@@ -20,7 +20,8 @@ base_account：the account which pay for the base coin  and when claim the base 
 base_weight：the weight of the base coin          
 market_amount：the market coin amount
 market_account：the account which pay for the market coin  and when claim the base coin ,the account will recvive the market coin
-market_weight：the weight of the base coin        
+market_weight：the weight of the base coin
+about the weight for example:if base_weight is 1 and market_weight is 2 then    1 base_coin can exchange 2 market_coin        
 
 ### 2. Add mortgage
 Function：void addmortgage(name trade,account_name trade_maker,account_name recharge_account,asset recharge_amount,coin_type type);

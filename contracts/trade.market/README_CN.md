@@ -8,19 +8,22 @@ trade.market目前只提供两种功能：1.等比例兑换。2.bancor兑换
 ## 操作说明
 
 ### 1. 创建交易对
-功能：addmarket(name trade,account_name trade_maker,trade_type type,asset base_amount,account_name base_account,uint64_t base_weight,
-               asset market_amount,account_name market_account,uint64_t market_weight)
-示例：cleos push action market addmarket '["eos.eosc","maker",1,"500.0000 SYS","maker",1,"1000.0000 SYS","maker",2]' -p market@active maker@active
+功能：         void addmarket(name trade,account_name trade_maker,trade_type type,name base_chain,asset base_amount,account_name base_account,uint64_t base_weight,
+               name market_chain,asset market_amount,account_name market_account,uint64_t market_weight);
+示例：cleos push action market addmarket '["eos.eosc","maker",1,"eosfoce","500.0000 SYS","maker",1,"side","1000.0000 SYS","maker",2]' -p market@active maker@active
 参数说明:
 trade:交易对名称
 trade_maker：创建交易对的账户的名称
 type：交易对的类型     1.等比例兑换。    2.bancor兑换
+base_chain:第一种代币所在的链
 base_amount：第一个代币的金额    amount本身也包含币种
 base_account：第一个代币绑定的账户     该账户需要在创建交易对的时候先在交易对上充值一部分代币，每次从交易对取代币是打到这个账户上面
 base_weight：第一个代币所占的权重          两个代币之间交换的比例是两个代币权重的比例决定的
+market_chain:第二种代币所在的链
 market_amount：第二个代币的金额      amount本身也包含币种
 market_account：第二个代币绑定的账户       该账户需要在创建交易对的时候先在交易对上充值一部分代币，每次从交易对取代币是打到这个账户上面
 market_weight：第二个代币所占的权重        两个代币之间交换的比例是两个代币权重的比例决定的
+关于权重详解：例如：base_weight=1   market_weight=2   则1个base_coin可以兑换2个market_coin
 
 ### 2. 增加抵押
 功能：void addmortgage(name trade,account_name trade_maker,account_name recharge_account,asset recharge_amount,coin_type type);
