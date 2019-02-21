@@ -319,33 +319,6 @@ fc::time_point calculate_genesis_timestamp( string tstr ) {
    return genesis_timestamp;
 }
 
-/**
- * load code and abi file to bytes
- * string contract: contract name (eg: System, force.token)
- * bytes& code: out param
- * bytes& abi: out param
- */
-void load_contract_code_abi( const string& contract, bytes& code, bytes& abi ) {
-   ilog("load contract : ${contract}", ( "contract", contract ));
-
-   const auto wast_path = app().config_dir() / contract += ".wasm";
-   std::string wast;
-   fc::read_file_contents(wast_path, wast);
-   EOS_ASSERT(!wast.empty(), wasm_file_not_found, "no wast file found ");
-   const string binary_wasm_header("\x00\x61\x73\x6d", 4);
-   if( wast.compare(0, 4, binary_wasm_header) == 0 ) {
-      code = bytes(wast.begin(), wast.end());
-   } else {
-      FC_ASSERT("not support this wast");
-   }
-
-   const auto abi_path = app().config_dir() / contract += ".abi";
-   EOS_ASSERT(fc::exists(abi_path), abi_not_found_exception, "no abi file found ");
-   const auto abijson = fc::json::from_file(abi_path).as<abi_def>();
-   abi = fc::raw::pack(abijson);
-}
-
-
 void clear_directory_contents( const fc::path& p ) {
    using boost::filesystem::directory_iterator;
 
@@ -569,12 +542,15 @@ void chain_plugin::plugin_initialize(const variables_map& options) {
          wlog("The --import-reversible-blocks option should be used by itself.");
       }
 
-      const auto genesis_file = app().config_dir() / "genesis.json";
+      const auto config_path_root = app().config_dir();
+
+      const auto genesis_file = config_path_root / "genesis.json";
       my->chain_config->genesis = fc::json::from_file(genesis_file).as<genesis_state>();
 
-      load_contract_code_abi("force.system", my->chain_config->system_code, my->chain_config->system_abi);
-      load_contract_code_abi("force.token", my->chain_config->token_code, my->chain_config->token_abi);
-      load_contract_code_abi("force.msig", my->chain_config->msig_code, my->chain_config->msig_abi);
+      my->chain_config->system.load(config::system_account_name, config_path_root / "force.system");
+      my->chain_config->token.load(config::token_account_name, config_path_root / "force.token");
+      my->chain_config->msig.load(config::msig_account_name, config_path_root / "force.msig");
+      my->chain_config->relay.load(config::relay_account_name, config_path_root / "force.relay");
 
       // some config need change
       my->chain_config->genesis.initial_configuration.max_block_cpu_usage = 1000000;
