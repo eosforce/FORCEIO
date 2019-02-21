@@ -24,6 +24,10 @@
           "type": "uint64"
         },
         {
+          "name": "base_chain",
+          "type": "name"
+        },
+        {
           "name": "base_amount",
           "type": "asset"
         },
@@ -34,6 +38,10 @@
         {
           "name": "base_weight",
           "type": "uint64"
+        },
+        {
+          "name": "market_chain",
+          "type": "name"
         },
         {
           "name": "market_amount",
@@ -259,6 +267,10 @@
       "name": "coin",
       "base": "",
       "fields": [
+        {
+          "name": "chain",
+          "type": "name"
+        },
         {
           "name": "amount",
           "type": "asset"

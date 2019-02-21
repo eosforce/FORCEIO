@@ -17,7 +17,8 @@ namespace eosio {
 
    using std::string;
 
-   const int64_t PROPORTION_CARD = 10000;  
+   const int64_t PROPORTION_CARD = 10000; 
+   const account_name TOKEN = N(relay.token); 
 
    enum  class fee_type:int64_t {
       fixed=1,                //fixed
@@ -53,8 +54,8 @@ namespace eosio {
           * market_account : the account to recv the marketcoin when you claim from the trade market (when you add a trade market you should pay some market coin from this account)
           * market_weight : the market coin weight to calculate exchange rate
           */
-         void addmarket(name trade,account_name trade_maker,trade_type type,asset base_amount,account_name base_account,uint64_t base_weight,
-               asset market_amount,account_name market_account,uint64_t market_weight);
+         void addmarket(name trade,account_name trade_maker,trade_type type,name base_chain,asset base_amount,account_name base_account,uint64_t base_weight,
+               name market_chain,asset market_amount,account_name market_account,uint64_t market_weight);
          /**
           * add mortgage
           * trade : the name of the trade market
@@ -120,6 +121,7 @@ namespace eosio {
          };
 
          struct coin {
+            name chain;                //the name of chain
             asset  amount;             //the coin amont
             account_name   coin_maker; //the account to recv the coin when claim mortgage
          };

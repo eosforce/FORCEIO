@@ -3,12 +3,13 @@
  *  @copyright defined in eos/LICENSE.txt
  */
 #include <math.h>
-#include <force.token/force.token.hpp>
+//#include <force.token/force.token.hpp>
+#include <relay.token/relay.token.hpp>
 #include "trade.market.hpp"
 
 namespace eosio {
-   void market::addmarket(name trade,account_name trade_maker,trade_type type,asset base_amount,account_name base_account,uint64_t base_weight,
-               asset market_amount,account_name market_account,uint64_t market_weight) {
+   void market::addmarket(name trade,account_name trade_maker,trade_type type,name base_chain,asset base_amount,account_name base_account,uint64_t base_weight,
+               name market_chain,asset market_amount,account_name market_account,uint64_t market_weight) {
          
          require_auth(trade_maker);
          require_auth(base_account);
@@ -24,7 +25,7 @@ namespace eosio {
          eosio_assert( market_amount.is_valid(), "invalid supply");
          eosio_assert( market_amount.amount >= 0, "max-supply must be positive");
       //暂时先使用相同的代币进行转换
-      //    eosio_assert(coinbase_sym != coinmarket_sym,"a market must on two coin");
+      //    eosio_assert(coinbase_sym != coinmarket_sym || base_chain != market_chain,"a market must on two coin");
          
          eosio_assert( type < trade_type::trade_type_count, "invalid trade type");
          eosio_assert( market_weight > 0,"invalid market_weight");
@@ -33,8 +34,10 @@ namespace eosio {
          trade_pair trademarket;
          trademarket.trade_name = trade;
          trademarket.trade_maker = trade_maker;
+         trademarket.base.chain = base_chain;
          trademarket.base.amount = base_amount;
          trademarket.base.coin_maker = base_account;
+         trademarket.market.chain = market_chain;
          trademarket.market.amount = market_amount;
          trademarket.market.coin_maker = market_account;
 
@@ -47,19 +50,21 @@ namespace eosio {
          trademarket.fee.market = asset(0,coinmarket_sym);
          trademarket.fee.fee_type = fee_type::fixed;
 
-         INLINE_ACTION_SENDER(eosio::token, transfer)( 
-               config::token_account_name, 
+         INLINE_ACTION_SENDER(relay::token, transfer)( 
+               TOKEN, 
                {base_account, N(active)},
                { base_account, 
                  _self, 
+                 base_chain,
                 base_amount, 
                  std::string("add market transfer coin base") } );
           
-         INLINE_ACTION_SENDER(eosio::token, transfer)( 
-               config::token_account_name, 
+         INLINE_ACTION_SENDER(relay::token, transfer)( 
+               TOKEN, 
                {market_account, N(active)},
-               { market_account, 
+               { market_account,
                  _self, 
+                market_chain,
                 market_amount, 
                  std::string("add market transfer coin market") } );
          
@@ -78,19 +83,22 @@ namespace eosio {
       eosio_assert( coinrecharge_sym.is_valid(), "invalid symbol name" );
       eosio_assert( recharge_amount.is_valid(), "invalid supply");
       eosio_assert( recharge_amount.amount > 0, "max-supply must be positive");
-
+      name chain_name;
       if (type == coin_type::coin_base) {
             eosio_assert(coinrecharge_sym == existing->base.amount.symbol,"recharge coin is not the same coin on the market");
+            chain_name = existing->base.chain;
       }
       else {
             eosio_assert(coinrecharge_sym == existing->base.amount.symbol,"recharge coin is not the same coin on the market");
+            chain_name = existing->market.chain;
       }     
 
-      INLINE_ACTION_SENDER(eosio::token, transfer)( 
-               config::token_account_name, 
+       INLINE_ACTION_SENDER(relay::token, transfer)( 
+               TOKEN, 
                {recharge_account, N(active)},
                { recharge_account, 
                  _self, 
+                 chain_name,
                 recharge_amount, 
                  std::string("add market transfer coin market") } );
 
@@ -114,14 +122,16 @@ namespace eosio {
       eosio_assert( coinclaim_sym.is_valid(), "invalid symbol name" );
       eosio_assert( claim_amount.is_valid(), "invalid supply");
       eosio_assert( claim_amount.amount > 0, "max-supply must be positive");
-
+      name chain_name;
       if (type == coin_type::coin_base) {
             eosio_assert(coinclaim_sym == existing->base.amount.symbol,"recharge coin is not the same coin on the market");
             eosio_assert(claim_amount <= existing->base.amount,"overdrawn balance");
+            chain_name = existing->base.chain;
       }
       else {
             eosio_assert(coinclaim_sym == existing->market.amount.symbol,"recharge coin is not the same coin on the market");
              eosio_assert(claim_amount <= existing->market.amount,"overdrawn balance");
+             chain_name = existing->market.chain;
       }
 
       tradepair.modify( *existing, 0, [&]( auto& s ) {
@@ -132,11 +142,12 @@ namespace eosio {
                   s.market.amount = s.market.amount - claim_amount;
             }
       });
-      INLINE_ACTION_SENDER(eosio::token, transfer)( 
-               config::token_account_name, 
+      INLINE_ACTION_SENDER(relay::token, transfer)( 
+               TOKEN, 
                {_self, N(active)},
                { _self, 
-                 type == coin_type::coin_base?existing->base.coin_maker:existing->market.coin_maker, 
+                 type == coin_type::coin_base?existing->base.coin_maker:existing->market.coin_maker,
+                 chain_name, 
                 claim_amount, 
                  std::string("claim market transfer coin market") } );      
 
@@ -325,11 +336,12 @@ namespace eosio {
 
       auto recv_asset = asset(recv_amount,market_recv_amount.symbol);
 
-      INLINE_ACTION_SENDER(eosio::token, transfer)( 
-            config::token_account_name, 
+      INLINE_ACTION_SENDER(relay::token, transfer)( 
+              TOKEN,  
             {account_covert, N(active)},
             { account_covert, 
             _self, 
+            type == coin_type::coin_base ? existing->base.chain:existing->market.chain,
             convert_amount, 
             std::string("claim market transfer coin market") } );
 
@@ -345,11 +357,12 @@ namespace eosio {
             }
       });
  
-      INLINE_ACTION_SENDER(eosio::token, transfer)( 
-            config::token_account_name, 
+      INLINE_ACTION_SENDER(relay::token, transfer)( 
+              TOKEN, 
             {_self, N(active)},
             { _self, 
             account_recv, 
+            type == coin_type::coin_market ? existing->base.chain:existing->market.chain,
             recv_asset, 
             std::string("claim market transfer coin market") } );
 
