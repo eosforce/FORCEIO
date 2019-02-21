@@ -476,9 +476,9 @@ fc::variant bus_plugin_impl::to_variant_with_abi( const T& obj ) {
 
 void bus_plugin_impl::insert_default_abi()
 {
-   //eosio.token
+   //force.token
    {
-      auto abiPath = app().config_dir() / "eosio.token" += ".abi";
+      auto abiPath = app().config_dir() / "force.token" += ".abi";
       FC_ASSERT( fc::exists( abiPath ), "no abi file found ");
       auto abijson = fc::json::from_file(abiPath).as<abi_def>();
       auto abi = fc::raw::pack(abijson);
@@ -486,7 +486,7 @@ void bus_plugin_impl::insert_default_abi()
      // const string json_str = fc::json::to_string( abi_def );
      purge_abi_cache(); // make room if necessary
      abi_cache entry;
-     entry.account = N(eosio.token);
+     entry.account = N(force.token);
      entry.last_accessed = fc::time_point::now();
      abi_serializer abis;
      abis.set_abi( abi_def, abi_serializer_max_time );
@@ -494,9 +494,9 @@ void bus_plugin_impl::insert_default_abi()
      abi_cache_index.insert( entry );
    }
 
-   //eosio
+   //force
    {
-      auto abiPath = app().config_dir() / "System01" += ".abi";
+      auto abiPath = app().config_dir() / "force.system" += ".abi";
       FC_ASSERT( fc::exists( abiPath ), "no abi file found ");
       auto abijson = fc::json::from_file(abiPath).as<abi_def>();
       auto abi = fc::raw::pack(abijson);
@@ -504,7 +504,7 @@ void bus_plugin_impl::insert_default_abi()
      // const string json_str = fc::json::to_string( abi_def );
      purge_abi_cache(); // make room if necessary
      abi_cache entry;
-     entry.account = N(eosio);
+     entry.account = N(force);
      entry.last_accessed = fc::time_point::now();
      abi_serializer abis;
      abis.set_abi( abi_def, abi_serializer_max_time );
