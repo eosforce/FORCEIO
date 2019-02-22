@@ -518,7 +518,7 @@ mongodconf
 			printf "\\n\\tExiting now.\\n\\n"
 			exit 1;
 		fi
-		if ! ./configure --prefix="${HOME}"/opt/protpbuf
+		if ! ./configure --prefix="${HOME}"/opt/protobuf
 		then
 			printf "\\n\\tconfigure fail.\\n"
 			printf "\\n\\tExiting now.\\n\\n"
