@@ -505,7 +505,6 @@ mongodconf
 
 	if [ ! -e "${PROTOC}" ]; then
 		printf "\\n\\tstart to install protobuf\\n"
-		pwd
 		if ! cd externals/grpc/third_party/protobuf/ 
 		then
 			printf "\\n\\tunable to enter direction protobuf.\\n"
@@ -557,7 +556,6 @@ mongodconf
 			printf "\\n\\tExiting now.\\n\\n"
 			exit 1;
 		fi
-		cd ..	
 	fi
 
 	function print_instructions()
