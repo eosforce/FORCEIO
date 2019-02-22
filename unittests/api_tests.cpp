@@ -583,7 +583,7 @@ BOOST_FIXTURE_TEST_CASE(cf_action_tests, TESTER) { try {
       BOOST_CHECK_EQUAL(ttrace->action_traces[0].inline_traces.size(), 1);
       BOOST_CHECK_EQUAL(ttrace->action_traces[0].inline_traces[0].receipt.receiver, account_name("dummy"));
       BOOST_CHECK_EQUAL(ttrace->action_traces[0].inline_traces[0].act.account, account_name("dummy"));
-      BOOST_CHECK_EQUAL(ttrace->action_traces[0].inline_traces[0].act.name, account_name("event1"));
+      BOOST_CHECK_EQUAL(ttrace->action_traces[0].inline_traces[0].act.name, action_name("event1"));
       BOOST_CHECK_EQUAL(ttrace->action_traces[0].inline_traces[0].act.authorization.size(), 0);
 
       BOOST_CHECK_EXCEPTION( CALL_TEST_FUNCTION( *this, "test_transaction", "send_cf_action_fail", {} ),
