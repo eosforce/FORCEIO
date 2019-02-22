@@ -1408,7 +1408,7 @@ struct action1 {
    uint32_t blah2;
    uint8_t blah3;
    static account_name get_account() { return N(acount1); }
-   static account_name get_name() { return N(action1); }
+   static action_name get_name() { return N(action1); }
 
    template<typename Stream>
    friend Stream& operator<<( Stream& ds, const action1& act ) {
@@ -1430,7 +1430,7 @@ struct action2 {
    uint64_t blah2;
    uint8_t blah3;
    static account_name get_account() { return N(acount2); }
-   static account_name get_name() { return N(action2); }
+   static action_name get_name() { return N(action2); }
 
    template<typename Stream>
    friend Stream& operator<<( Stream& ds, const action2& act ) {
