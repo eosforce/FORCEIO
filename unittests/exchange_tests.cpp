@@ -3,8 +3,8 @@
 #include <eosio/chain/producer_object.hpp>
 #include <eosio/chain/global_property_object.hpp>
 #include <eosio/chain/generated_transaction_object.hpp>
-#include <eosio.token/eosio.token.wast.hpp>
-#include <eosio.token/eosio.token.abi.hpp>
+#include <force.token/force.token.wast.hpp>
+#include <force.token/force.token.abi.hpp>
 #include <exchange/exchange.wast.hpp>
 #include <exchange/exchange.abi.hpp>
 
@@ -67,6 +67,8 @@ BOOST_FIXTURE_TEST_SUITE(exchange_tests, exchange)
 
 // partial match / full match when test price equals order price
 BOOST_AUTO_TEST_CASE( test1 ) { try {
+
+   produce_blocks(2);
 
    // make an ask order
    push_action(exc_acc, name("trade"), seller, fc::mutable_variant_object()

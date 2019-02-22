@@ -7,8 +7,8 @@
 #include <eosio/chain/abi_serializer.hpp>
 #include <eosio/chain/generated_transaction_object.hpp>
 
-#include <eosio.token/eosio.token.wast.hpp>
-#include <eosio.token/eosio.token.abi.hpp>
+#include <force.token/force.token.wast.hpp>
+#include <force.token/force.token.abi.hpp>
 
 #include <proxy/proxy.wast.hpp>
 #include <proxy/proxy.abi.hpp>
@@ -75,10 +75,10 @@ class currency_tester : public TESTER {
       }
 
       currency_tester()
-      :TESTER(),abi_ser(json::from_string(eosio_token_abi).as<abi_def>(), abi_serializer_max_time)
+      :TESTER(),abi_ser(json::from_string(force_token_abi).as<abi_def>(), abi_serializer_max_time)
       {
          create_account( N(eosio.token));
-         set_code( N(eosio.token), eosio_token_wast );
+         set_code( N(eosio.token), force_token_wast );
 
          auto result = push_action(N(eosio.token), N(create), mutable_variant_object()
                  ("issuer",       eosio_token)
