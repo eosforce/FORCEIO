@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#if 0
+
 #include <eosio/testing/tester.hpp>
 #include <eosio/chain/abi_serializer.hpp>
 
@@ -32,7 +34,6 @@ using mvo = fc::mutable_variant_object;
 #endif
 #endif
 
-#if 0
 namespace eosio_system {
 
 class eosio_system_tester : public TESTER {
