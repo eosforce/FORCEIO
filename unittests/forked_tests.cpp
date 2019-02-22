@@ -3,8 +3,8 @@
 #include <eosio/chain/abi_serializer.hpp>
 #include <eosio/chain/fork_database.hpp>
 
-#include <eosio.token/eosio.token.wast.hpp>
-#include <eosio.token/eosio.token.abi.hpp>
+#include <force.token/force.token.wast.hpp>
+#include <force.token/force.token.abi.hpp>
 
 #include <Runtime/Runtime.h>
 
