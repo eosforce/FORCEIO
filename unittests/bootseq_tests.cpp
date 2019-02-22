@@ -2,13 +2,13 @@
 #include <eosio/testing/tester.hpp>
 #include <eosio/chain/abi_serializer.hpp>
 
-#include <eosio.system/eosio.system.wast.hpp>
-#include <eosio.system/eosio.system.abi.hpp>
+#include <force.system/force.system.wast.hpp>
+#include <force.system/force.system.abi.hpp>
 // These contracts are still under dev
-#include <eosio.token/eosio.token.wast.hpp>
-#include <eosio.token/eosio.token.abi.hpp>
-#include <eosio.msig/eosio.msig.wast.hpp>
-#include <eosio.msig/eosio.msig.abi.hpp>
+#include <force.token/force.token.wast.hpp>
+#include <force.token/force.token.abi.hpp>
+#include <force.msig/force.msig.wast.hpp>
+#include <force.msig/force.msig.abi.hpp>
 
 #include <Runtime/Runtime.h>
 
