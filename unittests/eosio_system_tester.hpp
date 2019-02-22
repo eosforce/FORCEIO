@@ -32,6 +32,7 @@ using mvo = fc::mutable_variant_object;
 #endif
 #endif
 
+#if 0
 namespace eosio_system {
 
 class eosio_system_tester : public TESTER {
@@ -558,3 +559,4 @@ inline uint64_t M( const string& eos_str ) {
 }
 
 }
+#endif
