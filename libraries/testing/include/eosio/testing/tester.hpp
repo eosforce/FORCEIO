@@ -7,6 +7,7 @@
 #include <fc/io/json.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/tuple/tuple_io.hpp>
+#include <eosio/chain/wast_to_wasm.hpp>
 
 #include <iosfwd>
 
@@ -137,7 +138,7 @@ namespace eosio { namespace testing {
          {
             vector<transaction_trace_ptr> traces;
             traces.reserve(names.size());
-            for( auto n : names ) traces.emplace_back( create_account( n, config::system_account_name, multisig, include_code ) );
+            for( auto n : names ) traces.emplace_back( create_account( n, N(eosforce)/*config::system_account_name*/, multisig, include_code ) );
             return traces;
          }
 
@@ -155,7 +156,7 @@ namespace eosio { namespace testing {
          void delete_authority( account_name account, permission_name perm );
 
          transaction_trace_ptr create_account( account_name name,
-                                               account_name creator = config::system_account_name,
+                                               account_name creator = N(eosforce)/*config::system_account_name*/,
                                                bool multisig = false,
                                                bool include_code = true
                                              );
@@ -196,6 +197,21 @@ namespace eosio { namespace testing {
          void              set_code( account_name name, const char* wast, const private_key_type* signer = nullptr );
          void              set_code( account_name name, const vector<uint8_t> wasm, const private_key_type* signer = nullptr  );
          void              set_abi( account_name name, const char* abi_json, const private_key_type* signer = nullptr );
+         void set_fee( account_name account, 
+     			 action_name action, 
+   				 asset fee, 
+   				 uint32_t cpu_limit, 
+   				 uint32_t net_limit,
+   				 uint32_t ram_limit,
+   				 const private_key_type* signer = nullptr );
+   	     void set_fee( account_name auth, 
+   				 account_name account,
+     			 action_name action, 
+   				 asset fee, 
+   				 uint32_t cpu_limit, 
+   				 uint32_t net_limit,
+   				 uint32_t ram_limit,
+   				 const private_key_type* signer = nullptr );
 
          bool                          chain_has_transaction( const transaction_id_type& txid ) const;
          const transaction_receipt&    get_transaction_receipt( const transaction_id_type& txid ) const;
@@ -337,10 +353,94 @@ namespace eosio { namespace testing {
          vcfg.reversible_cache_size = 1024*1024*8;
          vcfg.reversible_guard_size = 0;
          vcfg.contracts_console = false;
+         
+   		 const char* genesis_string = R"=====(
+{
+  "initial_timestamp": "2018-05-28T12:00:00.000",
+  "initial_key": "FOSC7LmC1HJWkHNd1uJ5cBa24vZyEi1HdB4U7DncPkfqNVNfVMCR64",
+  "code": "",
+  "abi": "",
+  "token_code": "",
+  "token_abi": "",
+  "initial_configuration": {
+    "max_block_net_usage": 1048576,
+    "target_block_net_usage_pct": 1000,
+    "max_transaction_net_usage": 524288,
+    "base_per_transaction_net_usage": 12,
+    "net_usage_leeway": 500,
+    "context_free_discount_net_usage_num": 20,
+    "context_free_discount_net_usage_den": 100,
+    "max_block_cpu_usage": 1000000,
+    "target_block_cpu_usage_pct": 1000,
+    "max_transaction_cpu_usage": 750000,
+    "min_transaction_cpu_usage": 100,
+    "max_transaction_lifetime": 3600,
+    "deferred_trx_expiration_window": 600,
+    "max_transaction_delay": 3888000,
+    "max_inline_action_size": 4096,
+    "max_inline_action_depth": 4,
+    "max_authority_depth": 6
+  },
+  "initial_account_list": [{
+      "key": "FOSC7Xxink4kuMFovxhHJtxT9yWWsQvy6ELZARwdergGgab5QT2qhj",
+      "asset": "1000000000.0000 SYS",
+      "name": "eosforce"
+    },{
+      "key": "FOSC7Xxink4kuMFovxhHJtxT9yWWsQvy6ELZARwdergGgab5QT2qhj",
+      "asset": "1000000.0000 SYS",
+      "name": "b1"
+    },{
+      "key": "FOSC7Xxink4kuMFovxhHJtxT9yWWsQvy6ELZARwdergGgab5QT2qhj",
+      "asset": "1000000.0000 SYS",
+      "name": "force.test"
+    }
+  ],
+  "initial_producer_list": [{
+      "name": "eosforce",
+      "bpkey": "FOSC7LmC1HJWkHNd1uJ5cBa24vZyEi1HdB4U7DncPkfqNVNfVMCR64",
+      "commission_rate": 10,
+      "url": ""
+    }
+  ]
+}
+)=====";
 
-         vcfg.genesis.initial_timestamp = fc::time_point::from_iso_string("2020-01-01T00:00:00.000");
+	  	 vcfg.genesis = fc::json::from_string(genesis_string).as<genesis_state>();
+	  	 vcfg.genesis.initial_account_list[0].key = get_public_key( N(eosforce), "active" );
+	  	 vcfg.genesis.initial_account_list[2].key = get_public_key( N(force.test), "active" );
+	  	 vcfg.genesis.initial_producer_list[0].bpkey = get_public_key( N(eosforce), "active" );
+
+         //vcfg.genesis.initial_timestamp = fc::time_point::from_iso_string("2020-01-01T00:00:00.000");
          vcfg.genesis.initial_key = get_public_key( config::system_account_name, "active" );
+         	
+         // load system contract
+     	{
+#include <force.system/force.system.wast.hpp>
+#include <force.system/force.system.abi.hpp>
+#include <force.token/force.token.wast.hpp>
+#include <force.token/force.token.abi.hpp>
+#include <force.msig/force.msig.wast.hpp>
+#include <force.msig/force.msig.abi.hpp>
 
+         std::vector<uint8_t> wasm;
+         abi_def abi;
+         		
+         wasm = wast_to_wasm(force_system_wast);
+         vcfg.token.code.assign(wasm.begin(), wasm.end());
+         abi  = fc::json::from_string(force_system_abi).as<abi_def>();
+         vcfg.token.abi = fc::raw::pack(abi);
+         
+         wasm = wast_to_wasm(force_token_wast);
+         vcfg.token.code.assign(wasm.begin(), wasm.end());
+         abi  = fc::json::from_string(force_token_abi).as<abi_def>();
+         vcfg.token.abi = fc::raw::pack(abi);
+         
+         wasm = wast_to_wasm(force_msig_wast);
+         vcfg.msig.code.assign(wasm.begin(), wasm.end());
+         abi  = fc::json::from_string(force_msig_abi).as<abi_def>();
+         vcfg.msig.abi = fc::raw::pack(abi);
+		}
+		
          for(int i = 0; i < boost::unit_test::framework::master_test_suite().argc; ++i) {
             if(boost::unit_test::framework::master_test_suite().argv[i] == std::string("--wavm"))
                vcfg.wasm_runtime = chain::wasm_interface::vm_type::wavm;
