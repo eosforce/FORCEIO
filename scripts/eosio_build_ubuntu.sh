@@ -523,7 +523,7 @@ mongodconf
 			printf "\\n\\tExiting now.\\n\\n"
 			exit 1;
 		fi
-		if ! make
+		if ! make -j"${CPU_CORE}"
 		then
 			printf "\\n\\tprotobuf make fail.\\n"
 			printf "\\n\\tExiting now.\\n\\n"
@@ -544,7 +544,7 @@ mongodconf
 			printf "\\n\\tExiting now.\\n\\n"
 			exit 1;
 		fi
-		if ! make
+		if ! make -j"${CPU_CORE}"
 		then
 			printf "\\n\\tgrpc make fail.\\n"
 			printf "\\n\\tExiting now.\\n\\n"
