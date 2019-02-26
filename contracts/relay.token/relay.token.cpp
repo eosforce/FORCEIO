@@ -207,15 +207,15 @@ void token::trade( account_name from,
             )
       ).send();
    }
-   else if(type == trade_type::match && to == N(sys.bridge)) {
+   else if(type == trade_type::match && to == N(sys.match)) {
 
    }
    else {
       eosio_assert(false,"invalid type");
    }
    
-  // sub_balance(from, chain, quantity);
-  // add_balance(to, chain, quantity, from);
+   sub_balance(from, chain, quantity);
+   add_balance(to, chain, quantity, from);
 }
 
 void splitMemo(std::vector<std::string>& results, const std::string& memo,char separator) {
