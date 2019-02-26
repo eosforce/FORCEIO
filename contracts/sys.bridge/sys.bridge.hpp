@@ -107,6 +107,8 @@ namespace eosio {
           * set proportion with a Minimum fee
           */
          void setprominfee(name trade,account_name trade_maker,uint64_t base_ratio,uint64_t market_ratio,asset base,asset market);
+
+         void transfer( name trade,account_name trade_maker,account_name recharge_account,asset recharge_amount,coin_type type);
       private:
          //fixed cost      think about the Proportionate fee
          struct trade_fee {

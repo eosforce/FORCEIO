@@ -29,7 +29,7 @@ add_subdirectory(noop)
 add_subdirectory(tic_tac_toe)
 add_subdirectory(payloadless)
 add_subdirectory(integration_test)
-add_subdirectory(trade.market)
+add_subdirectory(sys.bridge)
 
 add_subdirectory(force.relay)
 add_subdirectory(relay.token)
