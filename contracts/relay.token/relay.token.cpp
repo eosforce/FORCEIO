@@ -17,10 +17,10 @@ void token::on( const name chain, const checksum256 block_id, const force::relay
    // TODO create accounts from diff chain
 
    // Just send account
-   //print("on ", name{ act.account }, " ", name{ act.name }, "\n");
+   print("on ", name{ act.account }, " ", name{ act.name }, "\n");
    const auto data = unpack<token::action>(act.data);
 
-   //print("map ", name{ data.from }, " ", data.quantity, " ", data.memo, "\n");
+   print("map ", name{ data.from }, " ", data.quantity, " ", data.memo, "\n");
 
    SEND_INLINE_ACTION(*this, issue,
          { N(eosforce), N(active) },
