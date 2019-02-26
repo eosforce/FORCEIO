@@ -18,6 +18,31 @@ using namespace eosio;
 
 using std::string;
 
+   struct sys_bridge_addmort {
+      name trade_name;
+      account_name trade_maker;
+      uint64_t type;
+      void parse(const string memo);
+   };
+
+   struct sys_bridge_exchange {
+      name trade_name;
+      account_name trade_maker;
+      account_name recv;
+      uint64_t type;
+      void parse(const string memo);
+   };
+
+   enum  class trade_type:uint64_t {
+      match=1,
+      bridge_addmortgage,
+      bridge_exchange,
+      trade_type_count
+   };
+
+   const account_name SYS_BRIDGE = N(sys.bridge);
+
+
 class token : public eosio::contract {
 public:
    using contract::contract;
@@ -47,6 +72,13 @@ public:
                   name chain,
                   asset quantity,
                   string memo );
+
+   void trade(    account_name from,
+                  account_name to,
+                  name chain,
+                  asset quantity,
+                  trade_type type,
+                  string memo);
 
 private:
    inline static uint128_t get_account_idx(const name& chain, const asset& a) {
@@ -86,6 +118,8 @@ private:
 
    void sub_balance( account_name owner, name chain, asset value );
    void add_balance( account_name owner, name chain, asset value, account_name ram_payer );
+
+   
 
 public:
    struct transfer_args {
