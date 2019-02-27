@@ -227,6 +227,7 @@ void bus_plugin_impl::applied_transaction(const chain::transaction_trace_ptr& t)
 
 void bus_plugin_impl::applied_irreversible_block(const chain::block_state_ptr& bs) {
    try {
+      ilog("applied_irreversible_block ${num}", ("num", bs->block_num));
       queue(irreversible_block_state_queue, bs);
    } catch(fc::exception& e) {
       elog("FC Exception while applied_irreversible_block ${e}", ("e", e.to_string()));
@@ -342,7 +343,7 @@ void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& 
          elog("req block ${num} err by std exp ${w}", ("num", bs->block_num)("w", e.what()));
       }
       ilog("send block req ${num} ${id}", ("num", bs->block_num)("id", bs->id));
-      break;
+      return;
    }
 
    elog("req block err too much times!");
