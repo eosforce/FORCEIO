@@ -5,7 +5,7 @@
 #include <math.h>
 //#include <force.token/force.token.hpp>
 #include <relay.token/relay.token.hpp>
-#include "trade.market.hpp"
+#include "sys.bridge.hpp"
 
 namespace eosio {
    void market::addmarket(name trade,account_name trade_maker,trade_type type,name base_chain,asset base_amount,account_name base_account,uint64_t base_weight,
@@ -25,7 +25,7 @@ namespace eosio {
          eosio_assert( market_amount.is_valid(), "invalid supply");
          eosio_assert( market_amount.amount >= 0, "max-supply must be positive");
       //暂时先使用相同的代币进行转换
-      //    eosio_assert(coinbase_sym != coinmarket_sym || base_chain != market_chain,"a market must on two coin");
+         eosio_assert(coinbase_sym != coinmarket_sym || base_chain != market_chain,"a market must on two coin");
          
          eosio_assert( type < trade_type::trade_type_count, "invalid trade type");
          eosio_assert( market_weight > 0,"invalid market_weight");
@@ -35,10 +35,10 @@ namespace eosio {
          trademarket.trade_name = trade;
          trademarket.trade_maker = trade_maker;
          trademarket.base.chain = base_chain;
-         trademarket.base.amount = base_amount;
+         trademarket.base.amount = asset(0,coinbase_sym);
          trademarket.base.coin_maker = base_account;
          trademarket.market.chain = market_chain;
-         trademarket.market.amount = market_amount;
+         trademarket.market.amount = asset(0,coinmarket_sym);
          trademarket.market.coin_maker = market_account;
 
          trademarket.type = type;
@@ -49,24 +49,7 @@ namespace eosio {
          trademarket.fee.base = asset(0,coinbase_sym);
          trademarket.fee.market = asset(0,coinmarket_sym);
          trademarket.fee.fee_type = fee_type::fixed;
-
-         INLINE_ACTION_SENDER(relay::token, transfer)( 
-               TOKEN, 
-               {base_account, N(active)},
-               { base_account, 
-                 _self, 
-                 base_chain,
-                base_amount, 
-                 std::string("add market transfer coin base") } );
-          
-         INLINE_ACTION_SENDER(relay::token, transfer)( 
-               TOKEN, 
-               {market_account, N(active)},
-               { market_account,
-                 _self, 
-                market_chain,
-                market_amount, 
-                 std::string("add market transfer coin market") } );
+         //no transfer here
          
          tradepair.emplace(trade_maker, [&]( trade_pair& s ) {
             s = trademarket;
@@ -74,7 +57,8 @@ namespace eosio {
    }
 
    void market::addmortgage(name trade,account_name trade_maker,account_name recharge_account,asset recharge_amount,coin_type type) {
-      require_auth(recharge_account);
+      require_auth(_self);
+
       tradepairs tradepair( _self,trade_maker);
       auto existing = tradepair.find( trade );
       eosio_assert( existing != tradepair.end(), "the market is not exist" );
@@ -91,17 +75,9 @@ namespace eosio {
       else {
             eosio_assert(coinrecharge_sym == existing->market.amount.symbol,"recharge coin is not the same coin on the market");
             chain_name = existing->market.chain;
-      }     
-
-       INLINE_ACTION_SENDER(relay::token, transfer)( 
-               TOKEN, 
-               {recharge_account, N(active)},
-               { recharge_account, 
-                 _self, 
-                 chain_name,
-                recharge_amount, 
-                 std::string("add market transfer coin market") } );
-
+      }
+      // recharge_account transfer to self
+      print("xuyapeng addmortgage");
       tradepair.modify( *existing, 0, [&]( auto& s ) {
             if (type == coin_type::coin_base) {
                   s.base.amount = s.base.amount + recharge_amount;
@@ -213,9 +189,7 @@ namespace eosio {
 
       eosio_assert(base_ratio >= 0 && base_ratio < PROPORTION_CARD,"base_ratio must between 0 and 10000");
       eosio_assert(market_ratio >= 0 && market_ratio < PROPORTION_CARD,"market_ratio must between 0 and 10000");
-      print("xuyapeng add for setprofee\n");
       tradepair.modify( *existing, 0, [&]( auto& s ) {
-            print("xuyapeng add for setprofee\n");
             s.fee.base_ratio = base_ratio;
             s.fee.market_ratio = market_ratio;
             s.fee.fee_type = fee_type::proportion;
@@ -253,8 +227,7 @@ namespace eosio {
       });
    }
    void market::exchange(name trade,account_name trade_maker,account_name account_covert,account_name account_recv,asset convert_amount,coin_type type) {
-      //require_auth(_self);
-      require_auth(account_covert);
+      require_auth(_self);
 
       tradepairs tradepair( _self,trade_maker);
       auto existing = tradepair.find( trade );
@@ -335,16 +308,7 @@ namespace eosio {
       "the market do not has enough dest coin");
 
       auto recv_asset = asset(recv_amount,market_recv_amount.symbol);
-
-      INLINE_ACTION_SENDER(relay::token, transfer)( 
-              TOKEN,  
-            {account_covert, N(active)},
-            { account_covert, 
-            _self, 
-            type == coin_type::coin_base ? existing->base.chain:existing->market.chain,
-            convert_amount, 
-            std::string("claim market transfer coin market") } );
-
+      // account_covert transfer to self
      
       tradepair.modify( *existing, 0, [&]( auto& s ) {
             if (type == coin_type::coin_base) {
@@ -367,7 +331,6 @@ namespace eosio {
             std::string("claim market transfer coin market") } );
 
    }
-
 
 } /// namespace eosio
 

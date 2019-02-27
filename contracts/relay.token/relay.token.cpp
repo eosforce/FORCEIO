@@ -180,14 +180,14 @@ void token::trade( account_name from,
    eosio_assert(quantity.symbol == st.supply.symbol, "symbol precision mismatch");
    eosio_assert(chain == st.chain, "symbol chain mismatch");
    //eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
-   //½âÎömemo µ÷ÓÃmarket
+   //è§£æžmemo è°ƒç”¨market
    if (type == trade_type::bridge_addmortgage && to == SYS_BRIDGE) {
       sys_bridge_addmort bri_add;
       bri_add.parse(memo);
       
       eosio::action(
-            vector<eosio::permission_level>{{from,N(active)}},
-            N(trade.market),
+            vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
+            SYS_BRIDGE,
             N(addmortgage),
             std::make_tuple(
                   bri_add.trade_name.value,bri_add.trade_maker,from,quantity,bri_add.type
@@ -199,8 +199,8 @@ void token::trade( account_name from,
       bri_exchange.parse(memo);
 
       eosio::action(
-            vector<eosio::permission_level>{{from,N(active)}},
-            N(trade.market),
+            vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
+            SYS_BRIDGE,
             N(exchange),
             std::make_tuple(
                   bri_exchange.trade_name.value,bri_exchange.trade_maker,from,bri_exchange.recv,quantity,bri_exchange.type
