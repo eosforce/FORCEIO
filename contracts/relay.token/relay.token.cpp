@@ -282,21 +282,21 @@ void sys_bridge_exchange::parse(const string memo) {
    eosio_assert(this->type == 1 || this->type == 2,"type is not adapted with bridge_addmortgage");
 }
 
-inline string& ltrim(string &str) {
+inline string ltrim(string str) {
     auto str1 = str;
     string::iterator p = find_if(str1.begin(), str1.end(), not1(std::ptr_fun<int, int>(isspace)));
     str.erase(str1.begin(), p);
     return str1;
 }
  
-inline string& rtrim(string &str) {
+inline string rtrim(string str) {
     auto str1 = str;
     string::reverse_iterator p = find_if(str1.rbegin(), str1.rend(), not1(std::ptr_fun<int , int>(isspace)));
     str.erase(p.base(), str1.end());
     return str1;
 }
 
-inline string& trim(const string &str) {
+inline string trim(const string str) {
     auto str1 = str;
     ltrim(rtrim(str1));
     return str1;
@@ -320,7 +320,7 @@ asset asset_from_string(const string& from)
     }
 
     // Parse symbol
-    int precision_digits;
+    uint32_t precision_digits;
     if (dot_pos != string::npos) {
        precision_digits = amount_str.size() - dot_pos - 1;
     } else {
@@ -328,7 +328,7 @@ asset asset_from_string(const string& from)
     }
 
     symbol_type sym;
-    sym.value = (::eosio::string_to_name(symbol_str.c_str()) << 8) | precision_digits;
+    sym.value = (::eosio::string_to_name(symbol_str.c_str()) << 8) | (uint8_t)precision_digits;
 
     // Parse amount
     int64_t int_part, fract_part;
@@ -337,6 +337,7 @@ asset asset_from_string(const string& from)
        fract_part = ::atoll(amount_str.substr(dot_pos + 1).c_str());
     } else {
        int_part = ::atoll(amount_str.c_str());
+       fract_part = 0;
     }
 
     int64_t amount = int_part * exchange::exchange::precision(precision_digits);
@@ -353,7 +354,7 @@ void sys_match_match::parse(const string memo) {
    receiver = ::eosio::string_to_name(memoParts[1].c_str());
    base = asset_from_string(memoParts[2]);
    price = asset_from_string(memoParts[3]);
-   bid_or_ask = atoi(memoParts[4].c_str());
+   bid_or_ask = (uint32_t)atoi(memoParts[4].c_str());
    eosio_assert(bid_or_ask == 0 || bid_or_ask == 1,"type is not adapted with sys_match_match");
 }
 
