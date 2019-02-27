@@ -31,15 +31,17 @@ namespace exchange {
     public:
         exchange(account_name self) : contract(self) {}
 
-        void create(symbol_type base, symbol_type quote);
+        void create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym);
 
-        void trade( account_name payer, asset base, asset price, uint32_t bid_or_ask);
+        //void trade( account_name payer, asset base, asset price, uint32_t bid_or_ask);
+        
+        void match( account_name payer, account_name receiver, asset base, asset price, uint32_t bid_or_ask );
         
         void cancel(uint64_t order_id);
 
 
-    private:
-        class symbol {
+    //private:
+        /*class symbol {
            public:
         
               static constexpr uint8_t max_precision = 18;
@@ -88,12 +90,18 @@ namespace exchange {
            private:
               uint64_t m_value;
         }; // class symbol
+        */
 
         struct trading_pair{
             uint32_t id;
        
             symbol_type base;
+            name        base_chain;
+            symbol_type base_sym;
+
             symbol_type quote;
+            name        quote_chain;
+            symbol_type quote_sym;
             
             uint32_t primary_key() const { return id; }
             uint128_t by_pair_sym() const { return (uint128_t(base.name()) << 64) | quote.name(); }
@@ -103,6 +111,7 @@ namespace exchange {
             uint64_t        id;
             uint32_t        pair_id;
             account_name    maker;
+            account_name    receiver;
             asset           base;
             asset           price;
             uint32_t        bid_or_ask;
@@ -128,9 +137,10 @@ namespace exchange {
            indexed_by< N(idxkey), const_mem_fun<order, uint128_t,  &order::by_pair_price>>
         > orderbook;    
 
-        asset to_asset( account_name code, const asset& a );
-        asset convert( symbol_type expected_symbol, const asset& a );
-        uint64_t precision(uint8_t decimals) const
+        static asset to_asset( account_name code, name chain, const asset& a );
+        static asset convert( symbol_type expected_symbol, const asset& a );
+        static asset convert_asset( symbol_type expected_symbol, const asset& a );
+        static uint64_t precision(uint8_t decimals)
         {
            eosio_assert( decimals >= 0, "precision should be >= 0" );
            uint64_t p10 = 1;
