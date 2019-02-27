@@ -238,7 +238,9 @@ void token::trade( account_name from,
       ).send();
    }
    else if(type == trade_type::match && to == N(sys.match)) {
-      //trade_imp();
+      sys_match_match smm;
+      smm.parse(memo);
+      trade_imp(smm.payer, smm.receiver, smm.base, smm.price, smm.bid_or_ask);
    }
    else {
       eosio_assert(false,"invalid type");
