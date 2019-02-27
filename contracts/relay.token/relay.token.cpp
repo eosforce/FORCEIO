@@ -186,7 +186,7 @@ void token::trade( account_name from,
       bri_add.parse(memo);
       
       eosio::action(
-            vector<eosio::permission_level>{{from,N(active)}},
+            vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
             N(trade.market),
             N(addmortgage),
             std::make_tuple(
@@ -199,7 +199,7 @@ void token::trade( account_name from,
       bri_exchange.parse(memo);
 
       eosio::action(
-            vector<eosio::permission_level>{{from,N(active)}},
+            vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
             N(trade.market),
             N(exchange),
             std::make_tuple(
