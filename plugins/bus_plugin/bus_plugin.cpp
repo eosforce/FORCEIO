@@ -23,7 +23,7 @@
 #include <queue>
 #include <eosio/chain/genesis_state.hpp>
 #include <grpcpp/grpcpp.h>
-#include "relay_commit.grpc.pb.h"
+#include <relay_commit.grpc.pb.h>
 
 namespace fc { class variant; }
 
@@ -55,14 +55,14 @@ static appbase::abstract_plugin& _bus_plugin = app().register_plugin<bus_plugin>
 
 class grpc_stub {
 public:
-   grpc_stub(std::shared_ptr <Channel> channel) : relay_stub_(relay_commit::NewStub(channel)) {}
+   grpc_stub( std::shared_ptr<Channel> channel ) : relay_stub_(relay_commit::NewStub(channel)) {}
 
-   std::string PutRelayCommitRequest(RelayBlock* block, vector <RelayAction>& action);
+   ~grpc_stub() = default;
 
-   ~grpc_stub() {}
+   std::string PutRelayCommitRequest(RelayBlock* block, vector<RelayAction>& action);
 
 private:
-   std::unique_ptr <relay_commit::Stub> relay_stub_;
+   std::unique_ptr<relay_commit::Stub> relay_stub_;
 };
 
 class bus_plugin_impl {
@@ -158,7 +158,7 @@ private:
 std::string grpc_stub::PutRelayCommitRequest(RelayBlock* block, vector <RelayAction>& action) {
    try {
       RelayCommitRequest request;
-      request.set_allocated_block(block);
+      request.set_allocated_block(block); // no need delete block
       int nsize = action.size();
       for(int i = 0; i != nsize; ++i) {
          RelayAction* actiontemp = request.add_action();
@@ -297,25 +297,25 @@ void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& 
    const auto block_num = bs->block->block_num();
    bool transactions_in_block = false;
 
-   //构造Replyblock
    RelayBlock* block = new RelayBlock;
-   block->set_producer(bs->block->producer.to_string());//是否使用uint64?
+   block->set_producer(bs->block->producer.to_string());
    block->set_id(bs->block->id().data(), bs->block->id().data_size());
    block->set_previous(bs->block->previous.data(), bs->block->previous.data_size());
    block->set_confirmed(bs->block->confirmed);
    block->set_transaction_mroot(bs->block->transaction_mroot.data(), bs->block->transaction_mroot.data_size());
    block->set_action_mroot(bs->block->action_mroot.data(), bs->block->action_mroot.data_size());
    block->set_mroot(bs->block->digest().data(), bs->block->digest().data_size());
-   vector<RelayAction> relayAction;
+
+   vector<RelayAction> relay_actions;
+   relay_actions.reserve(bs->block->transactions.size() * 3); // most trx has 1-2 actions
    for(const auto& receipt : bs->block->transactions) {
-      string trx_id_str;
       if(receipt.trx.contains<packed_transaction>()) {
          const auto& pt = receipt.trx.get<packed_transaction>();
          // get id via get_raw_transaction() as packed_transaction.id() mutates internal transaction state
          const auto& raw = pt.get_raw_transaction();
          const auto& trx = fc::raw::unpack<transaction>(raw);
 
-         for(auto& act: trx.actions) {
+         for(const auto& act: trx.actions) {
             RelayAction tempaction;
             tempaction.set_account(act.account.to_string());
             tempaction.set_action_name(act.name.to_string());
@@ -323,18 +323,17 @@ void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& 
             tempdata.assign(act.data.begin(), act.data.end());
             tempaction.set_data(tempdata);
 
-            for(auto& auth : act.authorization) {
+            for(const auto& auth : act.authorization) {
                RelayPermission_level* tempauth = tempaction.add_authorization();
                tempauth->set_actor(auth.actor.to_string());
                tempauth->set_permission(auth.permission.to_string());
             }
-            relayAction.push_back(tempaction);
+            relay_actions.push_back(tempaction);
          }
-
       }
    }
    // ilog("xuyapeng add for before PutRelayCommitRequest");
-   auto reply = _grpc_stub->PutRelayCommitRequest(block, relayAction);
+   auto reply = _grpc_stub->PutRelayCommitRequest(block, relay_actions);
 }
 
 void bus_plugin_impl::process_accepted_block(const chain::block_state_ptr& bs) {
