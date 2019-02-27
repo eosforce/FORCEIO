@@ -125,27 +125,10 @@ def stepMakeGenesis():
     run('cp ' + datas.contracts_dir + '/force.msig/force.msig.wasm ' + datas.config_dir)
     run('cp ' + datas.contracts_dir + '/force.relay/force.relay.abi ' + datas.config_dir)
     run('cp ' + datas.contracts_dir + '/force.relay/force.relay.wasm ' + datas.config_dir)
+    
+    run('cp ./genesis-data/config.ini ' + datas.config_dir)
 
     cpContract('relay.token')
-
-    #run('cp ./genesis-data/genesis.json ' + datas.config_dir)
-    #replaceFile(datas.config_dir + "/genesis.json", "#CORE_SYMBOL#", args.symbol)
-    #replaceFile(datas.config_dir + "/genesis.json", "#PUB#", args.pr)
-    #run('cp ./genesis-data/key.json ' + datas.config_dir + '/keys/')
-    #run('cp ./genesis-data/sigkey.json ' + datas.config_dir + '/keys/')
-    run('''echo "## Notify Plugin
-plugin = eosio::notify_plugin
-# notify-filter-on = account:action
-notify-filter-on = b1:
-notify-filter-on = b1:transfer
-notify-filter-on = eosio:delegatebw
-# http endpoint for each action seen on the chain.
-notify-receive-url = http://127.0.0.1:8080/notify
-# Age limit in seconds for blocks to send notifications. No age limit if set to negative.
-# Used to prevent old actions from trigger HTTP request while on replay (seconds)
-notify-age-limit = -1
-# Retry times of sending http notification if failed.
-notify-retry-times = 3" > ''' + datas.config_dir + '/config.ini')
         
     run(datas.args.root + 'build/programs/genesis/genesis')
     run('mv ./genesis.json ' + datas.config_dir)
