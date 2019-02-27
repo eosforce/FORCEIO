@@ -27,7 +27,7 @@ def createNodeDirs(inits, keys):
 
 def startNode(nodeIndex, bpaccount, key):
     dir = datas.args.nodes_dir + ('%02d-' % nodeIndex) + bpaccount['name'] + '/'
-    otherOpts = ''.join(list(map(lambda i: '    --p2p-peer-address 127.0.0.1:' + str(9001 + i), range(nodeIndex - 1))))
+    otherOpts = ''.join(list(map(lambda i: ('    --p2p-peer-address 127.0.0.1:%d1%02d' % (datas.args.use_port, i)), range(nodeIndex - 1))))
     if not nodeIndex: otherOpts += (
         '    --plugin eosio::history_plugin'
         '    --plugin eosio::history_api_plugin'
@@ -42,8 +42,8 @@ def startNode(nodeIndex, bpaccount, key):
         '    --blocks-dir ' + os.path.abspath(dir) + '/blocks'
         '    --config-dir ' + os.path.abspath(dir) + '/../../config'
         '    --data-dir ' + os.path.abspath(dir) +
-        '    --http-server-address 0.0.0.0:' + str(8000 + nodeIndex) +
-        '    --p2p-listen-endpoint 0.0.0.0:' + str(9000 + nodeIndex) +
+        ('    --http-server-address 0.0.0.0:%d0%02d' % (datas.args.use_port, nodeIndex)) +
+        ('    --p2p-listen-endpoint 0.0.0.0:%d1%02d' % (datas.args.use_port, nodeIndex)) +
         '    --max-clients ' + str(datas.maxClients) +
         '    --p2p-max-nodes-per-host ' + str(datas.maxClients) +
         '    --enable-stale-production'
@@ -72,7 +72,10 @@ def stepKillAll():
 def stepStartWallet():
     rm(datas.wallet_dir)
     run('mkdir -p ' + datas.wallet_dir)
-    background(datas.args.keosd + ' --unlock-timeout 999999999 --http-server-address 0.0.0.0:6666 --wallet-dir %s' % (datas.wallet_dir))
+    background(datas.args.keosd + 
+        ( ' --unlock-timeout 999999999' +
+          ' --http-server-address 0.0.0.0:%d666' +
+          ' --wallet-dir %s' ) % (datas.args.use_port, datas.wallet_dir))
     sleep(.4)
 
 def stepCreateWallet():
@@ -216,7 +219,7 @@ commands = [
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--cleos', metavar='', help="Cleos command", default='build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 ')
+parser.add_argument('--cleos', metavar='', help="Cleos command", default='build/programs/cleos/cleos')
 parser.add_argument('--nodeos', metavar='', help="Path to nodeos binary", default='build/programs/nodeos/nodeos')
 parser.add_argument('--keosd', metavar='', help="Path to keosd binary", default='build/programs/keosd/keosd')
 

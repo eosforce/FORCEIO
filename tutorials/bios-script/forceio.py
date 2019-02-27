@@ -118,6 +118,7 @@ def parserArgsAndRun(parser, commands):
     parser.add_argument('--symbol', metavar='', help="The core symbol", default='SYS')
     parser.add_argument('--pr', metavar='', help="The Public Key Start Symbol", default='FOSC')
     parser.add_argument('-a', '--all', action='store_true', help="Do everything marked with (*)")
+    parser.add_argument('--use-port', metavar='', help="port X to listen, http X001-X099, p2p X101-X199 and wallet X666", default='8')
     
     for (flag, command, function, inAll, help) in commands:
         prefix = ''
@@ -129,7 +130,15 @@ def parserArgsAndRun(parser, commands):
             parser.add_argument('--' + command, action='store_true', help=help, dest=command)
 
     args = parser.parse_args()
-    args.cleos += '--url http://127.0.0.1:%d ' % 8001
+    
+    args.use_port = int(args.use_port)
+    
+    if args.use_port >= 50 or args.use_port <= 4 :
+       print("args --use-port should between 5-50")
+       sys.exit(1)
+    
+    args.cleos += ' --wallet-url http://127.0.0.1:%d666' % args.use_port
+    args.cleos += ' --url http://127.0.0.1:%d001 ' % args.use_port
     args.cleos = args.root + args.cleos
     args.nodeos = args.root + args.nodeos
     args.keosd = args.root + args.keosd
