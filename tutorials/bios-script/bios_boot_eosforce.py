@@ -8,8 +8,6 @@ import sys
 import time
 from forceio import *
 
-unlockTimeout = 999999999
-
 def importKeys():
     keys = {}
     for a in datas.initAccountsKeys:
@@ -74,7 +72,7 @@ def stepKillAll():
 def stepStartWallet():
     rm(datas.wallet_dir)
     run('mkdir -p ' + datas.wallet_dir)
-    background(datas.args.keosd + ' --unlock-timeout %d --http-server-address 0.0.0.0:6666 --wallet-dir %s' % (unlockTimeout, datas.wallet_dir))
+    background(datas.args.keosd + ' --unlock-timeout 999999999 --http-server-address 0.0.0.0:6666 --wallet-dir %s' % (datas.wallet_dir))
     sleep(.4)
 
 def stepCreateWallet():
