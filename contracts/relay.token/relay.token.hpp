@@ -32,6 +32,15 @@ using std::string;
       uint64_t type;
       void parse(const string memo);
    };
+   
+   struct sys_match_match {
+      account_name payer; 
+      account_name receiver;
+      asset base;
+      asset price;
+      uint32_t bid_or_ask;
+      void parse(const string memo);
+   };
 
    enum  class trade_type:uint64_t {
       match=1,
