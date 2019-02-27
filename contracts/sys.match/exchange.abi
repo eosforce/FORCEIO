@@ -14,13 +14,18 @@
       "base": "",
       "fields": [
       {"name": "base","type": "symbol_type"},
-      {"name": "quote","type": "symbol_type"}
+      {"name": "base_chain","type": "name"},
+      {"name": "base_sym","type": "symbol_type"},
+      {"name": "quote","type": "symbol_type"},
+      {"name": "quote_chain","type": "name"},
+      {"name": "quote_sym","type": "symbol_type"}
       ]
     },{
        "name": "trade",
        "base": "",
        "fields": [
         {"name": "maker","type": "account_name"},
+        {"name": "receiver","type": "account_name"},
         {"name": "base","type": "asset"},
         {"name": "price","type": "asset"},
         {"name": "bid_or_ask","type": "uint32"}
@@ -37,7 +42,11 @@
       "fields": [
       {"name": "id","type": "uint32"},
       {"name": "base","type": "symbol_type"},
-      {"name": "quote","type": "symbol_type"}
+      {"name": "base_chain","type": "name"},
+      {"name": "base_sym","type": "symbol_type"},
+      {"name": "quote","type": "symbol_type"},
+      {"name": "quote_chain","type": "name"},
+      {"name": "quote_sym","type": "symbol_type"},
       ]
     },{
        "name": "order",
@@ -46,6 +55,7 @@
         {"name": "id","type": "uint64"},
         {"name": "pair_id","type": "uint32"},
         {"name": "maker","type": "account_name"},
+        {"name": "receiver","type": "account_name"},
         {"name": "base","type": "asset"},
         {"name": "price","type": "asset"},
         {"name": "bid_or_ask","type": "uint32"}
@@ -57,7 +67,7 @@
       "type": "create",
       "ricardian_contract": ""
     },{
-      "name": "trade",
+      "name": "match",
       "type": "trade",
       "ricardian_contract": ""
     },{

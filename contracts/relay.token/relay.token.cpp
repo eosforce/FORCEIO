@@ -4,9 +4,9 @@
 
 #include "relay.token.hpp"
 #include "force.relay/force.relay.hpp"
+#include "sys.match/exchange.h"
 #include <eosiolib/action.hpp>
-
-
+#include <stdlib.h>
 
 namespace relay {
 
@@ -159,29 +159,57 @@ void token::add_balance( account_name owner, name chain, asset value, account_na
    }
 }
 
+void token::trade_imp( account_name payer, account_name receiver, asset base, asset price, uint32_t bid_or_ask ) {
+    account_name    exc_acc = N(sys.match);
+    account_name    escrow  = N(eosfund1);
+    const account_name relay_token_acc = N(relay.token);
+    
+    exchange::exchange::trading_pairs   trading_pairs_table(exc_acc, exc_acc);
+    asset           quant_after_fee;
+
+    uint128_t idxkey = (uint128_t(base.symbol.name()) << 64) | price.symbol.name();
+
+    //print("idxkey=",idxkey,",contract=",token_contract,",symbol=",token_symbol.value);
+
+    auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
+    auto itr1 = idx_pair.find(idxkey);
+    eosio_assert(itr1 != idx_pair.end(), "trading pair does not exist");
+
+    base    = exchange::exchange::convert(itr1->base, base);
+    price   = exchange::exchange::convert(itr1->quote, price);
+    if (bid_or_ask) {
+        // first, transfer the quote currency to escrow account
+        //print("bid step0: quant_after_fee=",convert(itr1->quote, price)," base.amount =",base.amount, " precision =",precision(base.symbol.precision()));
+        quant_after_fee = exchange::exchange::convert(itr1->quote_sym, price) * base.amount / exchange::exchange::precision(base.symbol.precision());
+        //print("bid step1: quant_after_fee=",quant_after_fee);
+        quant_after_fee = exchange::exchange::to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
+        //print("bid step2: quant_after_fee=",quant_after_fee);
+        transfer( payer, escrow, itr1->quote_chain, quant_after_fee, "");
+    } else {
+        quant_after_fee = exchange::exchange::convert_asset(itr1->base_sym, base);
+        quant_after_fee = exchange::exchange::to_asset(relay_token_acc, itr1->base_chain, quant_after_fee);
+        transfer( payer, escrow, itr1->base_chain, quant_after_fee, "");
+    }
+    
+    eosio::action(
+            permission_level{ payer, N(active) },
+            exc_acc, N(match),
+            std::make_tuple(payer, receiver, base, price, bid_or_ask)
+    ).send();
+}
+
 void token::trade( account_name from,
                   account_name to,
                   name chain,
                   asset quantity,
                   trade_type type,
                   string memo ) {
-   eosio_assert(from != to, "cannot trade to self");
-   require_auth(from);
-   eosio_assert(is_account(to), "to account does not exist");
-   auto sym = quantity.symbol.name();
-   stats statstable(_self, chain);
-   const auto& st = statstable.get(sym);
-
-   require_recipient(from);
-   require_recipient(to);
-
-   eosio_assert(quantity.is_valid(), "invalid quantity");
-   eosio_assert(quantity.amount > 0, "must transfer positive quantity");
-   eosio_assert(quantity.symbol == st.supply.symbol, "symbol precision mismatch");
-   eosio_assert(chain == st.chain, "symbol chain mismatch");
+   
    //eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
    //解析memo 调用market
    if (type == trade_type::bridge_addmortgage && to == SYS_BRIDGE) {
+      transfer(from, to, chain, quantity, memo);
+      
       sys_bridge_addmort bri_add;
       bri_add.parse(memo);
       
@@ -195,6 +223,8 @@ void token::trade( account_name from,
       ).send();
    }
    else if (type == trade_type::bridge_exchange && to == SYS_BRIDGE) {
+      transfer(from, to, chain, quantity, memo);
+
       sys_bridge_exchange bri_exchange;
       bri_exchange.parse(memo);
 
@@ -208,14 +238,15 @@ void token::trade( account_name from,
       ).send();
    }
    else if(type == trade_type::match && to == N(sys.match)) {
-
+      sys_match_match smm;
+      smm.parse(memo);
+      trade_imp(smm.payer, smm.receiver, smm.base, smm.price, smm.bid_or_ask);
    }
    else {
       eosio_assert(false,"invalid type");
    }
    
-   sub_balance(from, chain, quantity);
-   add_balance(to, chain, quantity, from);
+   
 }
 
 void splitMemo(std::vector<std::string>& results, const std::string& memo,char separator) {
@@ -251,6 +282,80 @@ void sys_bridge_exchange::parse(const string memo) {
    eosio_assert(this->type == 1 || this->type == 2,"type is not adapted with bridge_addmortgage");
 }
 
+inline string& ltrim(string &str) {
+    auto str1 = str;
+    string::iterator p = find_if(str1.begin(), str1.end(), not1(std::ptr_fun<int, int>(isspace)));
+    str.erase(str1.begin(), p);
+    return str1;
+}
+ 
+inline string& rtrim(string &str) {
+    auto str1 = str;
+    string::reverse_iterator p = find_if(str1.rbegin(), str1.rend(), not1(std::ptr_fun<int , int>(isspace)));
+    str.erase(p.base(), str1.end());
+    return str1;
+}
+
+inline string& trim(const string &str) {
+    auto str1 = str;
+    ltrim(rtrim(str1));
+    return str1;
+}
+
+asset asset_from_string(const string& from)
+{
+    string s = trim(from);
+
+    // Find space in order to split amount and symbol
+    auto space_pos = s.find(' ');
+    eosio_assert((space_pos != string::npos), "Asset's amount and symbol should be separated with space");
+    auto symbol_str = trim(s.substr(space_pos + 1));
+    auto amount_str = s.substr(0, space_pos);
+    eosio_assert((amount_str[0] != '-'), "now do not support negetive asset");
+
+    // Ensure that if decimal point is used (.), decimal fraction is specified
+    auto dot_pos = amount_str.find('.');
+    if (dot_pos != string::npos) {
+       eosio_assert((dot_pos != amount_str.size() - 1), "Missing decimal fraction after decimal point");
+    }
+
+    // Parse symbol
+    int precision_digits;
+    if (dot_pos != string::npos) {
+       precision_digits = amount_str.size() - dot_pos - 1;
+    } else {
+       precision_digits = 0;
+    }
+
+    symbol_type sym;
+    sym.value = (::eosio::string_to_name(symbol_str.c_str()) << 8) | precision_digits;
+
+    // Parse amount
+    int64_t int_part, fract_part;
+    if (dot_pos != string::npos) {
+       int_part = ::atoll(amount_str.substr(0, dot_pos).c_str());
+       fract_part = ::atoll(amount_str.substr(dot_pos + 1).c_str());
+    } else {
+       int_part = ::atoll(amount_str.c_str());
+    }
+
+    int64_t amount = int_part * exchange::exchange::precision(precision_digits);
+    amount += fract_part;
+
+    return asset(amount, sym);
+}
+
+void sys_match_match::parse(const string memo) {
+   std::vector<std::string> memoParts;
+   splitMemo(memoParts, memo, ';');
+   eosio_assert(memoParts.size() == 5,"memo is not adapted with bridge_addmortgage");
+   payer = ::eosio::string_to_name(memoParts[0].c_str());
+   receiver = ::eosio::string_to_name(memoParts[1].c_str());
+   base = asset_from_string(memoParts[2]);
+   price = asset_from_string(memoParts[3]);
+   bid_or_ask = atoi(memoParts[4].c_str());
+   eosio_assert(bid_or_ask == 0 || bid_or_ask == 1,"type is not adapted with sys_match_match");
+}
 
 };
 
