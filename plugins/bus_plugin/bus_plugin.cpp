@@ -59,7 +59,7 @@ public:
 
    ~grpc_stub() = default;
 
-   std::string PutRelayCommitRequest(RelayBlock* block, vector<RelayAction>& action);
+   void put_relay_commit_req(RelayBlock* block, const vector<RelayAction>& action);
 
 private:
    std::unique_ptr<relay_commit::Stub> relay_stub_;
@@ -67,8 +67,7 @@ private:
 
 class bus_plugin_impl {
 public:
-   bus_plugin_impl() {}
-
+   bus_plugin_impl() = default;
    ~bus_plugin_impl();
 
    std::string client_address = std::string("");
@@ -155,31 +154,30 @@ private:
 
 };
 
-std::string grpc_stub::PutRelayCommitRequest(RelayBlock* block, vector <RelayAction>& action) {
+void grpc_stub::put_relay_commit_req(RelayBlock* block, const vector<RelayAction>& actions) {
    try {
       RelayCommitRequest request;
       request.set_allocated_block(block); // no need delete block
-      int nsize = action.size();
-      for(int i = 0; i != nsize; ++i) {
-         RelayAction* actiontemp = request.add_action();
-         *actiontemp = action[i];
+      for( const auto& act : actions ) {
+         auto actiontemp = request.add_action();
+         *actiontemp = act;
       }
 
       RelayCommitReply reply;
       ClientContext context;
       Status status = relay_stub_->rpc_sendaction(&context, request, &reply);
-      if(status.ok()) {
-         //ilog("bus_plug send blockRequest success block_num");
-         return reply.message();
-      } else {
-         elog("PutBlockRequest error error_code:${error_code},error_message:${message}",
-              ("error_code", (int) (status.error_code()))("message", status.error_message()));
-         return "RPC failed";
+      if(!status.ok()) {
+         EOS_THROW( chain::plugin_exception,
+                    "PutBlockRequest error error_code:${error_code},error_message:${message}",
+                    ("error_code", (int)(status.error_code()))("message", status.error_message()))
       }
    } catch(std::exception& e) {
-      elog("Exception on grpc_stub PutRequest: ${e}", ("e", e.what()));
-      return "exception " + string(e.what());
+      throw;
+   } catch(...) {
+      throw;
    }
+
+   return;
 }
 
 template<typename Queue, typename Entry> void bus_plugin_impl::queue(Queue& queue, const Entry& e) {
@@ -332,8 +330,23 @@ void bus_plugin_impl::_process_irreversible_block(const chain::block_state_ptr& 
          }
       }
    }
-   // ilog("xuyapeng add for before PutRelayCommitRequest");
-   auto reply = _grpc_stub->PutRelayCommitRequest(block, relay_actions);
+
+   const auto max_req_times = 3;
+
+   for(auto i = 0; i < max_req_times; i++) {
+      try {
+         _grpc_stub->put_relay_commit_req(block, relay_actions);
+      } catch(fc::exception& e) {
+         elog("req block ${num} err by ${w}", ("num", bs->block_num)("w", e.what()));
+      } catch(std::exception& e) {
+         elog("req block ${num} err by std exp ${w}", ("num", bs->block_num)("w", e.what()));
+      }
+      ilog("send block req ${num} ${id}", ("num", bs->block_num)("id", bs->id));
+      break;
+   }
+
+   elog("req block err too much times!");
+   // TODO process service err
 }
 
 void bus_plugin_impl::process_accepted_block(const chain::block_state_ptr& bs) {
