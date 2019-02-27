@@ -226,6 +226,23 @@ namespace eosio {
             s.fee.fee_type = fee_type::proportion_mincost;
       });
    }
+
+   void market::setweight(name trade,account_name trade_maker,uint64_t  base_weight,uint64_t  market_weight)
+   {
+      require_auth(trade_maker); 
+      tradepairs tradepair( _self,trade_maker);
+      auto existing = tradepair.find( trade );
+      eosio_assert( existing != tradepair.end(), "the market is not exist" );
+
+      eosio_assert( market_weight > 0,"invalid market_weight");
+      eosio_assert( base_weight > 0,"invalid base_weight");
+
+      tradepair.modify( *existing, 0, [&]( auto& s ) {
+            s.base_weight = base_weight;
+            s.market_weight = market_weight;
+      });
+   }
+
    void market::exchange(name trade,account_name trade_maker,account_name account_covert,account_name account_recv,asset convert_amount,coin_type type) {
       require_auth(_self);
 

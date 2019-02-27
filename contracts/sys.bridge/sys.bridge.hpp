@@ -107,6 +107,8 @@ namespace eosio {
           * set proportion with a Minimum fee
           */
          void setprominfee(name trade,account_name trade_maker,uint64_t base_ratio,uint64_t market_ratio,asset base,asset market);
+
+         void setweight(name trade,account_name trade_maker,uint64_t  base_weight,uint64_t  market_weight);
       private:
          //fixed cost      think about the Proportionate fee
          struct trade_fee {
@@ -143,5 +145,5 @@ namespace eosio {
          typedef eosio::multi_index<N(tradepairs), trade_pair> tradepairs;
    };
 
-   EOSIO_ABI( market, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket)(setfixedfee)(setprofee)(setprominfee) ) 
+   EOSIO_ABI( market, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket)(setfixedfee)(setprofee)(setprominfee)(setweight) ) 
 } /// namespace eosio
