@@ -86,7 +86,7 @@ void relay::onblock( const name chain, const account_name transfer, const block_
    }
 
    for(const auto& act : actions){
-      //print("check act ", act.account, " ", act.name, "\n");
+      print("check act ", act.account, " ", act.name, "\n");
       const auto& h = handler_map.find(std::make_pair(act.account, act.name));
       if(h != handler_map.end()){
          onaction(transfer, block, act, h->second);
