@@ -17,17 +17,17 @@ class dataSet(object):
       self.logFile = {}
       self.args = {}   
       
-      self.config_dir = ""
-      
-   def processData(self, args, logs):
+   def processData(self, args):
       self.args = args
-      self.logFile = logs
-      
-      self.config_dir = os.path.abspath(args.config_dir)
-      self.nodes_dir = os.path.abspath(args.nodes_dir)
-      self.wallet_dir = os.path.abspath(args.wallet_dir)
-      self.log_path = os.path.abspath(args.log_path)
+      self.config_dir = os.path.abspath(args.data_dir) + '/config/'
+      self.nodes_dir = os.path.abspath(args.data_dir) + '/nodes/'
+      self.wallet_dir = os.path.abspath(args.data_dir) + '/wallet/'
+      self.log_path = os.path.abspath(args.data_dir) + '/' + args.log_path
       self.contracts_dir = args.contracts_dir
+      
+      run('mkdir -p ' + os.path.abspath(args.data_dir))
+      self.logFile = open(self.log_path, 'a')
+      self.logFile.write('\n\n' + '*' * 80 + '\n\n\n')
    
       
 datas = dataSet()
@@ -37,7 +37,8 @@ def jsonArg(a):
     
 def log2File(l):
    print('forceio script:', l)
-   datas.logFile.write(l + '\n')
+   if datas.logFile != {}:
+      datas.logFile.write(l + '\n')
 
 def run(args):
     log2File(args)
@@ -111,10 +112,11 @@ def setContract(account):
 def parserArgsAndRun(parser, commands):
     parser.add_argument('--root', metavar='', help="Eosforce root dir from git", default='../../')
     parser.add_argument('--contracts-dir', metavar='', help="Path to contracts directory", default='build/contracts/')
-    parser.add_argument('--log-path', metavar='', help="Path to log file", default='./output.log')
+    parser.add_argument('--log-path', metavar='', help="Path to log file", default='output.log')
     parser.add_argument('--nodes-dir', metavar='', help="Path to nodes directory", default='./nodes/')
     parser.add_argument('--wallet-dir', metavar='', help="Path to wallet directory", default='./wallet/')
     parser.add_argument('--config-dir', metavar='', help="Path to config directory", default='./config')
+    parser.add_argument('--data-dir', metavar='', help="Path to datas", default='./testnet')
     parser.add_argument('--symbol', metavar='', help="The core symbol", default='SYS')
     parser.add_argument('--pr', metavar='', help="The Public Key Start Symbol", default='FOSC')
     parser.add_argument('-a', '--all', action='store_true', help="Do everything marked with (*)")
@@ -132,7 +134,6 @@ def parserArgsAndRun(parser, commands):
     args = parser.parse_args()
     
     args.use_port = int(args.use_port)
-    
     if args.use_port >= 50 or args.use_port <= 4 :
        print("args --use-port should between 5-50")
        sys.exit(1)
@@ -144,12 +145,9 @@ def parserArgsAndRun(parser, commands):
     args.keosd = args.root + args.keosd
     args.contracts_dir = args.root + args.contracts_dir
 
-    logFile = open(args.log_path, 'a')
-    logFile.write('\n\n' + '*' * 80 + '\n\n\n')
-
     global datas
-    datas.processData(args, logFile)
-    
+    datas.processData(args)
+        
     haveCommand = False
     for (flag, command, function, inAll, help) in commands:
         if getattr(args, command) or inAll and args.all:

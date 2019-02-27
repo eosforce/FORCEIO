@@ -17,7 +17,7 @@ def importKeys():
             cleos('wallet import --private-key ' + key)
 
 def createNodeDir(nodeIndex, bpaccount, key):
-    dir = datas.args.nodes_dir + ('%02d-' % nodeIndex) + bpaccount['name'] + '/'
+    dir = datas.nodes_dir + ('/%02d-' % nodeIndex) + bpaccount['name'] + '/'
     run('rm -rf ' + dir)
     run('mkdir -p ' + dir)
 
@@ -26,7 +26,7 @@ def createNodeDirs(inits, keys):
         createNodeDir(i + 1, datas.initProducers[i], keys[i])
 
 def startNode(nodeIndex, bpaccount, key):
-    dir = datas.args.nodes_dir + ('%02d-' % nodeIndex) + bpaccount['name'] + '/'
+    dir = datas.nodes_dir + ('/%02d-' % nodeIndex) + bpaccount['name'] + '/'
     otherOpts = ''.join(list(map(lambda i: ('    --p2p-peer-address 127.0.0.1:%d1%02d' % (datas.args.use_port, i)), range(nodeIndex - 1))))
     if not nodeIndex: otherOpts += (
         '    --plugin eosio::history_plugin'
@@ -39,9 +39,9 @@ def startNode(nodeIndex, bpaccount, key):
 
     cmd = (
         datas.args.nodeos +
-        '    --blocks-dir ' + os.path.abspath(dir) + '/blocks'
-        '    --config-dir ' + os.path.abspath(dir) + '/../../config'
-        '    --data-dir ' + os.path.abspath(dir) +
+        '    --blocks-dir ' + dir + '/blocks'
+        '    --config-dir ' + datas.config_dir + 
+        '    --data-dir ' + dir +
         ('    --http-server-address 0.0.0.0:%d0%02d' % (datas.args.use_port, nodeIndex)) +
         ('    --p2p-listen-endpoint 0.0.0.0:%d1%02d' % (datas.args.use_port, nodeIndex)) +
         '    --max-clients ' + str(datas.maxClients) +
@@ -80,7 +80,7 @@ def stepStartWallet():
 
 def stepCreateWallet():
     run('mkdir -p ' + datas.wallet_dir)
-    cleos('wallet create --file ./pw')
+    cleos('wallet create --file ' + datas.wallet_dir + '/pw')
 
 def stepStartProducers():
     startProducers(datas.initProducers, datas.initProducerSigKeys)
@@ -92,7 +92,7 @@ def stepCreateNodeDirs():
     sleep(0.5)
 
 def stepLog():
-    run('tail -n 1000 ' + datas.args.nodes_dir + 'biosbpa.log')
+    run('tail -n 1000 ' + datas.nodes_dir + '/biosbpa.log')
     cleos('get info')
     print('you can use \"alias cleost=\'%s\'\" to call cleos to testnet' % datas.args.cleos)
 
@@ -185,12 +185,7 @@ def stepSetFuncs():
 
 def clearData():
     stepKillAll()
-    rm(datas.config_dir)
-    rm(datas.nodes_dir)
-    rm(datas.wallet_dir)
-    rm(datas.log_path)
-    rm(os.path.abspath('./pw'))
-    rm(os.path.abspath('./config.ini'))
+    rm(os.path.abspath(datas.args.data_dir))
 
 def restart():
     stepKillAll()
