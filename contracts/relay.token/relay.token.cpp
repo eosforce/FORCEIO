@@ -4,9 +4,8 @@
 
 #include "relay.token.hpp"
 #include "force.relay/force.relay.hpp"
+#include "sys.match/exchange.h"
 #include <eosiolib/action.hpp>
-
-
 
 namespace relay {
 
@@ -159,29 +158,57 @@ void token::add_balance( account_name owner, name chain, asset value, account_na
    }
 }
 
+void token::trade_imp( account_name payer, account_name receiver, asset base, asset price, uint32_t bid_or_ask ) {
+    account_name    exc_acc = N(sys.match);
+    account_name    escrow  = N(eosfund1);
+    const account_name relay_token_acc = N(relay.token);
+    
+    exchange::exchange::trading_pairs   trading_pairs_table(exc_acc, exc_acc);
+    asset           quant_after_fee;
+
+    uint128_t idxkey = (uint128_t(base.symbol.name()) << 64) | price.symbol.name();
+
+    //print("idxkey=",idxkey,",contract=",token_contract,",symbol=",token_symbol.value);
+
+    auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
+    auto itr1 = idx_pair.find(idxkey);
+    eosio_assert(itr1 != idx_pair.end(), "trading pair does not exist");
+
+    base    = exchange::exchange::convert(itr1->base, base);
+    price   = exchange::exchange::convert(itr1->quote, price);
+    if (bid_or_ask) {
+        // first, transfer the quote currency to escrow account
+        //print("bid step0: quant_after_fee=",convert(itr1->quote, price)," base.amount =",base.amount, " precision =",precision(base.symbol.precision()));
+        quant_after_fee = exchange::exchange::convert(itr1->quote_sym, price) * base.amount / exchange::exchange::precision(base.symbol.precision());
+        //print("bid step1: quant_after_fee=",quant_after_fee);
+        quant_after_fee = exchange::exchange::to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
+        //print("bid step2: quant_after_fee=",quant_after_fee);
+        transfer( payer, escrow, itr1->quote_chain, quant_after_fee, "");
+    } else {
+        quant_after_fee = exchange::exchange::convert_asset(itr1->base_sym, base);
+        quant_after_fee = exchange::exchange::to_asset(relay_token_acc, itr1->base_chain, quant_after_fee);
+        transfer( payer, escrow, itr1->base_chain, quant_after_fee, "");
+    }
+    
+    eosio::action(
+            permission_level{ payer, N(active) },
+            exc_acc, N(match),
+            std::make_tuple(payer, receiver, base, price, bid_or_ask)
+    ).send();
+}
+
 void token::trade( account_name from,
                   account_name to,
                   name chain,
                   asset quantity,
                   trade_type type,
                   string memo ) {
-   eosio_assert(from != to, "cannot trade to self");
-   require_auth(from);
-   eosio_assert(is_account(to), "to account does not exist");
-   auto sym = quantity.symbol.name();
-   stats statstable(_self, chain);
-   const auto& st = statstable.get(sym);
-
-   require_recipient(from);
-   require_recipient(to);
-
-   eosio_assert(quantity.is_valid(), "invalid quantity");
-   eosio_assert(quantity.amount > 0, "must transfer positive quantity");
-   eosio_assert(quantity.symbol == st.supply.symbol, "symbol precision mismatch");
-   eosio_assert(chain == st.chain, "symbol chain mismatch");
+   
    //eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
    //½âÎömemo µ÷ÓÃmarket
    if (type == trade_type::bridge_addmortgage && to == SYS_BRIDGE) {
+      transfer(from, to, chain, quantity, memo);
+      
       sys_bridge_addmort bri_add;
       bri_add.parse(memo);
       
@@ -195,6 +222,8 @@ void token::trade( account_name from,
       ).send();
    }
    else if (type == trade_type::bridge_exchange && to == SYS_BRIDGE) {
+      transfer(from, to, chain, quantity, memo);
+
       sys_bridge_exchange bri_exchange;
       bri_exchange.parse(memo);
 
@@ -208,14 +237,13 @@ void token::trade( account_name from,
       ).send();
    }
    else if(type == trade_type::match && to == N(sys.match)) {
-
+      //trade_imp();
    }
    else {
       eosio_assert(false,"invalid type");
    }
    
-   sub_balance(from, chain, quantity);
-   add_balance(to, chain, quantity, from);
+   
 }
 
 void splitMemo(std::vector<std::string>& results, const std::string& memo,char separator) {

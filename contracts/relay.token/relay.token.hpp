@@ -72,6 +72,8 @@ public:
                   name chain,
                   asset quantity,
                   string memo );
+   
+   inline asset get_supply( name chain, symbol_name sym )const;
 
    void trade(    account_name from,
                   account_name to,
@@ -79,6 +81,8 @@ public:
                   asset quantity,
                   trade_type type,
                   string memo);
+                  
+   void trade_imp( account_name payer, account_name receiver, asset base, asset price, uint32_t bid_or_ask );
 
 private:
    inline static uint128_t get_account_idx(const name& chain, const asset& a) {
@@ -131,6 +135,14 @@ public:
    };
 
 };
+
+   asset token::get_supply( name chain, symbol_name sym )const
+   {
+      stats statstable( _self, chain );
+      const auto& st = statstable.get( sym );
+      return st.supply;
+   }
+
 };
 
 #endif //FORCEIO_CONTRACT_RELAY_TOKEN_HPP
