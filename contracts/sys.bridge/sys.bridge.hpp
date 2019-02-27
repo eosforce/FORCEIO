@@ -39,6 +39,12 @@ namespace eosio {
       trade_type_count
    };
 
+   enum  class action_type:int64_t {
+      addmortgage = 1,
+      exchange,
+      action_type_count
+   };
+
    class market : public contract {
       public:
          market( account_name self ):contract(self){}
@@ -107,6 +113,10 @@ namespace eosio {
           * set proportion with a Minimum fee
           */
          void setprominfee(name trade,account_name trade_maker,uint64_t base_ratio,uint64_t market_ratio,asset base,asset market);
+
+         void apply(account_name contract, action_name act);
+
+         void onTransfer(account_name from,name chain,asset quantity,string memo);
       private:
          //fixed cost      think about the Proportionate fee
          struct trade_fee {
@@ -139,9 +149,16 @@ namespace eosio {
 
             uint64_t primary_key()const { return trade_name; }
          };
+
+         struct transfer_args {
+            account_name from;
+            account_name to;
+            name chain;
+            asset quantity;
+            string memo;
+         };
          
          typedef eosio::multi_index<N(tradepairs), trade_pair> tradepairs;
    };
 
-   EOSIO_ABI( market, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket)(setfixedfee)(setprofee)(setprominfee) ) 
 } /// namespace eosio
