@@ -67,7 +67,7 @@ namespace exchange {
     }
     
     asset exchange::convert_asset( symbol_type expected_symbol, const asset& a ) {
-        auto b = asset( a.amount, expected_symbol.value );
+        auto b = asset( a.amount, expected_symbol );
         return b;
     }
 
