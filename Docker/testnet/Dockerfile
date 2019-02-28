@@ -8,8 +8,17 @@ RUN git clone https://github.com/eosforce/FORCEIO.git --recursive \
     
 RUN cd FORCEIO && git submodule update --init --recursive
 
-RUN cd FORCEIO && cmake -H. -B"/tmp/build" -GNinja -DCMAKE_BUILD_TYPE=Release -DWASM_ROOT=/opt/wasm -DCMAKE_CXX_COMPILER=clang++ \
-       -DCMAKE_C_COMPILER=clang -DCMAKE_INSTALL_PREFIX=/tmp/build  -DSecp256k1_ROOT_DIR=/usr/local -DBUILD_MONGO_DB_PLUGIN=true \
+RUN apt-get update && apt-get -y install golang-1.10 && export PATH=$PATH:/usr/lib/go-1.10/bin
+
+RUN cd FORCEIO/externals/grpc/third_party/protobuf/ && ./autogen.sh && ./configure --prefix=/opt/protobuf && make -j12 && make install 
+
+RUN ls /usr/local/
+
+RUN cd FORCEIO/externals/grpc && make -j12 && make install prefix=/opt/grpc
+RUN cp -r /opt/grpc/lib/* /usr/local/lib/
+
+RUN export PATH=$PATH:/usr/lib/go-1.10/bin && cd FORCEIO && cmake -H. -B"/tmp/build" -GNinja -DCMAKE_BUILD_TYPE=Release -DWASM_ROOT=/opt/wasm -DCMAKE_CXX_COMPILER=clang++ \
+       -DCMAKE_C_COMPILER=clang -DCMAKE_INSTALL_PREFIX=/tmp/build  -DSecp256k1_ROOT_DIR=/usr/local -DBUILD_MONGO_DB_PLUGIN=true -DPROTOC=/opt/protobuf/bin/protoc -DGRPC_CPP_PLUGIN=/opt/grpc/bin/grpc_cpp_plugin \
     && cmake --build /tmp/build --target install
 
 FROM ubuntu:18.04
