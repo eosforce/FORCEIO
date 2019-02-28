@@ -4,7 +4,7 @@
 
 #include "relay.token.hpp"
 #include "force.relay/force.relay.hpp"
-#include "sys.match/exchange.h"
+#include "sys.match/sys.match.hpp"
 #include <eosiolib/action.hpp>
 #include <string>
 #include <stdlib.h>
