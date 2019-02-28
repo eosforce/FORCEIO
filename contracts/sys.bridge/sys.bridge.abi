@@ -32,10 +32,6 @@
           "type": "asset"
         },
         {
-          "name": "base_account",
-          "type": "account_name"
-        },
-        {
           "name": "base_weight",
           "type": "uint64"
         },
@@ -46,10 +42,6 @@
         {
           "name": "market_amount",
           "type": "asset"
-        },
-        {
-          "name": "market_account",
-          "type": "account_name"
         },
         {
           "name": "market_weight",
@@ -93,6 +85,10 @@
         },
         {
           "name": "trade_maker",
+          "type": "account_name"
+        },
+        {
+          "name": "recv_account",
           "type": "account_name"
         },
         {
@@ -298,8 +294,8 @@
           "type": "asset"
         },
         {
-          "name": "coin_maker",
-          "type": "account_name"
+          "name": "weight",
+          "type": "uint64"
         }
       ]
     },
@@ -326,14 +322,6 @@
         {
           "name": "trade_maker",
           "type": "account_name"
-        },
-        {
-          "name": "base_weight",
-          "type": "uint64"
-        },
-        {
-          "name": "market_weight",
-          "type": "uint64"
         },
         {
           "name": "isactive",
