@@ -132,6 +132,8 @@ def stepMakeGenesis():
     run('cp ./genesis-data/config.ini ' + datas.config_dir)
 
     cpContract('relay.token')
+    cpContract('sys.bridge')
+    cpContract('sys.match')
         
     run(datas.args.root + 'build/programs/genesis/genesis')
     run('mv ./genesis.json ' + datas.config_dir)
@@ -172,6 +174,23 @@ def stepSetFuncs():
     setFee('relay.token', 'create',   15000, 0, 0, 0)
     setFee('relay.token', 'issue',    15000, 0, 0, 0)
     setFee('relay.token', 'transfer', 1000,  0, 0, 0)
+
+    setContract('sys.bridge')
+    setFee('sys.bridge', 'addmarket',     15000, 0, 0, 0)
+    setFee('sys.bridge', 'addmortgage',   15000, 0, 0, 0)
+    setFee('sys.bridge', 'claimmortgage', 15000, 0, 0, 0)
+    setFee('sys.bridge', 'exchange',      5000,  0, 0, 0)
+    setFee('sys.bridge', 'frozenmarket',  15000, 0, 0, 0)
+    setFee('sys.bridge', 'trawmarket',    15000, 0, 0, 0)
+    setFee('sys.bridge', 'setfixedfee',   15000, 0, 0, 0)
+    setFee('sys.bridge', 'setprofee',     15000, 0, 0, 0)
+    setFee('sys.bridge', 'setprominfee',  15000, 0, 0, 0)
+    setFee('sys.bridge', 'setweight',     15000, 0, 0, 0)
+
+    setContract('sys.match')
+    setFee('sys.match', 'create',  15000, 0, 0, 0)
+    setFee('sys.match', 'match',   5000,  0, 0, 0)
+    setFee('sys.match', 'cancel',  15000, 0, 0, 0)
 
     createMap("eosforce", "force.token")
     #createMap("side", "force.token")
