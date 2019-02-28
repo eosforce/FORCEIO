@@ -8,7 +8,7 @@ namespace exchange {
     const account_name relay_token_acc = N(relay.token);
     const account_name escrow = N(eosfund1);
 
-    uint128_t compute_pair_index(symbol_type base, name base_chain, symbol_type quote, name quote_chain)
+    uint128_t compute_pair_index(symbol_type base, symbol_type quote)
     {
         uint128_t idxkey = (uint128_t(base.name()) << 64) | quote.name();
         return idxkey;
@@ -28,7 +28,7 @@ namespace exchange {
 
         trading_pairs trading_pairs_table(_self,_self);
 
-        uint128_t idxkey = compute_pair_index(base, base_chain, quote, quote_chain);
+        uint128_t idxkey = compute_pair_index(base, quote);
 
         auto idx = trading_pairs_table.template get_index<N(idxkey)>();
         auto itr = idx.find(idxkey);
@@ -41,19 +41,19 @@ namespace exchange {
             
             p.base_sym      = base_sym;
             p.base_chain    = base_chain;
-            p.base          = base | (base_sym.value & 0xff);
+            p.base          = (base.value << 8) | (base_sym.value & 0xff);
             p.quote_sym     = quote_sym;
             p.quote_chain   = quote_chain;
-            p.quote         = quote | (quote_sym.value & 0xff);
+            p.quote         = (quote.value << 8) | (quote_sym.value & 0xff);
             
         });
     }
 
     asset exchange::to_asset( account_name code, name chain, const asset& a ) {
         asset b;
-        token t(code);
+        relay::token t(code);
         
-        symbol_type expected_symbol = t.get_supply(a.symbol.name()).symbol ;
+        symbol_type expected_symbol = t.get_supply(chain, a.symbol.name()).symbol ;
 
         b = convert(expected_symbol, a);
         return b;
@@ -132,7 +132,7 @@ namespace exchange {
         auto idx_orderbook = orders.template get_index<N(idxkey)>();
         // if bid, traverse ask orders, other traverse bid orders
         // auto lookup_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | price.amount;
-        auto lookup_key = compute_orderbook_lookupkey(itr1->id, bid_or_ask, price.amount);
+        auto lookup_key = compute_orderbook_lookupkey(itr1->id, bid_or_ask, (uint32_t)price.amount);
         // test. walk through orderbook
         {
             print("\n ---------------- begin to walk through orderbook: ----------------");

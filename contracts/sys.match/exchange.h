@@ -14,7 +14,7 @@
 #include <eosiolib/privileged.hpp>
 #include <eosiolib/singleton.hpp>
 #include <eosiolib/eosio.hpp>
-#include <force.token/force.token.hpp>
+#include <relay.token/relay.token.hpp>
 #include <string>
 
 
@@ -118,8 +118,8 @@ namespace exchange {
 
             uint64_t primary_key() const { return id; }
             uint128_t by_pair_price() const { 
-                print("\n by_pair_price: order: id=", id, ", pair_id=", pair_id, ", bid_or_ask=", bid_or_ask,", base=", base,", price=", price,", maker=", maker, ", key=", (uint128_t(pair_id) << 96) | ((uint128_t)(bid_or_ask ? 1 : 0)) << 64 | price.amount);
-                return (uint128_t(pair_id) << 96) | ((uint128_t)(bid_or_ask ? 1 : 0)) << 64 | price.amount; }
+                print("\n by_pair_price: order: id=", id, ", pair_id=", pair_id, ", bid_or_ask=", bid_or_ask,", base=", base,", price=", price,", maker=", maker, ", key=", (uint128_t(pair_id) << 96) | ((uint128_t)(bid_or_ask ? 1 : 0)) << 64 | (uint64_t)price.amount);
+                return (uint128_t(pair_id) << 96) | ((uint128_t)(bid_or_ask ? 1 : 0)) << 64 | (uint64_t)price.amount; }
         };
 /* 
    ordered_unique<tag<by_code_scope_table>,
@@ -140,11 +140,10 @@ namespace exchange {
         static asset to_asset( account_name code, name chain, const asset& a );
         static asset convert( symbol_type expected_symbol, const asset& a );
         static asset convert_asset( symbol_type expected_symbol, const asset& a );
-        static uint64_t precision(uint8_t decimals)
+        static int64_t precision(uint64_t decimals)
         {
-           eosio_assert( decimals >= 0, "precision should be >= 0" );
-           uint64_t p10 = 1;
-           uint64_t p = decimals;
+           int64_t p10 = 1;
+           int64_t p = (int64_t)decimals;
            while( p > 0  ) {
               p10 *= 10; --p;
            }
