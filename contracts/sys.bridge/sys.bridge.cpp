@@ -8,19 +8,17 @@
 #include "sys.bridge.hpp"
 
 namespace eosio {
-   void market::addmarket(name trade,account_name trade_maker,trade_type type,name base_chain,asset base_amount,account_name base_account,uint64_t base_weight,
-               name market_chain,asset market_amount,account_name market_account,uint64_t market_weight) {
+   void market::addmarket(name trade,account_name trade_maker,trade_type type,name base_chain,asset base_amount,uint64_t base_weight,
+               name market_chain,asset market_amount,uint64_t market_weight) {
          
          require_auth(trade_maker);
-         require_auth(base_account);
-         require_auth(market_account);
          
-        auto coinbase_sym = base_amount.symbol;
+         auto coinbase_sym = base_amount.symbol;
          eosio_assert( coinbase_sym.is_valid(), "invalid symbol name" );
          eosio_assert( base_amount.is_valid(), "invalid supply");
          eosio_assert( base_amount.amount >= 0, "max-supply must be positive");
         
-        auto coinmarket_sym = market_amount.symbol;
+         auto coinmarket_sym = market_amount.symbol;
          eosio_assert( coinmarket_sym.is_valid(), "invalid symbol name" );
          eosio_assert( market_amount.is_valid(), "invalid supply");
          eosio_assert( market_amount.amount >= 0, "max-supply must be positive");
@@ -36,14 +34,12 @@ namespace eosio {
          trademarket.trade_maker = trade_maker;
          trademarket.base.chain = base_chain;
          trademarket.base.amount = asset(0,coinbase_sym);
-         trademarket.base.coin_maker = base_account;
+         trademarket.base.weight = base_weight;
          trademarket.market.chain = market_chain;
          trademarket.market.amount = asset(0,coinmarket_sym);
-         trademarket.market.coin_maker = market_account;
+         trademarket.market.weight = market_weight;
 
          trademarket.type = type;
-         trademarket.base_weight = base_weight;
-         trademarket.market_weight = market_weight;
          trademarket.isactive = true;
 
          trademarket.fee.base = asset(0,coinbase_sym);
@@ -77,7 +73,6 @@ namespace eosio {
             chain_name = existing->market.chain;
       }
       // recharge_account transfer to self
-      print("xuyapeng addmortgage");
       tradepair.modify( *existing, 0, [&]( auto& s ) {
             if (type == coin_type::coin_base) {
                   s.base.amount = s.base.amount + recharge_amount;
@@ -88,7 +83,7 @@ namespace eosio {
       });
    }
 
-   void market::claimmortgage(name trade,account_name trade_maker,asset claim_amount,coin_type type) {
+   void market::claimmortgage(name trade,account_name trade_maker,account_name recv_account,asset claim_amount,coin_type type) {
       require_auth(trade_maker);
       tradepairs tradepair( _self,trade_maker);
       auto existing = tradepair.find( trade );
@@ -122,7 +117,7 @@ namespace eosio {
                TOKEN, 
                {_self, N(active)},
                { _self, 
-                 type == coin_type::coin_base?existing->base.coin_maker:existing->market.coin_maker,
+                 recv_account,
                  chain_name, 
                 claim_amount, 
                  std::string("claim market transfer coin market") } );      
@@ -238,8 +233,8 @@ namespace eosio {
       eosio_assert( base_weight > 0,"invalid base_weight");
 
       tradepair.modify( *existing, 0, [&]( auto& s ) {
-            s.base_weight = base_weight;
-            s.market_weight = market_weight;
+            s.base.weight = base_weight;
+            s.market.weight = market_weight;
       });
    }
 
@@ -266,19 +261,19 @@ namespace eosio {
       asset market_recv_amount = type != coin_type::coin_base ? existing->base.amount : existing->market.amount;
       uint64_t recv_amount;
       if (existing->type == trade_type::equal_ratio) {
-            recv_amount = type != coin_type::coin_base? (convert_amount.amount * existing->base_weight / existing->market_weight) :
-             (convert_amount.amount * existing->market_weight / existing->base_weight);
+            recv_amount = type != coin_type::coin_base? (convert_amount.amount * existing->base.weight / existing->market.weight) :
+             (convert_amount.amount * existing->market.weight / existing->base.weight);
       }
       else if(existing->type == trade_type::bancor) 
       {
             if (type != coin_type::coin_base) { 
                   auto tempa = 1 + (double)convert_amount.amount/existing->market.amount.amount;
-                  auto cw = (double)existing->market_weight/existing->base_weight;
+                  auto cw = (double)existing->market.weight/existing->base.weight;
                   recv_amount = existing->base.amount.amount * (pow(tempa,cw) - 1);
             }
             else {
                   auto tempa = 1 + (double)convert_amount.amount/existing->base.amount.amount;
-                  auto cw = (double)existing->base_weight/existing->market_weight;
+                  auto cw = (double)existing->base.weight/existing->market.weight;
                   recv_amount = existing->market.amount.amount * (pow(tempa,cw) - 1);
             }
       }
