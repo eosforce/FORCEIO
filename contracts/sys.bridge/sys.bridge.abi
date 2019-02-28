@@ -238,6 +238,28 @@
       ]
     },
     {
+      "name": "setweight",
+      "base": "",
+      "fields": [
+        {
+          "name": "trade",
+          "type": "name"
+        },
+        {
+          "name": "trade_maker",
+          "type": "account_name"
+        },
+        {
+          "name": "base_weight",
+          "type": "uint64"
+        },
+        {
+          "name": "market_weight",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
       "name": "trade_fee",
       "base": "",
       "fields": [
@@ -368,6 +390,11 @@
     {
       "name": "setprominfee",
       "type": "setprominfee",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "setweight",
+      "type": "setweight",
       "ricardian_contract": ""
     }
   ],

@@ -210,7 +210,6 @@ void token::trade( account_name from,
                   string memo ) {
    
    //eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
-   //解析memo 调用market
    if (type == trade_type::bridge_addmortgage && to == SYS_BRIDGE) {
       transfer(from, to, chain, quantity, memo);
       
