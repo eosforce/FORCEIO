@@ -82,12 +82,7 @@ var/lib/node_*
 *.iws
 .DS_Store
 
+tutorials/bios-script/test*
+tutorials/bios-script/net*
+
 tutorials/bios-script/config\.ini
-tutorials/bios-script/nodes
-tutorials/bios-script/config
-
-tutorials/bios-script/pw
-
-tutorials/bios-script/output\.log
-
-tutorials/bios-script/wallet/
