@@ -1,4 +1,4 @@
 #!/bin/sh
-cd /opt/eosforce/
-./bios_boot_eosforce.py -a --root ./
-tail -f ./nodes/biosbpa.log
+cd /opt/FORCEIO/
+./bios_boot_forceio.py -a --root ./ --data-dir testnet
+tail -f ./testnet/nodes/biosbpa.log
