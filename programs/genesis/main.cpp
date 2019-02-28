@@ -87,6 +87,7 @@ int main( int argc, const char **argv ) {
    my_keymap.add_init_acc(gs, N(relay.token), 100*10000, private_key);
 
    my_keymap.add_init_acc(gs, N(test), 1000*10000, private_key);
+   my_keymap.add_init_acc(gs, N(sys.match), 1000*10000, private_key);
 
    // test accounts
    for( int j = 0; j < 26; ++j ) {
