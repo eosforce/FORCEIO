@@ -8,20 +8,18 @@ trade.market目前只提供两种功能：1.等比例兑换。2.bancor兑换
 ## 操作说明
 
 ### 1. 创建交易对
-功能：         void addmarket(name trade,account_name trade_maker,trade_type type,name base_chain,asset base_amount,account_name base_account,uint64_t base_weight,
-               name market_chain,asset market_amount,account_name market_account,uint64_t market_weight);
-示例：cleos push action market addmarket '["eos.eosc","maker",1,"eosfoce","500.0000 SYS","maker",1,"side","1000.0000 SYS","maker",2]' -p market@active maker@active
+功能：         void addmarket(name trade,account_name trade_maker,trade_type type,name base_chain,asset base_amount,uint64_t base_weight,
+               name market_chain,asset market_amount,uint64_t market_weight);
+示例：cleos push action market addmarket '["eos.eosc","maker",1,"eosfoce","500.0000 SYS",1,"side","1000.0000 SYS",2]' -p maker@active
 参数说明:
 trade:交易对名称
 trade_maker：创建交易对的账户的名称
 type：交易对的类型     1.等比例兑换。    2.bancor兑换
 base_chain:第一种代币所在的链
 base_amount：第一个代币的金额    amount仅仅指明币种
-base_account：第一个代币绑定的账户     该账户需要在创建交易对的时候先在交易对上充值一部分代币，每次从交易对取代币是打到这个账户上面
 base_weight：第一个代币所占的权重          两个代币之间交换的比例是两个代币权重的比例决定的
 market_chain:第二种代币所在的链
 market_amount：第二个代币的金额      amount仅仅指明币种
-market_account：第二个代币绑定的账户       该账户需要在创建交易对的时候先在交易对上充值一部分代币，每次从交易对取代币是打到这个账户上面
 market_weight：第二个代币所占的权重        两个代币之间交换的比例是两个代币权重的比例决定的
 关于权重详解：例如：base_weight=1   market_weight=2   则1个base_coin可以兑换2个market_coin
 
@@ -37,11 +35,12 @@ type：付款代币的类型            1代表base_coin 2代表market_coin
 说明：新修改后增加抵押使用给合约转账模式，调用relay.token合约的trade方法         2代表 增加抵押的动作    memo--"eos.eosc;maker;1"  是用；分割的三项 第一个是交易对名称，第二个是交易对的创建者，第三个代表冲的是第一个币还是第二个币
 
 ### 3. 赎回抵押
-功能：void claimmortgage(name trade,account_name market_maker,asset claim_amount,coin_type type);
+功能：void claimmortgage(name trade,account_name market_maker,account_name recv_account,asset claim_amount,coin_type type);
 示例：cleos push action market claimmortgage '["eos.eosc","maker","100.0000 SYS",1]' -p maker@active
 参数说明：
 trade:交易对名称
 trade_maker：创建交易对的账户的名称
+recv_account：赎回是转入的账户名称
 recharge_amount：赎回的金额
 type：赎回代币的类型            1代表base_coin 2代表market_coin
 赎回抵押将自动将代币打到创建交易对绑定的账户上面
