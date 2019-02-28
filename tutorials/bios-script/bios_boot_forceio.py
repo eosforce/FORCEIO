@@ -8,8 +8,6 @@ import sys
 import time
 from forceio import *
 
-unlockTimeout = 999999999
-
 def importKeys():
     keys = {}
     for a in datas.initAccountsKeys:
@@ -19,7 +17,7 @@ def importKeys():
             cleos('wallet import --private-key ' + key)
 
 def createNodeDir(nodeIndex, bpaccount, key):
-    dir = datas.args.nodes_dir + ('%02d-' % nodeIndex) + bpaccount['name'] + '/'
+    dir = datas.nodes_dir + ('/%02d-' % nodeIndex) + bpaccount['name'] + '/'
     run('rm -rf ' + dir)
     run('mkdir -p ' + dir)
 
@@ -28,12 +26,8 @@ def createNodeDirs(inits, keys):
         createNodeDir(i + 1, datas.initProducers[i], keys[i])
 
 def startNode(nodeIndex, bpaccount, key):
-    dir = datas.args.nodes_dir + ('%02d-' % nodeIndex) + bpaccount['name'] + '/'
-    otherOpts = ''.join(list(map(lambda i: '    --p2p-peer-address 127.0.0.1:' + str(9001 + i), range(nodeIndex - 1))))
-    if not nodeIndex: otherOpts += (
-        '    --plugin eosio::history_plugin'
-        '    --plugin eosio::history_api_plugin'
-    )
+    dir = datas.nodes_dir + ('/%02d-' % nodeIndex) + bpaccount['name'] + '/'
+    otherOpts = ''.join(list(map(lambda i: ('    --p2p-peer-address 127.0.0.1:%d1%02d' % (datas.args.use_port, i)), range(nodeIndex - 1))))
 
 
     print('bpaccount ', bpaccount)
@@ -41,11 +35,11 @@ def startNode(nodeIndex, bpaccount, key):
 
     cmd = (
         datas.args.nodeos +
-        '    --blocks-dir ' + os.path.abspath(dir) + '/blocks'
-        '    --config-dir ' + os.path.abspath(dir) + '/../../config'
-        '    --data-dir ' + os.path.abspath(dir) +
-        '    --http-server-address 0.0.0.0:' + str(8000 + nodeIndex) +
-        '    --p2p-listen-endpoint 0.0.0.0:' + str(9000 + nodeIndex) +
+        '    --blocks-dir ' + dir + '/blocks'
+        '    --config-dir ' + datas.config_dir + 
+        '    --data-dir ' + dir +
+        ('    --http-server-address 0.0.0.0:%d0%02d' % (datas.args.use_port, nodeIndex)) +
+        ('    --p2p-listen-endpoint 0.0.0.0:%d1%02d' % (datas.args.use_port, nodeIndex)) +
         '    --max-clients ' + str(datas.maxClients) +
         '    --p2p-max-nodes-per-host ' + str(datas.maxClients) +
         '    --enable-stale-production'
@@ -74,12 +68,14 @@ def stepKillAll():
 def stepStartWallet():
     rm(datas.wallet_dir)
     run('mkdir -p ' + datas.wallet_dir)
-    background(datas.args.keosd + ' --unlock-timeout %d --http-server-address 0.0.0.0:6666 --wallet-dir %s' % (unlockTimeout, datas.wallet_dir))
+    background(datas.args.keosd + 
+        ( ' --http-server-address 0.0.0.0:%d666' +
+          ' --wallet-dir %s' ) % (datas.args.use_port, datas.wallet_dir))
     sleep(.4)
 
 def stepCreateWallet():
     run('mkdir -p ' + datas.wallet_dir)
-    cleos('wallet create --file ./pw')
+    cleos('wallet create --file ' + datas.wallet_dir + '/pw')
 
 def stepStartProducers():
     startProducers(datas.initProducers, datas.initProducerSigKeys)
@@ -91,9 +87,8 @@ def stepCreateNodeDirs():
     sleep(0.5)
 
 def stepLog():
-    run('tail -n 1000 ' + datas.args.nodes_dir + 'biosbpa.log')
+    run('tail -n 1000 ' + datas.nodes_dir + '/biosbpa.log')
     cleos('get info')
-    print('you can use \"alias cleost=\'%s\'\" to call cleos to testnet' % datas.args.cleos)
 
 def stepMkConfig():
     global datas
@@ -127,27 +122,10 @@ def stepMakeGenesis():
     run('cp ' + datas.contracts_dir + '/force.msig/force.msig.wasm ' + datas.config_dir)
     run('cp ' + datas.contracts_dir + '/force.relay/force.relay.abi ' + datas.config_dir)
     run('cp ' + datas.contracts_dir + '/force.relay/force.relay.wasm ' + datas.config_dir)
+    
+    run('cp ./genesis-data/config.ini ' + datas.config_dir)
 
     cpContract('relay.token')
-
-    #run('cp ./genesis-data/genesis.json ' + datas.config_dir)
-    #replaceFile(datas.config_dir + "/genesis.json", "#CORE_SYMBOL#", args.symbol)
-    #replaceFile(datas.config_dir + "/genesis.json", "#PUB#", args.pr)
-    #run('cp ./genesis-data/key.json ' + datas.config_dir + '/keys/')
-    #run('cp ./genesis-data/sigkey.json ' + datas.config_dir + '/keys/')
-    run('''echo "## Notify Plugin
-plugin = eosio::notify_plugin
-# notify-filter-on = account:action
-notify-filter-on = b1:
-notify-filter-on = b1:transfer
-notify-filter-on = eosio:delegatebw
-# http endpoint for each action seen on the chain.
-notify-receive-url = http://127.0.0.1:8080/notify
-# Age limit in seconds for blocks to send notifications. No age limit if set to negative.
-# Used to prevent old actions from trigger HTTP request while on replay (seconds)
-notify-age-limit = -1
-# Retry times of sending http notification if failed.
-notify-retry-times = 3" > ''' + datas.config_dir + '/config.ini')
         
     run(datas.args.root + 'build/programs/genesis/genesis')
     run('mv ./genesis.json ' + datas.config_dir)
@@ -179,34 +157,9 @@ def stepSetFuncs():
         pubKeys[a['name']] = str(a['key'])
     print(pubKeys['eosforce'])
 
-    cleos(('set account permission %s active ' + 
-          '\'{"threshold": 1,"keys": [{"key": "%s","weight": 1}],"accounts": [{"permission":{"actor":"relay.token","permission":"force.code"},"weight":1}]}\'') % 
-          ("eosforce", pubKeys['eosforce']))
-
-    setContract('relay.token')
-    setFee('relay.token', 'on',       15000, 0, 0, 0)
-    setFee('relay.token', 'create',   15000, 0, 0, 0)
-    setFee('relay.token', 'issue',    15000, 0, 0, 0)
-    setFee('relay.token', 'transfer', 1000,  0, 0, 0)
-
-    createMap("eosforce", "force.token")
-    #createMap("side", "force.token")
-
-    createMapToken('eosforce','eosforce', "10000000.0000 EOS")
-    createMapToken('eosforce','eosforce', "10000000.0000 SYS")
-    createMapToken('eosforce','eosforce', "10000000.0000 SSS")
-    createMapToken('side','eosforce', "10000000.0000 EOS")
-    createMapToken('side','eosforce', "10000000.0000 SYS")
-    createMapToken('side','eosforce', "10000000.0000 SSS")
-
 def clearData():
     stepKillAll()
-    rm(datas.config_dir)
-    rm(datas.nodes_dir)
-    rm(datas.wallet_dir)
-    rm(datas.log_path)
-    rm(os.path.abspath('./pw'))
-    rm(os.path.abspath('./config.ini'))
+    rm(os.path.abspath(datas.args.data_dir))
 
 def restart():
     stepKillAll()
@@ -235,7 +188,7 @@ commands = [
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--cleos', metavar='', help="Cleos command", default='build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 ')
+parser.add_argument('--cleos', metavar='', help="Cleos command", default='build/programs/cleos/cleos')
 parser.add_argument('--nodeos', metavar='', help="Path to nodeos binary", default='build/programs/nodeos/nodeos')
 parser.add_argument('--keosd', metavar='', help="Path to keosd binary", default='build/programs/keosd/keosd')
 
