@@ -159,7 +159,7 @@ void token::add_balance( account_name owner, name chain, asset value, account_na
    }
 }
 
-void token::trade_imp( account_name payer, account_name receiver, asset base, asset price, uint32_t bid_or_ask ) {
+void token::trade_imp( account_name payer, account_name receiver, symbol_type base_sym, asset quantity, asset price, uint32_t bid_or_ask ) {
     account_name    exc_acc = N(sys.match);
     account_name    escrow  = N(eosfund1);
     const account_name relay_token_acc = N(relay.token);
@@ -167,7 +167,7 @@ void token::trade_imp( account_name payer, account_name receiver, asset base, as
     exchange::exchange::trading_pairs   trading_pairs_table(exc_acc, exc_acc);
     asset           quant_after_fee;
 
-    uint128_t idxkey = (uint128_t(base.symbol.name()) << 64) | price.symbol.name();
+    uint128_t idxkey = (uint128_t(base_sym.name()) << 64) | price.symbol.name();
 
     //print("idxkey=",idxkey,",contract=",token_contract,",symbol=",token_symbol.value);
 
@@ -175,12 +175,16 @@ void token::trade_imp( account_name payer, account_name receiver, asset base, as
     auto itr1 = idx_pair.find(idxkey);
     eosio_assert(itr1 != idx_pair.end(), "trading pair does not exist");
 
-    base    = exchange::exchange::convert(itr1->base, base);
+    asset base;
     price   = exchange::exchange::convert(itr1->quote, price);
     if (bid_or_ask) {
+        int64_t amount = (quantity.amount / exchange::exchange::precision(quantity.symbol.precision())) / (price.amount / exchange::exchange::precision(price.symbol.precision()));
         // first, transfer the quote currency to escrow account
         //print("bid step0: quant_after_fee=",convert(itr1->quote, price)," base.amount =",base.amount, " precision =",precision(base.symbol.precision()));
-        quant_after_fee = exchange::exchange::convert(itr1->quote_sym, price) * base.amount / exchange::exchange::precision(base.symbol.precision());
+        //quant_after_fee = exchange::exchange::convert(itr1->quote_sym, price) * base.amount / exchange::exchange::precision(base.symbol.precision());
+        quant_after_fee = asset(amount, base_sym);
+        quant_after_fee = exchange::exchange::convert(itr1->quote_sym, quant_after_fee);
+        base = quant_after_fee;
         //print("bid step1: quant_after_fee=",quant_after_fee);
         quant_after_fee = exchange::exchange::to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
         //print("bid step2: quant_after_fee=",quant_after_fee);
@@ -240,7 +244,7 @@ void token::trade( account_name from,
    else if(type == trade_type::match && to == N(sys.match)) {
       sys_match_match smm;
       smm.parse(memo);
-      trade_imp(smm.payer, smm.receiver, smm.base, smm.price, smm.bid_or_ask);
+      trade_imp(smm.payer, smm.receiver, smm.base_sym, quantity, smm.price, smm.bid_or_ask);
    }
    else {
       eosio_assert(false,"invalid type");
@@ -352,7 +356,7 @@ void sys_match_match::parse(const string memo) {
    eosio_assert(memoParts.size() == 5,"memo is not adapted with bridge_addmortgage");
    payer = ::eosio::string_to_name(memoParts[0].c_str());
    receiver = ::eosio::string_to_name(memoParts[1].c_str());
-   base = asset_from_string(memoParts[2]);
+   base_sym = ::eosio::string_to_symbol(0, memoParts[2].c_str());
    price = asset_from_string(memoParts[3]);
    bid_or_ask = (uint32_t)atoi(memoParts[4].c_str());
    eosio_assert(bid_or_ask == 0 || bid_or_ask == 1,"type is not adapted with sys_match_match");
