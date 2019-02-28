@@ -169,6 +169,8 @@ namespace eosio {
       eosio_assert(existing->fee.base.symbol == base_sym,"base asset is different coin with fee base");
       eosio_assert(existing->fee.market.symbol == market_sym,"base asset is different coin with fee base");
 
+      eosio_assert(existing->isactive == false,"only frozen market can set fixedfee");
+
       tradepair.modify( *existing, 0, [&]( auto& s ) {
             s.fee.base = base;
             s.fee.market = market;
@@ -184,6 +186,8 @@ namespace eosio {
 
       eosio_assert(base_ratio >= 0 && base_ratio < PROPORTION_CARD,"base_ratio must between 0 and 10000");
       eosio_assert(market_ratio >= 0 && market_ratio < PROPORTION_CARD,"market_ratio must between 0 and 10000");
+
+      eosio_assert(existing->isactive == false,"only frozen market can set proportion fee");
       tradepair.modify( *existing, 0, [&]( auto& s ) {
             s.fee.base_ratio = base_ratio;
             s.fee.market_ratio = market_ratio;
@@ -213,6 +217,8 @@ namespace eosio {
       eosio_assert(base_ratio >= 0 && base_ratio < PROPORTION_CARD,"base_ratio must between 0 and 10000");
       eosio_assert(market_ratio >= 0 && market_ratio < PROPORTION_CARD,"market_ratio must between 0 and 10000");
 
+      eosio_assert(existing->isactive == false,"only frozen market can set proportion and min fee");
+
       tradepair.modify( *existing, 0, [&]( auto& s ) {
             s.fee.base_ratio = base_ratio;
             s.fee.market_ratio = market_ratio;
@@ -232,6 +238,7 @@ namespace eosio {
       eosio_assert( market_weight > 0,"invalid market_weight");
       eosio_assert( base_weight > 0,"invalid base_weight");
 
+      eosio_assert(existing->isactive == false,"only frozen market can set weight");
       tradepair.modify( *existing, 0, [&]( auto& s ) {
             s.base.weight = base_weight;
             s.market.weight = market_weight;
