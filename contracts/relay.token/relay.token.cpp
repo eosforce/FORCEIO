@@ -6,6 +6,7 @@
 #include "force.relay/force.relay.hpp"
 #include "sys.match/exchange.h"
 #include <eosiolib/action.hpp>
+#include <string>
 #include <stdlib.h>
 
 namespace relay {
@@ -317,46 +318,46 @@ void sys_bridge_exchange::parse(const string memo) {
    eosio_assert(this->type == 1 || this->type == 2,"type is not adapted with bridge_addmortgage");
 }
 
-inline string ltrim(string str) {
+inline std::string ltrim(std::string str) {
     auto str1 = str;
- /*   string::iterator p = find_if(str1.begin(), str1.end(), not1(std::ptr_fun<int, int>(isspace)));
-    str.erase(str1.begin(), p);*/
+    std::string::iterator p = std::find_if(str1.begin(), str1.end(), not1(std::ptr_fun<int, int>(isspace)));
+    str.erase(str1.begin(), p);
     return str1;
 }
  
-inline string rtrim(string str) {
+inline std::string rtrim(std::string str) {
     auto str1 = str;
-    /*string::reverse_iterator p = find_if(str1.rbegin(), str1.rend(), not1(std::ptr_fun<int , int>(isspace)));
-    str.erase(p.base(), str1.end());*/
+    std::string::reverse_iterator p = std::find_if(str1.rbegin(), str1.rend(), not1(std::ptr_fun<int , int>(isspace)));
+    str.erase(p.base(), str1.end());
     return str1;
 }
 
-inline string trim(const string str) {
+inline std::string trim(const std::string str) {
     auto str1 = str;
     ltrim(rtrim(str1));
     return str1;
 }
-
-asset asset_from_string(const string& from)
+/*
+asset asset_from_string(const std::string& from)
 {
-/*   string s = trim(from);
+    std::string s = trim(from);
 
     // Find space in order to split amount and symbol
     auto space_pos = s.find(' ');
-    eosio_assert((space_pos != string::npos), "Asset's amount and symbol should be separated with space");
+    eosio_assert((space_pos != std::string::npos), "Asset's amount and symbol should be separated with space");
     auto symbol_str = trim(s.substr(space_pos + 1));
     auto amount_str = s.substr(0, space_pos);
     eosio_assert((amount_str[0] != '-'), "now do not support negetive asset");
 
     // Ensure that if decimal point is used (.), decimal fraction is specified
     auto dot_pos = amount_str.find('.');
-    if (dot_pos != string::npos) {
+    if (dot_pos != std::string::npos) {
        eosio_assert((dot_pos != amount_str.size() - 1), "Missing decimal fraction after decimal point");
     }
 
     // Parse symbol
     uint32_t precision_digits;
-    if (dot_pos != string::npos) {
+    if (dot_pos != std::string::npos) {
        precision_digits = amount_str.size() - dot_pos - 1;
     } else {
        precision_digits = 0;
@@ -378,12 +379,59 @@ asset asset_from_string(const string& from)
     int64_t amount = int_part * exchange::exchange::precision(precision_digits);
     amount += fract_part;
 
-    return asset(amount, sym);*/
-    return asset(0);
+    return asset(amount, sym);
+}
+*/
+
+asset asset_from_string(const std::string& from)
+{
+    std::string s = trim(from);
+    const char * str1 = s.c_str();
+
+    // Find space in order to split amount and symbol
+    const char * pos = strchr(str1, ' ');
+    eosio_assert((pos != NULL), "Asset's amount and symbol should be separated with space");
+    auto space_pos = pos - str1;
+    auto symbol_str = trim(s.substr(space_pos + 1));
+    auto amount_str = s.substr(0, space_pos);
+    eosio_assert((amount_str[0] != '-'), "now do not support negetive asset");
+
+    // Ensure that if decimal point is used (.), decimal fraction is specified
+    const char * str2 = amount_str.c_str();
+    const char *dot_pos = strchr(str2, '.');
+    if (dot_pos != NULL) {
+       eosio_assert((dot_pos - str2 != amount_str.size() - 1), "Missing decimal fraction after decimal point");
+    }
+
+    // Parse symbol
+    uint32_t precision_digits;
+    if (dot_pos != dot_pos) {
+       precision_digits = dot_pos - str2 - 1;
+    } else {
+       precision_digits = 0;
+    }
+
+    symbol_type sym;
+    sym.value = (::eosio::string_to_name(symbol_str.c_str()) << 8) | (uint8_t)precision_digits;
+
+    // Parse amount
+    int64_t int_part, fract_part;
+    if (dot_pos != NULL) {
+       int_part = ::atoll(amount_str.substr(0, dot_pos - str2).c_str());
+       fract_part = ::atoll(amount_str.substr(dot_pos - str2 + 1).c_str());
+    } else {
+       int_part = ::atoll(amount_str.c_str());
+       fract_part = 0;
+    }
+
+    int64_t amount = int_part * precision(precision_digits);
+    amount += fract_part;
+
+    return asset(amount, sym);
 }
 
 void sys_match_match::parse(const string memo) {
-/*   std::vector<std::string> memoParts;
+   std::vector<std::string> memoParts;
    splitMemo(memoParts, memo, ';');
    eosio_assert(memoParts.size() == 5,"memo is not adapted with bridge_addmortgage");
    payer = ::eosio::string_to_name(memoParts[0].c_str());
@@ -391,7 +439,7 @@ void sys_match_match::parse(const string memo) {
    base_sym = ::eosio::string_to_symbol(0, memoParts[2].c_str());
    price = asset_from_string(memoParts[3]);
    bid_or_ask = (uint32_t)atoi(memoParts[4].c_str());
-   eosio_assert(bid_or_ask == 0 || bid_or_ask == 1,"type is not adapted with sys_match_match");*/
+   eosio_assert(bid_or_ask == 0 || bid_or_ask == 1,"type is not adapted with sys_match_match");
 }
 
 };
