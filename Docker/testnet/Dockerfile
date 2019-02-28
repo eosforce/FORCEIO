@@ -4,7 +4,7 @@ ARG branch=master
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install openssl ssh && rm -rf /var/lib/apt/lists/*
 
 RUN git clone https://github.com/eosforce/FORCEIO.git --recursive \
-    && cd FORCEIO && echo "$branch:$(git rev-parse HEAD)" > /etc/forceio-version
+    && cd FORCEIO && git checkout relay && echo "$branch:$(git rev-parse HEAD)" > /etc/forceio-version
     
 RUN cd FORCEIO && git submodule update --init --recursive
 
