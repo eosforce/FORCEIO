@@ -13,7 +13,13 @@ RUN cd FORCEIO/externals/grpc/third_party/protobuf/ && ./autogen.sh && ./configu
 RUN cd FORCEIO/externals/grpc && make -j12 && make install prefix=/opt/grpc && cp -r /opt/grpc/lib/* /usr/local/lib/
 
 RUN export PATH=$PATH:/usr/lib/go-1.10/bin && cd FORCEIO && cmake -H. -B"/tmp/build" -GNinja -DCMAKE_BUILD_TYPE=Release -DWASM_ROOT=/opt/wasm -DCMAKE_CXX_COMPILER=clang++ \
-       -DCMAKE_C_COMPILER=clang -DCMAKE_INSTALL_PREFIX=/tmp/build  -DSecp256k1_ROOT_DIR=/usr/local -DBUILD_MONGO_DB_PLUGIN=true -DPROTOC=/opt/protobuf/bin/protoc -DGRPC_CPP_PLUGIN=/opt/grpc/bin/grpc_cpp_plugin \
+    -DCMAKE_C_COMPILER=clang -DCMAKE_INSTALL_PREFIX=/tmp/build -DBUILD_MONGO_DB_PLUGIN=true \
+    -DCORE_SYMBOL_NAME="SYS" \
+    -DUSE_PUB_KEY_LEGACY_PREFIX=1 \
+    -DUSE_MULTIPLE_VOTE=${USE_MULTIPLE_VOTE} \
+    -DROOT_ACCOUNT="force" \
+    -DMAX_PRODUCERS=15 -DBLOCK_INTERVAL_MS=500 -DPRODUCER_REPETITIONS=6 \
+    -DRESOURCE_MODEL=1 \
     && cmake --build /tmp/build --target install
 
 FROM ubuntu:18.04
