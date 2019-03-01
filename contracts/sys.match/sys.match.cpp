@@ -28,7 +28,10 @@ namespace exchange {
 
         trading_pairs trading_pairs_table(_self,_self);
 
-        uint128_t idxkey = compute_pair_index(base, quote);
+        //uint128_t idxkey = compute_pair_index(base, quote);
+        uint128_t idxkey = (uint128_t(base.name()) << 64) | quote.name();
+        //print("idxkey=",idxkey,",base_sym=",base.name(),",price.symbol=",quote.name());
+        print("\n base=",base,",base_chain=",base_chain,",base_sym=",base_sym,"base=",quote,",base_chain=",quote_chain,",base_sym=",quote_sym,"\n");
 
         auto idx = trading_pairs_table.template get_index<N(idxkey)>();
         auto itr = idx.find(idxkey);
@@ -39,14 +42,21 @@ namespace exchange {
         trading_pairs_table.emplace( _self, [&]( auto& p ) {
             p.id = (uint32_t)pk;
             
-            p.base_sym      = base_sym;
-            p.base_chain    = base_chain;
-            p.base          = (base.value << 8) | (base_sym.value & 0xff);
-            p.quote_sym     = quote_sym;
-            p.quote_chain   = quote_chain;
-            p.quote         = (quote.value << 8) | (quote_sym.value & 0xff);
+            p.base         = base;
+            p.base_chain   = base_chain;
+            p.base_sym     = base_sym.value | (base.value & 0xff);
+            p.quote        = quote;
+            p.quote_chain  = quote_chain;
+            p.quote_sym    = quote_sym.value | (quote.value & 0xff);
             
         });
+        
+        // test
+        {
+         auto itr2 = trading_pairs_table.find(pk);
+         eosio_assert(itr2 != trading_pairs_table.end(), "trading pair does not exist");
+         print("\n pair created\n");
+        }
     }
 
     asset exchange::to_asset( account_name code, name chain, const asset& a ) {
@@ -60,9 +70,13 @@ namespace exchange {
     }
     
     asset exchange::convert( symbol_type expected_symbol, const asset& a ) {
+        //print("\n exchange::convert   expected_symbol=", expected_symbol, ", a=", a);
         eosio_assert(expected_symbol.precision() >= a.symbol.precision(), "converted precision must be greater or equal");
-        auto factor = exchange::precision( expected_symbol.precision() ) / precision( a.symbol.precision() );
-        auto b = asset( a.amount * factor, expected_symbol.value );
+         //print("\n exchange::convert   &7777777777=", expected_symbol, ", a=", a);
+        auto factor = precision( expected_symbol.precision() ) / precision( a.symbol.precision() );
+         //print("\n exchange::convert   &000000000000=", expected_symbol, ", a=", a);
+        auto b = asset( a.amount * factor, expected_symbol );
+        //print("\n exchange::convert   &555555555 b=", b);
         return b;
     }
     
@@ -92,7 +106,10 @@ namespace exchange {
      *  fee_rate:		    fee rate:[0,10000), for example:50 means 50 of ten thousandths ; 0 means no fee
      * */
     void exchange::match( account_name payer, account_name receiver, asset base, asset price, uint32_t bid_or_ask) {
-        require_auth( payer );
+        //require_auth( payer );
+        
+        print("\n--------------enter exchange::match: payer=", payer, "receiver=", receiver,"base=", base, "price=", price,"bid_or_ask=", bid_or_ask,"\n");
+        require_auth( _self );
 
         //eosio_assert(eos_quant.symbol == S(4, EOS), "eos_quant symbol must be EOS");
         //eosio_assert(token_symbol.is_valid(), "invalid token_symbol");
@@ -102,9 +119,11 @@ namespace exchange {
         orderbook       orders(_self,_self);
         asset           quant_after_fee;
 
+         
+
         uint128_t idxkey = (uint128_t(base.symbol.name()) << 64) | price.symbol.name();
 
-        //print("idxkey=",idxkey,",contract=",token_contract,",symbol=",token_symbol.value);
+        //print("idxkey=",idxkey,",base_sym=",base.symbol.name(),",price.symbol=",price.symbol.name());
 
         auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
         auto itr1 = idx_pair.find(idxkey);
@@ -114,6 +133,7 @@ namespace exchange {
         price   = convert(itr1->quote, price);
         
         //print("after convert: base=",base,",price=",price);
+        print("\n--------------exchange::match: base=", itr1->base, "base_chain=", itr1->base_sym,"base_sym=", itr1->base_sym, "quote=", itr1->quote,"quote_chain=", itr1->quote_chain,"quote_sym", itr1->quote_sym,"\n");
 
         /*auto quant_after_fee = eos_quant;
 

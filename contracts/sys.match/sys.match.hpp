@@ -39,6 +39,8 @@ namespace exchange {
         
         void cancel(uint64_t order_id);
 
+        inline symbol_type get_pair_base( uint32_t pair_id ) const;
+        inline symbol_type get_pair_quote( uint32_t pair_id ) const;
 
     //private:
         /*class symbol {
@@ -150,5 +152,69 @@ namespace exchange {
            return p10;
         }
     };
+    
+    symbol_type exchange::get_pair_base( uint32_t pair_id ) const {
+      trading_pairs   trading_pairs_table(_self, _self);
+      
+       //auto itr1 = trading_pairs_table.find(pair_id);
+      // eosio_assert(itr1 != trading_pairs_table.end(), "trading pair does not exist");
+       
+       
+       auto walk_table_range = [&]( auto itr, auto end_itr ) {
+         print("\n ---------------- begin to trading_pairs table: ----------------");
+                for( ; itr != end_itr; ++itr ) {
+                    print("\n pair: id=", itr->id);
+                }
+                print("\n -------------------- walk through trading_pairs table ends ----------------:");
+            };
+            //auto lower_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::lowest();
+            auto lower_key = std::numeric_limits<uint64_t>::lowest();
+            auto lower = trading_pairs_table.lower_bound( lower_key );
+            //auto upper_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::max();
+            auto upper_key = std::numeric_limits<uint64_t>::max();
+            auto upper = trading_pairs_table.upper_bound( upper_key );
+            //walk_table_range(lower, upper);
+            
+            for( auto itr = lower; itr != upper; ++itr ) {
+                    print("\n pair: id=", itr->id);
+                    if (itr->id == pair_id) return itr->base;
+                }
+                
+             eosio_assert(false, "trading pair does not exist");
+       
+       return 0;
+    }
+    
+    symbol_type exchange::get_pair_quote( uint32_t pair_id ) const {
+      trading_pairs   trading_pairs_table(_self, _self);
+      
+       //auto itr1 = trading_pairs_table.find(pair_id);
+      // eosio_assert(itr1 != trading_pairs_table.end(), "trading pair does not exist");
+       
+       
+       auto walk_table_range = [&]( auto itr, auto end_itr ) {
+         print("\n ---------------- begin to trading_pairs table: ----------------");
+                for( ; itr != end_itr; ++itr ) {
+                    print("\n pair: id=", itr->id);
+                }
+                print("\n -------------------- walk through trading_pairs table ends ----------------:");
+            };
+            //auto lower_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::lowest();
+            auto lower_key = std::numeric_limits<uint64_t>::lowest();
+            auto lower = trading_pairs_table.lower_bound( lower_key );
+            //auto upper_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::max();
+            auto upper_key = std::numeric_limits<uint64_t>::max();
+            auto upper = trading_pairs_table.upper_bound( upper_key );
+            //walk_table_range(lower, upper);
+            
+            for( auto itr = lower; itr != upper; ++itr ) {
+                    print("\n pair: id=", itr->id);
+                    if (itr->id == pair_id) return itr->quote;
+                }
+                
+             eosio_assert(false, "trading pair does not exist");
+       
+       return 0;
+    }
 }
 #endif //EOSIO_EXCHANGE_H
