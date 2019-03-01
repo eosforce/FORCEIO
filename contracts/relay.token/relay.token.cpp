@@ -171,9 +171,18 @@ int64_t precision(uint64_t decimals)
 }
 
 asset convert( symbol_type expected_symbol, const asset& a ) {
-   eosio_assert(expected_symbol.precision() >= a.symbol.precision(), "converted precision must be greater or equal");
-   auto factor = precision( expected_symbol.precision() ) / precision( a.symbol.precision() );
-   auto b = asset( a.amount * factor, expected_symbol.value );
+   int64_t factor;
+   asset b;
+   
+   if (expected_symbol.precision() >= a.symbol.precision()) {
+      factor = precision( expected_symbol.precision() ) / precision( a.symbol.precision() );
+      b = asset( a.amount * factor, expected_symbol );
+   }
+   else {
+      factor =  precision( a.symbol.precision() ) / precision( expected_symbol.precision() );
+      b = asset( a.amount / factor, expected_symbol );
+      
+   }
    return b;
 }
 
