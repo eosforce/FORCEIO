@@ -17,7 +17,7 @@ RUN export PATH=$PATH:/usr/lib/go-1.10/bin && cd FORCEIO && cmake -H. -B"/tmp/bu
     -DCORE_SYMBOL_NAME="SYS" \
     -DUSE_PUB_KEY_LEGACY_PREFIX=1 \
     -DROOT_ACCOUNT="force" \
-    -DMAX_PRODUCERS=9 -DBLOCK_INTERVAL_MS=3000 -DPRODUCER_REPETITIONS=1 \
+    -DMAX_PRODUCERS=9 -DBLOCK_INTERVAL_MS=500 -DPRODUCER_REPETITIONS=6 \
     -DRESOURCE_MODEL=1 \
     && cmake --build /tmp/build --target install
 
@@ -27,12 +27,12 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install openssl 
 COPY --from=builder /usr/local/lib/* /usr/local/lib/
 COPY --from=builder /tmp/build /opt/FORCEIO/build
 
-COPY bios_boot_forceio.py  /opt/FORCEIO/
+COPY bios_boot_relay_chain.py  /opt/FORCEIO/
 COPY forceio.py  /opt/FORCEIO/
 COPY start.sh  /opt/FORCEIO/
 
 RUN chmod +x /opt/FORCEIO/start.sh
-RUN chmod +x /opt/FORCEIO/bios_boot_forceio.py
+RUN chmod +x /opt/FORCEIO/bios_boot_relay_chain.py
 ENV LD_LIBRARY_PATH /usr/local/lib
 VOLUME /opt/FORCEIO
 ENV PATH /opt/FORCEIO:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
