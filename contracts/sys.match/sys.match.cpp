@@ -70,13 +70,18 @@ namespace exchange {
     }
     
     asset exchange::convert( symbol_type expected_symbol, const asset& a ) {
-        //print("\n exchange::convert   expected_symbol=", expected_symbol, ", a=", a);
-        eosio_assert(expected_symbol.precision() >= a.symbol.precision(), "converted precision must be greater or equal");
-         //print("\n exchange::convert   &7777777777=", expected_symbol, ", a=", a);
-        auto factor = precision( expected_symbol.precision() ) / precision( a.symbol.precision() );
-         //print("\n exchange::convert   &000000000000=", expected_symbol, ", a=", a);
-        auto b = asset( a.amount * factor, expected_symbol );
-        //print("\n exchange::convert   &555555555 b=", b);
+        int64_t factor;
+        asset b;
+        
+        if (expected_symbol.precision() >= a.symbol.precision()) {
+           factor = precision( expected_symbol.precision() ) / precision( a.symbol.precision() );
+           b = asset( a.amount * factor, expected_symbol );
+        }
+        else {
+           factor =  precision( a.symbol.precision() ) / precision( expected_symbol.precision() );
+           b = asset( a.amount / factor, expected_symbol );
+           
+        }
         return b;
     }
     
