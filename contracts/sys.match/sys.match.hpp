@@ -117,6 +117,7 @@ namespace exchange {
             asset           base;
             asset           price;
             uint32_t        bid_or_ask;
+            time_point_sec  timestamp;
 
             uint64_t primary_key() const { return id; }
             uint128_t by_pair_price() const { 

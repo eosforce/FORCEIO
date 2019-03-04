@@ -198,6 +198,7 @@ namespace exchange {
                             o.price         = convert(itr1->quote, price);
                             o.maker         = payer;
                             o.receiver      = receiver;
+                            o.timestamp     = time_point_sec(uint32_t(current_time() / 1000000ll));
                         });
                         return;
                     }
@@ -320,6 +321,7 @@ namespace exchange {
                     o.price         = convert(itr1->quote, price);
                     o.maker         = payer;
                     o.receiver      = receiver;
+                    o.timestamp     = time_point_sec(uint32_t(current_time() / 1000000ll));
                 });
             } else {
                 walk_table_range(lower, upper);
@@ -346,6 +348,7 @@ namespace exchange {
                             o.price         = convert(itr1->quote, price);
                             o.maker         = payer;
                             o.receiver      = receiver;
+                            o.timestamp     = time_point_sec(uint32_t(current_time() / 1000000ll));
                         });
                         return;
                     }
@@ -478,6 +481,7 @@ namespace exchange {
                     o.price         = price;
                     o.maker         = payer;
                     o.receiver      = receiver;
+                    o.timestamp     = time_point_sec(uint32_t(current_time() / 1000000ll));
                 });
             } else {
                 
