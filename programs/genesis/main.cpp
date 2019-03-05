@@ -64,7 +64,8 @@ int main( int argc, const char **argv ) {
       my_sign_keymap.keymap[string_to_name(name.c_str())] = sig_key;
    }
 
-   const auto private_key = fc::crypto::private_key::generate<fc::ecc::private_key_shim>();
+   // use fix key EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV
+   const auto private_key = fc::crypto::private_key(std::string("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"));
 
    my_keymap.add_init_acc(gs, N(eosforce), 10000*10000, private_key);
    my_keymap.add_init_acc(gs, N(devfund), 1, private_key);
