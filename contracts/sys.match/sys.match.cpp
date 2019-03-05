@@ -5,6 +5,7 @@
 
 namespace exchange {
     using namespace eosio;
+    const int64_t max_fee_rate = 10000;
     const account_name relay_token_acc = N(relay.token);
     const account_name escrow = N(eosfund1);
 
@@ -13,13 +14,13 @@ namespace exchange {
         uint128_t idxkey = (uint128_t(base.name()) << 64) | quote.name();
         return idxkey;
     }
-
+    
     /*  create trade pairt
      *  payer:			
      *  base:	        
      *  quote:		    
     */
-    void exchange::create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym)
+    void exchange::create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym, uint32_t fee_rate)
     {
         require_auth( _self );
 
@@ -48,6 +49,7 @@ namespace exchange {
             p.quote        = quote;
             p.quote_chain  = quote_chain;
             p.quote_sym    = quote_sym.value | (quote.value & 0xff);
+            p.fee_rate     = fee_rate;
             
         });
         
@@ -123,7 +125,7 @@ namespace exchange {
         trading_pairs   trading_pairs_table(_self,_self);
         orderbook       orders(_self,_self);
         asset           quant_after_fee;
-
+        asset           fee;
          
 
         uint128_t idxkey = (uint128_t(base.symbol.name()) << 64) | price.symbol.name();
@@ -206,6 +208,8 @@ namespace exchange {
                         // eat the order
                         base = convert_asset(itr1->base_sym, base);
                         quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, base);
+                        fee = calcfee(quant_after_fee, itr1->fee_rate);
+                        quant_after_fee -= fee;
                         /*action(
                                 permission_level{ escrow, N(active) },
                                 relay_token_acc, N(transfer),
@@ -214,6 +218,8 @@ namespace exchange {
                         inline_transfer(escrow, receiver, itr1->base_chain, quant_after_fee, "");
                         quant_after_fee = convert(itr1->quote_sym, itr->price) * base.amount / precision(base.symbol.precision());
                         quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
+                        fee = calcfee(quant_after_fee, itr1->fee_rate);
+                        quant_after_fee -= fee;
                         /*action(
                                 permission_level{ escrow, N(active) },
                                 relay_token_acc, N(transfer),
@@ -240,6 +246,8 @@ namespace exchange {
                     } else if ( base == itr->base ) { // full match
                         base = convert_asset(itr1->base_sym, base);
                         quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, base);
+                        fee = calcfee(quant_after_fee, itr1->fee_rate);
+                        quant_after_fee -= fee;
                         /*action(
                                 permission_level{ escrow, N(active) },
                                 relay_token_acc, N(transfer),
@@ -248,6 +256,8 @@ namespace exchange {
                         inline_transfer(escrow, receiver, itr1->base_chain, quant_after_fee, "");
                         quant_after_fee = convert(itr1->quote_sym, itr->price) * base.amount / precision(base.symbol.precision());
                         quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
+                        fee = calcfee(quant_after_fee, itr1->fee_rate);
+                        quant_after_fee -= fee;
                         /*action(
                                 permission_level{ escrow, N(active) },
                                 relay_token_acc, N(transfer),
@@ -272,6 +282,8 @@ namespace exchange {
                     } else { // partial match
                         quant_after_fee = convert_asset(itr1->base_sym, itr->base);
                         quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, quant_after_fee);
+                        fee = calcfee(quant_after_fee, itr1->fee_rate);
+                        quant_after_fee -= fee;
                         /*action(
                                 permission_level{ escrow, N(active) },
                                 relay_token_acc, N(transfer),
@@ -280,6 +292,8 @@ namespace exchange {
                         inline_transfer(escrow, receiver, itr1->base_chain, quant_after_fee, "");
                         quant_after_fee = convert(itr1->quote_sym, itr->price) * itr->base.amount / precision(itr->base.symbol.precision()) ;
                         quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
+                        fee = calcfee(quant_after_fee, itr1->fee_rate);
+                        quant_after_fee -= fee;
                         /*action(
                                 permission_level{ escrow, N(active) },
                                 relay_token_acc, N(transfer),
@@ -357,6 +371,8 @@ namespace exchange {
                         // eat the order
                         quant_after_fee = convert(itr1->quote_sym, price) * base.amount / precision(base.symbol.precision()) ;
                         quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
+                        fee = calcfee(quant_after_fee, itr1->fee_rate);
+                        quant_after_fee -= fee;
                         from.value = escrow; to.value = payer;
                         print("\n 1: from=", from.to_string().c_str(), ", to=", to.to_string().c_str(),  ", amount=", quant_after_fee);
                         /*action(
@@ -367,6 +383,8 @@ namespace exchange {
                         inline_transfer(escrow, receiver, itr1->quote_chain, quant_after_fee, "");
                         quant_after_fee = convert_asset(itr1->base_sym, base);
                         quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, quant_after_fee);
+                        fee = calcfee(quant_after_fee, itr1->fee_rate);
+                        quant_after_fee -= fee;
                             from.value = escrow; to.value = end_itr->maker;
                         print("\n 2: from=", from.to_string().c_str(), ", to=", to.to_string().c_str(),  ", amount=", quant_after_fee);
                         /*action(
@@ -396,6 +414,8 @@ namespace exchange {
                     } else if ( base == end_itr->base ) { // full match
                         quant_after_fee = convert(itr1->quote_sym, price) * base.amount / precision(base.symbol.precision());
                         quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
+                        fee = calcfee(quant_after_fee, itr1->fee_rate);
+                        quant_after_fee -= fee;
                         /*action(
                                 permission_level{ escrow, N(active) },
                                 relay_token_acc, N(transfer),
@@ -404,6 +424,8 @@ namespace exchange {
                         inline_transfer(escrow, receiver, itr1->quote_chain, quant_after_fee, "");
                         quant_after_fee = convert_asset(itr1->base_sym, base);
                         quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, quant_after_fee);
+                        fee = calcfee(quant_after_fee, itr1->fee_rate);
+                        quant_after_fee -= fee;
                         /*action(
                                 permission_level{ escrow, N(active) },
                                 relay_token_acc, N(transfer),
@@ -428,6 +450,8 @@ namespace exchange {
                     } else { // partial match
                         quant_after_fee = convert(itr1->quote_sym, price) * end_itr->base.amount / precision(end_itr->base.symbol.precision());
                         quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
+                        fee = calcfee(quant_after_fee, itr1->fee_rate);
+                        quant_after_fee -= fee;
                         /*action(
                                 permission_level{ escrow, N(active) },
                                 relay_token_acc, N(transfer),
@@ -436,6 +460,8 @@ namespace exchange {
                         inline_transfer(escrow, receiver, itr1->quote_chain, quant_after_fee, "");
                         quant_after_fee = convert_asset(itr1->base_sym, end_itr->base);
                         quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, quant_after_fee);
+                        fee = calcfee(quant_after_fee, itr1->fee_rate);
+                        quant_after_fee -= fee;
                         /*action(
                                 permission_level{ escrow, N(active) },
                                 relay_token_acc, N(transfer),
@@ -587,7 +613,15 @@ namespace exchange {
 
         return;
     }
-        
+    
+    asset exchange::calcfee(asset quant, uint64_t fee_rate) {
+        asset fee = quant * fee_rate / max_fee_rate; // 万分之fee_rate,fee 是 asset已经防止溢出
+        if(fee_rate > 0 && fee.amount < 1) {
+            fee.amount = 1;//最少万分之一
+        }
+
+        return fee;
+    }   
 }
 
 

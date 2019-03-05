@@ -31,13 +31,15 @@ namespace exchange {
     public:
         exchange(account_name self) : contract(self) {}
 
-        void create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym);
+        void create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym, uint32_t fee_rate);
 
         //void trade( account_name payer, asset base, asset price, uint32_t bid_or_ask);
         
         void match( account_name payer, account_name receiver, asset base, asset price, uint32_t bid_or_ask );
         
         void cancel(uint64_t order_id);
+        
+        asset calcfee(asset quant, uint64_t fee_rate);
 
         inline symbol_type get_pair_base( uint32_t pair_id ) const;
         inline symbol_type get_pair_quote( uint32_t pair_id ) const;
@@ -104,6 +106,8 @@ namespace exchange {
             symbol_type quote;
             name        quote_chain;
             symbol_type quote_sym;
+            
+            uint32_t    fee_rate;
             
             uint32_t primary_key() const { return id; }
             uint128_t by_pair_sym() const { return (uint128_t(base.name()) << 64) | quote.name(); }

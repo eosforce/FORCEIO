@@ -18,7 +18,8 @@
       {"name": "base_sym","type": "symbol_type"},
       {"name": "quote","type": "symbol_type"},
       {"name": "quote_chain","type": "name"},
-      {"name": "quote_sym","type": "symbol_type"}
+      {"name": "quote_sym","type": "symbol_type"},
+      {"name": "fee_rate","type": "uint32"}
       ]
     },{
        "name": "trade",
@@ -47,6 +48,7 @@
       {"name": "quote","type": "symbol_type"},
       {"name": "quote_chain","type": "name"},
       {"name": "quote_sym","type": "symbol_type"},
+      {"name": "fee_rate","type": "uint32"},
       ]
     },{
        "name": "order",
