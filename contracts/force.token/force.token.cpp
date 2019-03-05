@@ -134,6 +134,90 @@ void token::add_balance( account_name owner, asset value, account_name ram_payer
    }
 }
 
+void token::trade( account_name from,
+                  account_name to,
+                  asset quantity,
+                  func_type type,
+                  string memo ) {
+   //eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
+   if (type == func_type::bridge_addmortgage && to == SYS_BRIDGE) {
+      transfer(from, to,  quantity, memo);
+      
+      sys_bridge_addmort bri_add;
+      bri_add.parse(memo);
+      
+      eosio::action(
+            vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
+            SYS_BRIDGE,
+            N(addmortgage),
+            std::make_tuple(
+                  bri_add.trade_name.value,bri_add.trade_maker,from,N(self),quantity,bri_add.type
+            )
+      ).send();
+   }
+   else if (type == func_type::bridge_exchange && to == SYS_BRIDGE) {
+      transfer(from, to, quantity, memo);
+
+      sys_bridge_exchange bri_exchange;
+      bri_exchange.parse(memo);
+
+      eosio::action(
+            vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
+            SYS_BRIDGE,
+            N(exchange),
+            std::make_tuple(
+                  bri_exchange.trade_name.value,bri_exchange.trade_maker,from,bri_exchange.recv,N(self),quantity,bri_exchange.type
+            )
+      ).send();
+   }
+   else if(type == func_type::match) {
+      // account_name    escrow  = N(eosfund1);
+      // eosio_assert(to == escrow, "to must be escrow");
+      // transfer(from, to, chain, quantity, memo);
+      // sys_match_match smm;
+      // smm.parse(memo);
+      // trade_imp(smm.payer, smm.receiver, smm.pair_id, quantity, smm.price, smm.bid_or_ask);
+   }
+   else {
+      eosio_assert(false,"invalid type");
+   }
+   
+   
+}
+
+void splitMemo(std::vector<std::string>& results, const std::string& memo,char separator) {
+   auto start = memo.cbegin();
+   auto end = memo.cend();
+
+   for (auto it = start; it != end; ++it) {
+     if (*it == separator) {
+       results.emplace_back(start, it);
+       start = it + 1;
+     }
+   }
+   if (start != end) results.emplace_back(start, end);
+}
+void sys_bridge_addmort::parse(const string memo) {
+   std::vector<std::string> memoParts;
+   splitMemo(memoParts, memo, ';');
+   eosio_assert(memoParts.size() == 3,"memo is not adapted with bridge_addmortgage");
+   this->trade_name.value = ::eosio::string_to_name(memoParts[0].c_str());
+   this->trade_maker = ::eosio::string_to_name(memoParts[1].c_str());
+   this->type = atoi(memoParts[2].c_str());
+   eosio_assert(this->type == 1 || this->type == 2,"type is not adapted with bridge_addmortgage");
+}
+
+void sys_bridge_exchange::parse(const string memo) {
+   std::vector<std::string> memoParts;
+   splitMemo(memoParts, memo, ';');
+   eosio_assert(memoParts.size() == 4,"memo is not adapted with bridge_addmortgage");
+   this->trade_name.value = ::eosio::string_to_name(memoParts[0].c_str());
+   this->trade_maker = ::eosio::string_to_name(memoParts[1].c_str());
+   this->recv = ::eosio::string_to_name(memoParts[2].c_str());
+   this->type = atoi(memoParts[3].c_str());
+   eosio_assert(this->type == 1 || this->type == 2,"type is not adapted with bridge_addmortgage");
+}
+
 } /// namespace eosio
 
-EOSIO_ABI( eosio::token, (create)(issue)(transfer)(fee) )
+EOSIO_ABI( eosio::token, (create)(issue)(transfer)(fee)(trade) )

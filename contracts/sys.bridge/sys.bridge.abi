@@ -66,6 +66,10 @@
           "type": "account_name"
         },
         {
+          "name": "coin_chain",
+          "type": "name"
+        },
+        {
           "name": "recharge_amount",
           "type": "asset"
         },
@@ -120,6 +124,10 @@
         {
           "name": "account_recv",
           "type": "account_name"
+        },
+        {
+          "name": "coin_chain",
+          "type": "name"
         },
         {
           "name": "convert_amount",
@@ -256,6 +264,60 @@
       ]
     },
     {
+      "name": "settranscon",
+      "base": "",
+      "fields": [
+        {
+          "name": "chain",
+          "type": "name"
+        },
+        {
+          "name": "quantity",
+          "type": "asset"
+        },
+        {
+          "name": "contract_name",
+          "type": "account_name"
+        }
+      ]
+    },
+    {
+      "name": "trans_contract",
+      "base": "",
+      "fields": [
+        {
+            "name":"id",
+            "type":"uint64"
+        },
+        {
+          "name": "chain",
+          "type": "name"
+        },
+        {
+          "name": "quantity",
+          "type": "asset"
+        },
+        {
+          "name": "contract_name",
+          "type": "account_name"
+        }
+      ]
+    },
+    {
+      "name":"contract_next_id",
+      "base":"",
+      "fields":[
+         {
+            "name":"id",
+            "type":"uint64"
+         },
+         {
+            "name":"contract_name",
+            "type":"account_name"
+         }
+      ]
+    },
+    {
       "name": "trade_fee",
       "base": "",
       "fields": [
@@ -384,6 +446,11 @@
       "name": "setweight",
       "type": "setweight",
       "ricardian_contract": ""
+    },
+    {
+      "name": "settranscon",
+      "type": "settranscon",
+      "ricardian_contract": ""
     }
   ],
   "tables": [
@@ -393,6 +460,28 @@
       "index_type": "i64",
       "key_names": [ "trade" ],
       "key_types": [ "name" ]
+    },
+    {
+      "name":"transcon",
+      "type":"trans_contract",
+      "index_type":"i64",
+      "key_names":[
+         "chainsymbol"
+      ],
+      "key_types":[
+         "uint64"
+      ]
+    },
+    {
+      "name":"contractid",
+      "type":"contract_next_id",
+      "index_type":"i64",
+      "key_names":[
+         "contract"
+      ],
+      "key_types":[
+         "account_name"
+      ]
     }
   ],
   "ricardian_clauses": [],
