@@ -58,7 +58,8 @@
         {"name": "receiver","type": "account_name"},
         {"name": "base","type": "asset"},
         {"name": "price","type": "asset"},
-        {"name": "bid_or_ask","type": "uint32"}
+        {"name": "bid_or_ask","type": "uint32"},
+        {"name":"timestamp","type":"time_point_sec"}
        ]
      }
   ],

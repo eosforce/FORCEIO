@@ -36,7 +36,7 @@ using std::string;
    struct sys_match_match {
       account_name payer; 
       account_name receiver;
-      symbol_type base_sym;
+      uint32_t pair_id;
       asset price;
       uint32_t bid_or_ask;
       void parse(const string memo);
@@ -91,7 +91,7 @@ public:
                   trade_type type,
                   string memo);
                   
-   void trade_imp( account_name payer, account_name receiver, symbol_type base_sym, asset quantity, asset price, uint32_t bid_or_ask );
+   void trade_imp( account_name payer, account_name receiver, uint32_t pair_id, asset quantity, asset price, uint32_t bid_or_ask );
 
 private:
    inline static uint128_t get_account_idx(const name& chain, const asset& a) {
