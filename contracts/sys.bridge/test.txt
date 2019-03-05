@@ -7,6 +7,8 @@
 ../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 set account permission sys.bridge active '{"threshold": 1,"keys": [{"key": "FOSC6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV","weight": 1}],"accounts": [{"permission":{"actor":"force.token","permission":"force.code"},"weight":1},{"permission":{"actor":"relay.token","permission":"force.code"},"weight":1},{"permission":{"actor":"sys.bridge","permission":"force.code"},"weight":1}]}' owner -p sys.bridge
 给合约的transfer设置对应的合约
 ../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge settranscon '["side","0.0000 EOS","relay.token"]' -p sys.bridge@active
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge settranscon '["eosforce","0.0000 SYS","relay.token"]' -p sys.bridge@active
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge settranscon '["self","0.0000 SYS","force.token"]' -p sys.bridge@active
 
 
 2.新建交易对
@@ -28,10 +30,20 @@
 
 
 4.在交易对上面取钱
-../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge claimmortgage '["eos.sys","biosbpa","eosforce","10.0000 EOS",1]' -p eosforce@active
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge claimmortgage '["eos.sys","biosbpa","eosforce","10.0000 EOS",1]' -p biosbpa@active
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge claimmortgage '["eos.sys","biosbpa","eosforce","10.0000 SYS",2]' -p biosbpa@active
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge claimmortgage '["eos.self","biosbpa","eosforce","10.0000 EOS",1]' -p biosbpa@active
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge claimmortgage '["eos.self","biosbpa","eosforce","10.0000 SYS",2]' -p biosbpa@active
 5.交易
-wrong ../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge exchange '["eos.sys","biosbpa","eosforce","eosforce","100.0000 SYS",2]' -p eosforce@active
-right ../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action relay.token trade '["eosforce","sys.bridge","eosforce", "100.0000 SYS",3,"eos.sys;biosbpa;eosforce;2"]' -p eosforce@active
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action relay.token trade '["eosforce","sys.bridge","eosforce", "100.0000 SYS",3,"eos.sys;biosbpa;eosforce;2"]' -p eosforce@active
+
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action relay.token trade '["eosforce","sys.bridge","side", "100.0000 EOS",3,"eos.sys;biosbpa;eosforce;1"]' -p eosforce@active
+
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action relay.token trade '["eosforce","sys.bridge","side", "100.0000 EOS",3,"eos.self;biosbpa;eosforce;1"]' -p eosforce@active
+
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action relay.token trade '["eosforce","sys.bridge","side", "100.0000 EOS",3,"eos.self;biosbpa;eosforce;1"]' -p eosforce@active
+
+
 
 
 ../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge setweight '["eos.sys","biosbpa",5,6]' -p biosbpa@active
