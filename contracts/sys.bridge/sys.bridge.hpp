@@ -127,12 +127,6 @@ namespace eosio {
             uint128_t get_index_i128() const { return get_contract_idx(chain, quantity); }
          };
 
-         struct contract_next_id {
-            uint64_t     id;
-            account_name contract_name;
-
-            uint64_t  primary_key() const { return contract_name; }
-         };
          //fixed cost      think about the Proportionate fee
          struct trade_fee {
             asset base;             //fixed
@@ -167,7 +161,6 @@ namespace eosio {
 
          typedef eosio::multi_index<N(transcon), trans_contract,indexed_by< N(bychain),
                      const_mem_fun<trans_contract, uint128_t, &trans_contract::get_index_i128 >>> transcon;
-         typedef multi_index<N(contractid), contract_next_id> contractid ;
    };
 
    EOSIO_ABI( market, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket)(setfixedfee)(setprofee)(setprominfee)(setweight)(settranscon) ) 

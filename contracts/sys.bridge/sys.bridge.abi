@@ -304,20 +304,6 @@
       ]
     },
     {
-      "name":"contract_next_id",
-      "base":"",
-      "fields":[
-         {
-            "name":"id",
-            "type":"uint64"
-         },
-         {
-            "name":"contract_name",
-            "type":"account_name"
-         }
-      ]
-    },
-    {
       "name": "trade_fee",
       "base": "",
       "fields": [
@@ -470,17 +456,6 @@
       ],
       "key_types":[
          "uint64"
-      ]
-    },
-    {
-      "name":"contractid",
-      "type":"contract_next_id",
-      "index_type":"i64",
-      "key_names":[
-         "contract"
-      ],
-      "key_types":[
-         "account_name"
       ]
     }
   ],

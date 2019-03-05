@@ -121,16 +121,7 @@ namespace eosio {
       });
 
        send_transfer_action(chain_name,recv_account,claim_amount,
-            std::string("claim market transfer coin market"));
-      // INLINE_ACTION_SENDER(relay::token, transfer)( 
-      //          TOKEN, 
-      //          {_self, N(active)},
-      //          { _self, 
-      //            recv_account,
-      //            chain_name, 
-      //           claim_amount, 
-      //            std::string("claim market transfer coin market") } );      
-
+            std::string("claim market transfer coin market")); 
    }
 
    void market::frozenmarket(name trade,account_name trade_maker) {
@@ -353,21 +344,11 @@ namespace eosio {
  
       send_transfer_action(type == coin_type::coin_market ? existing->base.chain:existing->market.chain,account_recv,recv_asset,
             std::string("claim market transfer coin market"));
-      // INLINE_ACTION_SENDER(relay::token, transfer)( 
-      //         TOKEN, 
-      //       {_self, N(active)},
-      //       { _self, 
-      //       account_recv, 
-      //       type == coin_type::coin_market ? existing->base.chain:existing->market.chain,
-      //       recv_asset, 
-      //       std::string("claim market transfer coin market") } );
-
    }
 
    void market::settranscon(name chain,asset quantity,account_name contract_name) {
       require_auth(_self);
       transcon trans(_self,_self);
-      contractid acntids(_self, _self);
       auto idx = trans.get_index<N(bychain)>();
       auto con = idx.find(get_contract_idx(chain, quantity));
 
