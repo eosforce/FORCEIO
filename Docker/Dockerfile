@@ -51,8 +51,8 @@ COPY --from=builder /tmp/build/contracts/force.token/force.token.abi   /
 COPY --from=builder /tmp/build/contracts/force.token/force.token.wasm  /
 
 COPY config.ini /
-COPY --from=testnet /opt/FORCEIO/testnet/config/genesis.json /
-COPY --from=testnet /opt/FORCEIO/testnet/config/activeacc.json /
+#COPY --from=testnet /opt/FORCEIO/testnet/config/genesis.json /
+#COPY --from=testnet /opt/FORCEIO/testnet/config/activeacc.json /
 
 ENV EOSIO_ROOT=/opt/FORCEIO
 RUN chmod +x /opt/FORCEIO/bin/nodeosd.sh

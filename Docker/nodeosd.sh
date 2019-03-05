@@ -1,22 +1,22 @@
 #!/bin/sh
-cd /opt/eosio/bin
+cd /opt/FORCEIO/bin
 
-cp /genesis.json /opt/eosio/bin/data-dir
-cp /activeacc.json /opt/eosio/bin/data-dir
-cp /force.msig.wasm /opt/eosio/bin/data-dir
-cp /force.msig.abi /opt/eosio/bin/data-dir
-cp /force.relay.wasm /opt/eosio/bin/data-dir
-cp /force.relay.abi /opt/eosio/bin/data-dir
-cp /force.system.wasm /opt/eosio/bin/data-dir
-cp /force.system.abi /opt/eosio/bin/data-dir
-cp /force.token.wasm /opt/eosio/bin/data-dir
-cp /force.token.abi /opt/eosio/bin/data-dir
+#cp /genesis.json /opt/FORCEIO/bin/data-dir
+#cp /activeacc.json /opt/FORCEIO/bin/data-dir
+cp /force.msig.wasm /opt/FORCEIO/bin/data-dir
+cp /force.msig.abi /opt/FORCEIO/bin/data-dir
+cp /force.relay.wasm /opt/FORCEIO/bin/data-dir
+cp /force.relay.abi /opt/FORCEIO/bin/data-dir
+cp /force.system.wasm /opt/FORCEIO/bin/data-dir
+cp /force.system.abi /opt/FORCEIO/bin/data-dir
+cp /force.token.wasm /opt/FORCEIO/bin/data-dir
+cp /force.token.abi /opt/FORCEIO/bin/data-dir
 
-if [ -f '/opt/eosio/bin/data-dir/config.ini' ]; then
+if [ -f '/opt/FORCEIO/bin/data-dir/config.ini' ]; then
     echo
   else
-    cp /config.ini /opt/eosio/bin/data-dir
-fi
+    cp /config.ini /opt/FORCEIO/bin/data-dir
+  fi
 
 
 while :; do
@@ -26,14 +26,14 @@ while :; do
             ;;
         *)
             break
-    esac
+        esac
     shift
-done
+  done
 
 if [ ! "$CONFIG_DIR" ]; then
-    CONFIG_DIR="--config-dir=/opt/eosio/bin/data-dir"
+    CONFIG_DIR="--config-dir=/opt/FORCEIO/bin/data-dir"
 else
     CONFIG_DIR=""
 fi
 
-exec /opt/eosio/bin/nodeos $CONFIG_DIR $@
+exec /opt/FORCEIO/bin/nodeos $CONFIG_DIR $@
