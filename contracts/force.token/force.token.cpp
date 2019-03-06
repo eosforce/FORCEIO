@@ -10,7 +10,7 @@ namespace eosio {
 void token::create( account_name issuer,
                     asset        maximum_supply )
 {
-    require_auth( _self );
+    require_auth( issuer );
 
     auto sym = maximum_supply.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
