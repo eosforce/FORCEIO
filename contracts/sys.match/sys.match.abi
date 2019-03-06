@@ -19,7 +19,8 @@
       {"name": "quote","type": "symbol_type"},
       {"name": "quote_chain","type": "name"},
       {"name": "quote_sym","type": "symbol_type"},
-      {"name": "fee_rate","type": "uint32"}
+      {"name": "fee_rate","type": "uint32"},
+      {"name": "exc_acc","type": "account_name"}
       ]
     },{
        "name": "trade",
@@ -49,6 +50,7 @@
       {"name": "quote_chain","type": "name"},
       {"name": "quote_sym","type": "symbol_type"},
       {"name": "fee_rate","type": "uint32"},
+      {"name": "exc_acc","type": "account_name"}
       ]
     },{
        "name": "order",

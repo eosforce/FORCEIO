@@ -4,13 +4,15 @@
 ##
 一. 合约接口说明:
 1. 创建交易对:  （位于 sys.match 合约）   
-void create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym);    
+void create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym, uint32_t fee_rate, account_name exc_acc);    
 base:       显示基础代币符号及精度, 例如：4,BTC
 base_chain: 映射自哪个链    
 base_sym:   映射自哪种token
 quote:	   显示报价代币符号及精度，例如：2,USDT
 quote_chain:映射自哪个链
 quote_sym:  映射自哪种token
+fee_rate:   费率（万分之几， 比如，fee_rate 为 10， 手续费为万分之10）
+exc_acc:    交易所账户
 说明：比如 BTC/USDT 交易对，BTC 为基础代币，USDT 为报价代币    
 
 2. 交易 （位于 relay.token 合约）
@@ -51,15 +53,17 @@ efc set setfee sys.match cancel "0.0100 SYS" 100000 1000000 1000
 
 
 4、授权 
-先授权给托管账户(例如：eosfund1):     
-efc set account permission sys.match active '{"threshold": 1,"keys": [{"key": "FOSC5JYPbNj5GYyRD22HfWRvuhrBrPT7jiqBcMBRibZRvm41to4Rpz","weight": 1}],"accounts": [{"permission":{"actor":"relay.token","permission":"force.code"},"weight":1},{"permission":{"actor":"sys.match","permission":"force.code"},"weight":1}]}' owner -p sys.match
-efc set account permission eosfund1 active '{"threshold": 1,"keys": [{"key": "FOSC5JYPbNj5GYyRD22HfWRvuhrBrPT7jiqBcMBRibZRvm41to4Rpz","weight": 1}],"accounts": [{"permission":{"actor":"relay.token","permission":"force.code"},"weight":1},{"permission":{"actor":"sys.match","permission":"force.code"},"weight":1}]}' owner -p eosfund1
+交易所账户授权 （假设交易所账户为 biosbpa ）
+efc set account permission biosbpa active '{"threshold": 1,"keys": [{"key": "FOSC8UaaTwjdoBETaDmwy1735avE3hLAkLUkyxHsGFnTjJs6MbvZ1n","weight": 1}],"accounts": [{"permission":{"actor":"relay.token","permission":"force.code"},"weight":1}]}' owner -p biosbpa
+
+sys.match 账户授权
+efc set account permission sys.match active '{"threshold": 1,"keys": [{"key": "FOSC8J3iph4DnSWM1vvoEfBD9vRPBZEQv4Fd4ZdzhLGxEh6NzbxvNX","weight": 1}],"accounts": [{"permission":{"actor":"sys.match","permission":"force.code"},"weight":1}]}' owner -p sys.match
 
 撤销授权:  
 #efc set account permission eosfund1 active '{"threshold": 1,"keys": [{"key": "FOSC7PpbGuYrXKxDVLrUUxRETjYZLb6bfe2MXKUBhZhVwM3P9JSgV5","weight": 1}],"accounts": []}' owner -p eosfund1     
 
 5、创建交易对
-efc push action sys.match create '["4,BTC", "btc1", "4,CBTC", "2,USDT", "usdt1", "2,CUSDT"]' -p sys.match
+efc push action sys.match create '["4,BTC", "btc1", "4,CBTC", "2,USDT", "usdt1", "2,CUSDT", "10", "biosbpa"]' -p biosbpa
 
 6. 查看交易所的币交易情况:     
 efc get table sys.match sys.match orderbook       

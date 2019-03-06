@@ -7,7 +7,7 @@ namespace exchange {
     using namespace eosio;
     const int64_t max_fee_rate = 10000;
     const account_name relay_token_acc = N(relay.token);
-    const account_name escrow = N(eosfund1);
+    const account_name escrow = N(sys.match);
 
     uint128_t compute_pair_index(symbol_type base, symbol_type quote)
     {
@@ -20,9 +20,9 @@ namespace exchange {
      *  base:	        
      *  quote:		    
     */
-    void exchange::create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym, uint32_t fee_rate)
+    void exchange::create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym, uint32_t fee_rate, account_name exc_acc)
     {
-        require_auth( _self );
+        require_auth( exc_acc );
 
         eosio_assert(base.is_valid(), "invalid base symbol");
         eosio_assert(quote.is_valid(), "invalid quote symbol");
@@ -50,6 +50,7 @@ namespace exchange {
             p.quote_chain  = quote_chain;
             p.quote_sym    = quote_sym.value | (quote.value & 0xff);
             p.fee_rate     = fee_rate;
+            p.exc_acc      = exc_acc;
             
         });
         
@@ -115,8 +116,8 @@ namespace exchange {
     void exchange::match( account_name payer, account_name receiver, asset base, asset price, uint32_t bid_or_ask) {
         //require_auth( payer );
         
-        print("\n--------------enter exchange::match: payer=", payer, "receiver=", receiver,"base=", base, "price=", price,"bid_or_ask=", bid_or_ask,"\n");
-        require_auth( _self );
+        print("\n--------------enter exchange::match: payer=", payer, ", receiver=", receiver,", base=", base, ", price=", price,", bid_or_ask=", bid_or_ask,"\n");
+        //require_auth( _self );
 
         //eosio_assert(eos_quant.symbol == S(4, EOS), "eos_quant symbol must be EOS");
         //eosio_assert(token_symbol.is_valid(), "invalid token_symbol");
@@ -135,6 +136,7 @@ namespace exchange {
         auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
         auto itr1 = idx_pair.find(idxkey);
         eosio_assert(itr1 != idx_pair.end(), "trading pair does not exist");
+        require_auth( itr1->exc_acc );
 
         base    = convert(itr1->base, base);
         price   = convert(itr1->quote, price);
@@ -216,6 +218,9 @@ namespace exchange {
                                 std::make_tuple(escrow, payer, quant_after_fee.symbol.name(), quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();*/
                         inline_transfer(escrow, receiver, itr1->base_chain, quant_after_fee, "");
+                        // transfer fee to exchange
+                        if (escrow != itr1->exc_acc)
+                           inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
                         quant_after_fee = convert(itr1->quote_sym, itr->price) * base.amount / precision(base.symbol.precision());
                         quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
                         fee = calcfee(quant_after_fee, itr1->fee_rate);
@@ -226,6 +231,9 @@ namespace exchange {
                                 std::make_tuple(escrow, itr->maker, quant_after_fee.symbol.name(), quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();*/
                         inline_transfer(escrow, itr->receiver, itr1->quote_chain, quant_after_fee, "");
+                          // transfer fee to exchange
+                        if (escrow != itr1->exc_acc)
+                           inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
                         idx_orderbook.modify(itr, _self, [&]( auto& o ) {
                             o.base          -= convert(itr1->base, base);
                         });
@@ -254,6 +262,9 @@ namespace exchange {
                                 std::make_tuple(escrow, payer, quant_after_fee.symbol.name(), quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();*/
                         inline_transfer(escrow, receiver, itr1->base_chain, quant_after_fee, "");
+                        // transfer fee to exchange
+                        if (escrow != itr1->exc_acc)
+                           inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
                         quant_after_fee = convert(itr1->quote_sym, itr->price) * base.amount / precision(base.symbol.precision());
                         quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
                         fee = calcfee(quant_after_fee, itr1->fee_rate);
@@ -264,6 +275,9 @@ namespace exchange {
                                 std::make_tuple(escrow, itr->maker, quant_after_fee.symbol.name(), quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();*/
                         inline_transfer(escrow, itr->receiver, itr1->quote_chain, quant_after_fee, "");
+                        // transfer fee to exchange
+                        if (escrow != itr1->exc_acc)
+                           inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
                         // refund the difference to payer
                         if ( price > itr->price) {
                             quant_after_fee = convert(itr1->quote_sym, price - itr->price) * base.amount / precision(base.symbol.precision());
@@ -290,6 +304,9 @@ namespace exchange {
                                 std::make_tuple(escrow, payer, quant_after_fee.symbol.name(), quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();*/
                         inline_transfer(escrow, receiver, itr1->base_chain, quant_after_fee, "");
+                        // transfer fee to exchange
+                        if (escrow != itr1->exc_acc)
+                           inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
                         quant_after_fee = convert(itr1->quote_sym, itr->price) * itr->base.amount / precision(itr->base.symbol.precision()) ;
                         quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
                         fee = calcfee(quant_after_fee, itr1->fee_rate);
@@ -300,6 +317,9 @@ namespace exchange {
                                 std::make_tuple(escrow, itr->maker, quant_after_fee.symbol.name(), quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();*/
                         inline_transfer(escrow, itr->receiver, itr1->quote_chain, quant_after_fee, "");
+                        // transfer fee to exchange
+                        if (escrow != itr1->exc_acc)
+                           inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
                         base -= convert(itr1->base, itr->base);
                         // refund the difference to payer
                         if ( price > itr->price) {
@@ -381,6 +401,9 @@ namespace exchange {
                                 std::make_tuple(escrow, payer, quant_after_fee.symbol.name(), quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();*/
                         inline_transfer(escrow, receiver, itr1->quote_chain, quant_after_fee, "");
+                        // transfer fee to exchange
+                        if (escrow != itr1->exc_acc)
+                           inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
                         quant_after_fee = convert_asset(itr1->base_sym, base);
                         quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, quant_after_fee);
                         fee = calcfee(quant_after_fee, itr1->fee_rate);
@@ -393,6 +416,9 @@ namespace exchange {
                                 std::make_tuple(escrow, end_itr->maker, quant_after_fee.symbol.name(), quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();*/
                         inline_transfer(escrow, end_itr->receiver, itr1->base_chain, quant_after_fee, "");
+                        // transfer fee to exchange
+                        if (escrow != itr1->exc_acc)
+                           inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
                         idx_orderbook.modify(end_itr, _self, [&]( auto& o ) {
                             o.base          -= convert(itr1->base, base);
                         });
@@ -422,6 +448,9 @@ namespace exchange {
                                 std::make_tuple(escrow, payer, quant_after_fee.symbol.name(), quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();*/
                         inline_transfer(escrow, receiver, itr1->quote_chain, quant_after_fee, "");
+                        // transfer fee to exchange
+                        if (escrow != itr1->exc_acc)
+                           inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
                         quant_after_fee = convert_asset(itr1->base_sym, base);
                         quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, quant_after_fee);
                         fee = calcfee(quant_after_fee, itr1->fee_rate);
@@ -432,6 +461,9 @@ namespace exchange {
                                 std::make_tuple(escrow, end_itr->maker, quant_after_fee.symbol.name(), quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();*/
                         inline_transfer(escrow, end_itr->receiver, itr1->base_chain, quant_after_fee, "");
+                        // transfer fee to exchange
+                        if (escrow != itr1->exc_acc)
+                           inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
                         // refund the difference
                         if ( end_itr->price > price) {
                             quant_after_fee = convert(itr1->quote_sym, end_itr->price - price) * base.amount / precision(base.symbol.precision());
@@ -458,6 +490,9 @@ namespace exchange {
                                 std::make_tuple(escrow, payer, quant_after_fee.symbol.name(), quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();*/
                         inline_transfer(escrow, receiver, itr1->quote_chain, quant_after_fee, "");
+                        // transfer fee to exchange
+                        if (escrow != itr1->exc_acc)
+                           inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
                         quant_after_fee = convert_asset(itr1->base_sym, end_itr->base);
                         quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, quant_after_fee);
                         fee = calcfee(quant_after_fee, itr1->fee_rate);
@@ -468,6 +503,9 @@ namespace exchange {
                                 std::make_tuple(escrow, end_itr->maker, quant_after_fee.symbol.name(), quant_after_fee, std::string("send EOS fee to fee_account:"))
                         ).send();*/
                         inline_transfer(escrow, end_itr->receiver, itr1->base_chain, quant_after_fee, "");
+                        // transfer fee to exchange
+                        if (escrow != itr1->exc_acc)
+                           inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
                         base -= convert(itr1->base, end_itr->base);
                         // refund the difference
                         if ( end_itr->price > price) {
@@ -516,54 +554,10 @@ namespace exchange {
                     upper--;
                 }
                     
-                 print("\n ^^^^^^^^^^^^ ask: order: id=", upper->id, ", pair_id=", upper->pair_id, ", bid_or_ask=", upper->bid_or_ask,", base=", upper->base,", price=", upper->price,", maker=", upper->maker);
+                print("\n ^^^^^^^^^^^^ ask: order: id=", upper->id, ", pair_id=", upper->pair_id, ", bid_or_ask=", upper->bid_or_ask,", base=", upper->base,", price=", upper->price,", maker=", upper->maker);
                 walk_table_range(lower, upper);
             }
         }
-/*
-        eosio_assert( quant_after_fee.amount > 0, "quant_after_fee must a positive amount" );
-
-        asset market_fee{0, eos_quant.symbol};
-        if(market->buy_fee_rate > 0){//减去交易所手续费
-            market_fee = calcfee(eos_quant, market->buy_fee_rate);
-        }
-
-        action(//给交易所账户转入EOS
-                permission_level{ payer, N(active) },
-                market->quote.contract, N(transfer),
-                std::make_tuple(payer, market->exchange_account, quant_after_fee, std::string("send EOS to ET included fee:" + to_string(market_fee)))
-        ).send();
-
-        quant_after_fee -= market_fee;
-        eosio_assert( quant_after_fee.amount > 0, "quant_after_fee2 must a positive amount " );
-
-        print("\nquant_after_fee:");
-        quant_after_fee.print();
-
-        asset token_out{0,token_symbol};
-        _market.modify( *market, 0, [&]( auto& es ) {
-            token_out = es.convert( quant_after_fee,  token_symbol);
-            es.quote.balance += market_fee;
-
-            statsfee(es, market_fee, asset{0, token_symbol});
-        });
-        eosio_assert( token_out.amount > 0, "must reserve a positive amount" );
-
-        action(//交易所账户转出代币
-                permission_level{ market->exchange_account, N(active) },
-                market->base.contract, N(transfer),
-                std::make_tuple(market->exchange_account, payer, token_out, std::string("receive token from ET"))
-        ).send();
-    }
-
-
-
-
-    asset exchange::calcfee(asset quant, uint64_t fee_rate){
-        asset fee = quant * fee_rate / max_fee_rate; // 万分之fee_rate,fee 是 asset已经防止溢出
-        if(fee.amount < 1){
-            fee.amount = 1;//最少万分之一
-        }*/
 
         return;
     }
