@@ -189,6 +189,7 @@ def stepSetFuncs():
     setFee('sys.bridge', 'setprominfee',  15000, 0, 0, 0)
     setFee('sys.bridge', 'setweight',     15000, 0, 0, 0)
     setFee('sys.bridge', 'settranscon',     15000, 0, 0, 0)
+    setFee('sys.bridge', 'removemarket',     15000, 0, 0, 0)
 
     setContract('sys.match')
     setFee('sys.match', 'create',  15000, 0, 0, 0)

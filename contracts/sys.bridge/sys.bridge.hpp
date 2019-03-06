@@ -111,6 +111,8 @@ namespace eosio {
          void setweight(name trade,account_name trade_maker,uint64_t  base_weight,uint64_t  market_weight);
 
          void settranscon(name chain,asset quantity,account_name contract_name);
+
+         void removemarket(name trade,account_name trade_maker,account_name base_recv,account_name maker_recv);
       private:
          void send_transfer_action(name chain,account_name recv,asset quantity,string memo);
 
@@ -163,5 +165,5 @@ namespace eosio {
                      const_mem_fun<trans_contract, uint128_t, &trans_contract::get_index_i128 >>> transcon;
    };
 
-   EOSIO_ABI( market, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket)(setfixedfee)(setprofee)(setprominfee)(setweight)(settranscon) ) 
+   EOSIO_ABI( market, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket)(setfixedfee)(setprofee)(setprominfee)(setweight)(settranscon)(removemarket) ) 
 } /// namespace eosio

@@ -282,6 +282,28 @@
       ]
     },
     {
+      "name": "removemarket",
+      "base": "",
+      "fields": [
+        {
+          "name": "trade",
+          "type": "name"
+        },
+        {
+          "name": "trade_maker",
+          "type": "account_name"
+        },
+        {
+          "name": "base_recv",
+          "type": "account_name"
+        },
+        {
+          "name": "market_recv",
+          "type": "account_name"
+        },
+      ]
+    },
+    {
       "name": "trans_contract",
       "base": "",
       "fields": [
@@ -436,6 +458,11 @@
     {
       "name": "settranscon",
       "type": "settranscon",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "removemarket",
+      "type": "removemarket",
       "ricardian_contract": ""
     }
   ],

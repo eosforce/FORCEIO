@@ -396,6 +396,24 @@ namespace eosio {
       }
    }
 
+   void market::removemarket(name trade,account_name trade_maker,account_name base_recv,account_name maker_recv) {
+      require_auth(trade_maker);
+      tradepairs tradepair( _self,trade_maker);
+      auto existing = tradepair.find( trade );
+      eosio_assert( existing != tradepair.end(), "the market is not exist" );
+      if(existing->base.amount.amount > 0) {
+         send_transfer_action(existing->base.chain,base_recv,existing->base.amount,std::string("remove market return the base coins"));
+      }
+      if(existing->market.amount.amount > 0) {
+         send_transfer_action(existing->market.chain,maker_recv,existing->market.amount,std::string("remove market return the market coins"));
+      }
+      tradepair.modify( *existing, 0, [&]( auto& s ) {
+         s.base.amount -= s.base.amount;
+         s.market.amount -= s.market.amount;
+      });
+      tradepair.erase(existing);
+   }
+
 } /// namespace eosio
 
 
