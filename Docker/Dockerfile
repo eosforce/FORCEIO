@@ -37,6 +37,8 @@ COPY --from=builder /tmp/build/bin /opt/FORCEIO/bin
 COPY nodeosd.sh /opt/FORCEIO/bin/nodeosd.sh
 COPY --from=builder /tmp/build/contracts /contracts
 COPY config.ini /
+COPY genesis.json /opt/
+COPY activeacc.json /opt/
 
 ENV EOSIO_ROOT=/opt/FORCEIO
 RUN chmod +x /opt/FORCEIO/bin/nodeosd.sh
