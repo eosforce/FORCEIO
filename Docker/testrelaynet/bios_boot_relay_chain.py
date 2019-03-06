@@ -49,7 +49,7 @@ def startNode(nodeIndex, bpaccount, key):
         '    --enable-stale-production'
         '    --producer-name ' + bpaccount['name'] +
         '    --signature-provider=' + bpaccount['bpkey'] + '=KEY:' + key[1] +
-        '    --contracts-console ' +
+        '    --contracts-console --http-validate-host=false' +
         '    --plugin eosio::http_plugin' +
         '    --plugin eosio::chain_api_plugin' +
         '    --plugin eosio::producer_plugin' +
