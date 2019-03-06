@@ -23,8 +23,10 @@ Parameter Description:
 + trade:the name of market
 + trade_maker：the account who create the market
 + type：the type of the market     1.Proportional exchange。    2.Bancor exchange
++ base_chain : the chain which base coin is created at
 + base_amount：the base coin amount    
-+ base_weight：the weight of the base coin          
++ base_weight：the weight of the base coin  
++ market_chain : the chain which market coin is created at        
 + market_amount：the market coin amount
 + market_weight：the weight of the base coin
 **about the weight for example:if base_weight is 1 and market_weight is 2 then    1 base_coin can exchange 2 market_coin**        
@@ -42,7 +44,7 @@ Parameter Description：
 + trade:the name of market
 + trade_maker：the account who create the market
 + recharge_account：the account who pay the coin
-+ coin_chain，asset : the chain of the coin
++ coin_chain : the chain which the coin is created at
 + recharge_amount：the account who receive the coin
 + type：the type of the coin            1 for base_coin and 2 for market_coin
 
@@ -79,6 +81,8 @@ Parameter Description：
 + trade_maker：the account who create the market
 + account_covert:Payment account
 + account_recv：Receipt account
++ coin_chain : the chain which the coin is created at
++ amount:the amount you want to exchange
 + type：the type of the exchange      1 for pay base_coin  receive market_coin and 2 for pay market_coin receive base_coin
 
 **Description: After the new modification, the mortgage is added to the trade function of the token contract.3 represents the transaction.Memo--"eos.sys;biosbpa;eosforce;2" is used; divided four items.The first is the name of the transaction pair, the second is the creator of the transaction pair, the third parameter is the account for the payment, and the fourth parameter represents whether the first coin or the second currency**
