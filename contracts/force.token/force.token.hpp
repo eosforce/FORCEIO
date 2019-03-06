@@ -17,6 +17,30 @@ namespace eosio {
 
    using std::string;
 
+   struct sys_bridge_addmort {
+      name trade_name;
+      account_name trade_maker;
+      uint64_t type;
+      void parse(const string memo);
+   };
+
+   struct sys_bridge_exchange {
+      name trade_name;
+      account_name trade_maker;
+      account_name recv;
+      uint64_t type;
+      void parse(const string memo);
+   };
+
+   enum  class func_type:uint64_t {
+      match=1,
+      bridge_addmortgage,
+      bridge_exchange,
+      trade_type_count
+   };
+
+   const account_name SYS_BRIDGE = N(sys.bridge);
+
    class token : public contract {
       public:
          token( account_name self ):contract(self){}
@@ -37,6 +61,12 @@ namespace eosio {
          inline asset get_supply( symbol_name sym )const;
          
          inline asset get_balance( account_name owner, symbol_name sym )const;
+
+         void trade(    account_name from,
+                  account_name to,
+                  asset quantity,
+                  func_type type,
+                  string memo);
 
       private:
          struct account {

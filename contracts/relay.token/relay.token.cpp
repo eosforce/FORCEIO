@@ -281,7 +281,6 @@ void token::trade( account_name from,
                   asset quantity,
                   trade_type type,
                   string memo ) {
-   print("-----token::trade type=", (uint64_t)type, "\n");
    //eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
    if (type == trade_type::bridge_addmortgage && to == SYS_BRIDGE) {
       transfer(from, to, chain, quantity, memo);
@@ -294,7 +293,7 @@ void token::trade( account_name from,
             SYS_BRIDGE,
             N(addmortgage),
             std::make_tuple(
-                  bri_add.trade_name.value,bri_add.trade_maker,from,quantity,bri_add.type
+                  bri_add.trade_name.value,bri_add.trade_maker,from,chain,quantity,bri_add.type
             )
       ).send();
    }
@@ -309,7 +308,7 @@ void token::trade( account_name from,
             SYS_BRIDGE,
             N(exchange),
             std::make_tuple(
-                  bri_exchange.trade_name.value,bri_exchange.trade_maker,from,bri_exchange.recv,quantity,bri_exchange.type
+                  bri_exchange.trade_name.value,bri_exchange.trade_maker,from,bri_exchange.recv,chain,quantity,bri_exchange.type
             )
       ).send();
    }

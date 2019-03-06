@@ -43,6 +43,32 @@
         }
       ]
     },
+      {
+         "name":"trade",
+         "base":"",
+         "fields":[
+            {
+               "name":"from",
+               "type":"account_name"
+            },
+            {
+               "name":"to",
+               "type":"account_name"
+            },
+            {
+               "name":"quantity",
+               "type":"asset"
+            },
+            {
+               "name":"type",
+               "type":"uint64"
+            },
+            {
+               "name":"memo",
+               "type":"string"
+            }
+         ]
+      },
     {
       "name": "issue",
       "base": "",
@@ -124,6 +150,11 @@
       "name": "fee",
       "type": "fee",
       "ricardian_contract": ""
+    },
+    {
+      "name":"trade",
+      "type":"trade",
+      "ricardian_contract":""
     }
   ],
   "tables": [

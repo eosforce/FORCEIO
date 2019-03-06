@@ -64,7 +64,7 @@ namespace eosio {
           * recharge_amount ： the amount you add mortgage
           * type : to distinguish the base coin or the market coin 1 for base coin 2 for market coin
           */
-         void addmortgage(name trade,account_name trade_maker,account_name recharge_account,asset recharge_amount,coin_type type);
+         void addmortgage(name trade,account_name trade_maker,account_name recharge_account,name coin_chain,asset recharge_amount,coin_type type);
          /**
           * claim mortgage
           * trade : the name of the trade market
@@ -82,7 +82,7 @@ namespace eosio {
           * amount : the amount you pay the coin 
           * type : to distinguish the exchange 1 for you pay basecoin and recv the market coin  AND 2 for you pay the market coin and recv the base coin
           */
-         void exchange(name trade,account_name trade_maker,account_name account_covert,account_name account_recv,asset amount,coin_type type);
+         void exchange(name trade,account_name trade_maker,account_name account_covert,account_name account_recv,name coin_chain,asset amount,coin_type type);
          /**
           * forzen market : for the trade maker to frozen the trade market . if the market is frozened it could not use exchage function
           * trade : the name of the trade market
@@ -109,7 +109,26 @@ namespace eosio {
          void setprominfee(name trade,account_name trade_maker,uint64_t base_ratio,uint64_t market_ratio,asset base,asset market);
 
          void setweight(name trade,account_name trade_maker,uint64_t  base_weight,uint64_t  market_weight);
+
+         void settranscon(name chain,asset quantity,account_name contract_name);
+
+         void removemarket(name trade,account_name trade_maker,account_name base_recv,account_name maker_recv);
       private:
+         void send_transfer_action(name chain,account_name recv,asset quantity,string memo);
+
+         inline static uint128_t get_contract_idx(const name& chain, const asset  &a) {
+            return (uint128_t(uint64_t(chain)) << 64) + uint128_t(a.symbol.name());
+         }
+         struct trans_contract {
+            uint64_t     id;
+            name chain;
+            asset  quantity;
+            account_name contract_name;
+
+            uint64_t primary_key()const { return id; }
+            uint128_t get_index_i128() const { return get_contract_idx(chain, quantity); }
+         };
+
          //fixed cost      think about the Proportionate fee
          struct trade_fee {
             asset base;             //fixed
@@ -141,7 +160,10 @@ namespace eosio {
          };
          
          typedef eosio::multi_index<N(tradepairs), trade_pair> tradepairs;
+
+         typedef eosio::multi_index<N(transcon), trans_contract,indexed_by< N(bychain),
+                     const_mem_fun<trans_contract, uint128_t, &trans_contract::get_index_i128 >>> transcon;
    };
 
-   EOSIO_ABI( market, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket)(setfixedfee)(setprofee)(setprominfee)(setweight) ) 
+   EOSIO_ABI( market, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket)(setfixedfee)(setprofee)(setprominfee)(setweight)(settranscon)(removemarket) ) 
 } /// namespace eosio

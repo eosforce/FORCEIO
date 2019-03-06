@@ -49,7 +49,7 @@ def startNode(nodeIndex, bpaccount, key):
         '    --enable-stale-production'
         '    --producer-name ' + bpaccount['name'] +
         '    --signature-provider=' + bpaccount['bpkey'] + '=KEY:' + key[1] +
-        '    --contracts-console ' +
+        '    --contracts-console --http-validate-host=false' +
         '    --plugin eosio::http_plugin' +
         '    --plugin eosio::chain_api_plugin' +
         '    --plugin eosio::producer_plugin' +
@@ -174,6 +174,8 @@ def stepSetFuncs():
     setFee('relay.token', 'create',   15000, 0, 0, 0)
     setFee('relay.token', 'issue',    15000, 0, 0, 0)
     setFee('relay.token', 'transfer', 1000,  0, 0, 0)
+    setFee('relay.token', 'trade',    1000,  0, 0, 0)
+    setFee('force.token', 'trade',    1000,  0, 0, 0)
 
     setContract('sys.bridge')
     setFee('sys.bridge', 'addmarket',     15000, 0, 0, 0)
@@ -186,6 +188,8 @@ def stepSetFuncs():
     setFee('sys.bridge', 'setprofee',     15000, 0, 0, 0)
     setFee('sys.bridge', 'setprominfee',  15000, 0, 0, 0)
     setFee('sys.bridge', 'setweight',     15000, 0, 0, 0)
+    setFee('sys.bridge', 'settranscon',     15000, 0, 0, 0)
+    setFee('sys.bridge', 'removemarket',     15000, 0, 0, 0)
 
     setContract('sys.match')
     setFee('sys.match', 'create',  15000, 0, 0, 0)
