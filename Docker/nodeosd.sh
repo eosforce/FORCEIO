@@ -1,23 +1,35 @@
 #!/bin/sh
-cd /opt/eosio/bin
+cd /opt/FORCEIO/bin
 
-cp /genesis.json /opt/eosio/bin/data-dir
-cp /activeacc.json /opt/eosio/bin/data-dir
-cp /force.msig.wasm /opt/eosio/bin/data-dir
-cp /force.msig.abi /opt/eosio/bin/data-dir
-cp /force.relay.wasm /opt/eosio/bin/data-dir
-cp /force.relay.abi /opt/eosio/bin/data-dir
-cp /force.system.wasm /opt/eosio/bin/data-dir
-cp /force.system.abi /opt/eosio/bin/data-dir
-cp /force.token.wasm /opt/eosio/bin/data-dir
-cp /force.token.abi /opt/eosio/bin/data-dir
+cp /contracts/force.msig/force.msig.wasm /opt/FORCEIO/bin/data-dir
+cp /contracts/force.msig/force.msig.abi /opt/FORCEIO/bin/data-dir
+cp /contracts/force.relay/force.relay.wasm /opt/FORCEIO/bin/data-dir
+cp /contracts/force.relay/force.relay.abi /opt/FORCEIO/bin/data-dir
+cp /contracts/force.system/force.system.wasm /opt/FORCEIO/bin/data-dir
+cp /contracts/force.system/force.system.abi /opt/FORCEIO/bin/data-dir
+cp /contracts/force.token/force.token.wasm /opt/FORCEIO/bin/data-dir
+cp /contracts/force.token/force.token.abi /opt/FORCEIO/bin/data-dir
+mkdir /opt/FORCEIO/bin/data-dir/relay.token
+cp /contracts/relay.token/relay.token.wasm /opt/FORCEIO/bin/data-dir/relay.token
+cp /contracts/relay.token/relay.token.abi /opt/FORCEIO/bin/data-dir/relay.token
 
-if [ -f '/opt/eosio/bin/data-dir/config.ini' ]; then
+if [ -f '/opt/FORCEIO/bin/data-dir/config.ini' ]; then
     echo
-  else
-    cp /config.ini /opt/eosio/bin/data-dir
+else
+    cp /config.ini /opt/FORCEIO/bin/data-dir
 fi
 
+if [ -f '/opt/FORCEIO/bin/data-dir/genesis.json' ]; then
+    echo
+else
+    cp /opt/genesis.json  /opt/FORCEIO/bin/data-dir
+fi
+
+if [ -f '/opt/FORCEIO/bin/data-dir/activeacc.json' ]; then
+    echo
+else
+    cp /opt/activeacc.json /opt/FORCEIO/bin/data-dir
+fi
 
 while :; do
     case $1 in
@@ -26,14 +38,14 @@ while :; do
             ;;
         *)
             break
-    esac
+        esac
     shift
-done
+  done
 
 if [ ! "$CONFIG_DIR" ]; then
-    CONFIG_DIR="--config-dir=/opt/eosio/bin/data-dir"
+    CONFIG_DIR="--config-dir=/opt/FORCEIO/bin/data-dir"
 else
     CONFIG_DIR=""
 fi
 
-exec /opt/eosio/bin/nodeos $CONFIG_DIR $@
+exec /opt/FORCEIO/bin/nodeos $CONFIG_DIR $@
