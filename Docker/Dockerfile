@@ -29,30 +29,14 @@ RUN export PATH=$PATH:/usr/lib/go-1.10/bin && cd FORCEIO && cmake -H. -B"/tmp/bu
     -DRESOURCE_MODEL=1 \
     && cmake --build /tmp/build --target install
 
-FROM forceio/testnet as testnet
-
 FROM ubuntu:18.04
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install openssl && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /usr/local/lib/* /usr/local/lib/
 COPY --from=builder /tmp/build/bin /opt/FORCEIO/bin
-COPY --from=builder /tmp/build/contracts  /tmp/contracts
 COPY nodeosd.sh /opt/FORCEIO/bin/nodeosd.sh
-
-COPY --from=builder /tmp/build/contracts/relay.token  /relay.token
-
-COPY --from=builder /tmp/build/contracts/force.msig/force.msig.abi   /
-COPY --from=builder /tmp/build/contracts/force.msig/force.msig.wasm  /
-COPY --from=builder /tmp/build/contracts/force.relay/force.relay.abi   /
-COPY --from=builder /tmp/build/contracts/force.relay/force.relay.wasm  /
-COPY --from=builder /tmp/build/contracts/force.system/force.system.abi   /
-COPY --from=builder /tmp/build/contracts/force.system/force.system.wasm  /
-COPY --from=builder /tmp/build/contracts/force.token/force.token.abi   /
-COPY --from=builder /tmp/build/contracts/force.token/force.token.wasm  /
-
+COPY --from=builder /tmp/build/contracts /contracts
 COPY config.ini /
-#COPY --from=testnet /opt/FORCEIO/testnet/config/genesis.json /
-#COPY --from=testnet /opt/FORCEIO/testnet/config/activeacc.json /
 
 ENV EOSIO_ROOT=/opt/FORCEIO
 RUN chmod +x /opt/FORCEIO/bin/nodeosd.sh
