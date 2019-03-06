@@ -39,8 +39,14 @@ int main( int argc, const char **argv ) {
    key_map my_sign_keymap;
    std::ofstream out("./config.ini");
 
+   // EOS5muUziYrETi5b6G2Ev91dCBrEm3qir7PK4S2qSFqfqcmouyzCr
+   const auto bp_private_key = fc::crypto::private_key(std::string("5KYQvUwt6vMpLJxqg4jSQNkuRfktDHtYDp8LPoBpYo8emvS1GfG"));
+
+   // EOS7R82SaGaJubv23GwXHyKT4qDCVXi66qkQrnjwmBUvdA4dyzEPG
+   const auto bpsign_private_key = fc::crypto::private_key(std::string("5JfjatHRwbmY8SfptFRxHnYUctfnuaxANTGDYUtkfrrBDgkh3hB"));
+
    for( int i = 0; i < config::max_producers; i++ ) {
-      auto key = fc::crypto::private_key::generate<fc::ecc::private_key_shim>();
+      auto key = bp_private_key;
       auto pub_key = key.get_public_key();
       eosio::chain::account_tuple tu;
       tu.key = pub_key;
@@ -50,7 +56,7 @@ int main( int argc, const char **argv ) {
       name.append(1u, mark);
       tu.name = string_to_name(name.c_str());
       gs.initial_account_list.push_back(tu);
-      auto sig_key = fc::crypto::private_key::generate<fc::ecc::private_key_shim>();
+      auto sig_key = bpsign_private_key;
       auto sig_pub_key = sig_key.get_public_key();
       out << "producer-name = " << name << "\n";
       out << "private-key = [\"" << string(sig_pub_key) << "\",\"" << string(sig_key) << "\"]\n";
