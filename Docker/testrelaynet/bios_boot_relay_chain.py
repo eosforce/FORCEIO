@@ -174,6 +174,8 @@ def stepSetFuncs():
     setFee('relay.token', 'create',   15000, 0, 0, 0)
     setFee('relay.token', 'issue',    15000, 0, 0, 0)
     setFee('relay.token', 'transfer', 1000,  0, 0, 0)
+    setFee('relay.token', 'trade',    1000,  0, 0, 0)
+    setFee('force.token', 'trade',    1000,  0, 0, 0)
 
     setContract('sys.bridge')
     setFee('sys.bridge', 'addmarket',     15000, 0, 0, 0)
