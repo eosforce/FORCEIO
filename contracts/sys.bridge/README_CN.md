@@ -68,7 +68,6 @@ cleos push action sys.bridge claimmortgage '["eos.sys","biosbpa","eosforce","10.
 + recharge_amount：赎回的金额
 + type：赎回代币的类型            1代表base_coin 2代表market_coin
 
-**赎回抵押将自动将代币打到创建交易对绑定的账户上面**
 
 ### 4. 交易
 
