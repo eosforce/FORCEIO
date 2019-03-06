@@ -202,7 +202,7 @@ asset convert_asset( symbol_type expected_symbol, const asset& a ) {
 }
 
 void token::trade_imp( account_name payer, account_name receiver, uint32_t pair_id, asset quantity, asset price2, uint32_t bid_or_ask ) {
-    account_name    exc_acc = N(sys.match);
+    //account_name    exc_acc;// = N(sys.match);
     //account_name    escrow  = N(eosfund1);
     //const account_name relay_token_acc = N(relay.token);
     
@@ -237,10 +237,10 @@ void token::trade_imp( account_name payer, account_name receiver, uint32_t pair_
     //auto itr1 = trading_pairs_table.find(pair_id);
     //eosio_assert(itr1 != trading_pairs_table.end(), "trading pair does not exist");
 
-      exchange::exchange e(exc_acc);
+    exchange::exchange e(N(sys.match));
     auto base_sym = e.get_pair_base(pair_id);
     auto quote_sym = e.get_pair_quote(pair_id);
-
+    auto exc_acc = e.get_exchange_account(pair_id);
     
     //price   = convert(itr1->quote, price);
     if (bid_or_ask) {
@@ -270,7 +270,7 @@ void token::trade_imp( account_name payer, account_name receiver, uint32_t pair_
     
     eosio::action(
             permission_level{ exc_acc, N(active) },
-            exc_acc, N(match),
+            N(sys.match), N(match),
             std::make_tuple(payer, receiver, base, price, bid_or_ask)
     ).send();
 }
@@ -312,9 +312,7 @@ void token::trade( account_name from,
             )
       ).send();
    }
-   else if(type == trade_type::match) {
-      account_name    escrow  = N(eosfund1);
-      eosio_assert(to == escrow, "to must be escrow");
+   else if(type == trade_type::match && to == N(sys.match)) {
       transfer(from, to, chain, quantity, memo);
       sys_match_match smm;
       smm.parse(memo);
