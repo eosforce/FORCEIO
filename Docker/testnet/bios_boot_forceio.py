@@ -48,6 +48,7 @@ def startNode(nodeIndex, bpaccount, key):
         '    --contracts-console --http-validate-host=false' +
         '    --plugin eosio::http_plugin' +
         '    --plugin eosio::chain_api_plugin' +
+        '    --plugin eosio::chain_api_plugin' +
         '    --plugin eosio::producer_plugin' +
         otherOpts)
     with open(dir + '../' + bpaccount['name'] + '.log', mode='w') as f:

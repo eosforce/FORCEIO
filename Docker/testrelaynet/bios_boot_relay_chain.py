@@ -53,6 +53,8 @@ def startNode(nodeIndex, bpaccount, key):
         '    --plugin eosio::http_plugin' +
         '    --plugin eosio::chain_api_plugin' +
         '    --plugin eosio::producer_plugin' +
+        '    --plugin eosio::history_plugin' +
+        '    --plugin eosio::history_api_plugin' +
         otherOpts)
     with open(dir + '../' + bpaccount['name'] + '.log', mode='w') as f:
         f.write(cmd + '\n\n')
@@ -199,11 +201,12 @@ def stepSetFuncs():
     #createMap("side", "force.token")
 
     createMapToken('eosforce','eosforce', "10000000.0000 EOS")
+    createMapToken('eosforce','eosforce', "10000000.0000 EOSC")
     createMapToken('eosforce','eosforce', "10000000.0000 SYS")
     createMapToken('eosforce','eosforce', "10000000.0000 SSS")
-    createMapToken('side','eosforce', "10000000.0000 EOS")
-    createMapToken('side','eosforce', "10000000.0000 SYS")
-    createMapToken('side','eosforce', "10000000.0000 SSS")
+    #createMapToken('side','eosforce', "10000000.0000 EOS")
+    #createMapToken('side','eosforce', "10000000.0000 SYS")
+    #createMapToken('side','eosforce', "10000000.0000 SSS")
 
 def clearData():
     stepKillAll()

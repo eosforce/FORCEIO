@@ -18,7 +18,7 @@ struct key_map {
          eosio::chain::genesis_state &gs,
          const account_name &name,
          const uint64_t eos,
-         const private_key_type key = fc::crypto::private_key::generate<fc::ecc::private_key_shim>()) {
+         const private_key_type key) {
       const auto tu = eosio::chain::account_tuple{
             key.get_public_key(), eosio::chain::asset(eos * 10000), name
       };

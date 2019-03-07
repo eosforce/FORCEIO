@@ -141,7 +141,7 @@ def createMap(chain, token_account):
         '{"chain":"%s","type":"token","id":"","act_account":"%s","act_name":"transfer","account":"relay.token","data":""}' % (chain, token_account))
 
 def createMapToken(chain, issuer, asset):
-    pushAction('relay.token', 'create', issuer,
+    pushAction('force.token', 'create', issuer,
         '{"issuer":"%s","chain":"%s","maximum_supply":"%s"}' % (issuer,chain,asset))
 
 
