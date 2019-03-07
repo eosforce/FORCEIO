@@ -31,6 +31,7 @@ namespace eosio { namespace chain {
       init_native_fee(config::token_account_name, N(transfer), asset(100));
       init_native_fee(config::token_account_name, N(issue),    asset(100));
       init_native_fee(config::token_account_name, N(create),   asset(10*10000));
+      init_native_fee(config::token_account_name, N(trade),    asset(100));
 
       init_native_fee(config::system_account_name, N(setabi),  asset(1000));
       init_native_fee(config::system_account_name, config::action::setfee_name,  asset(1000));
