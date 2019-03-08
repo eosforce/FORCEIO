@@ -93,7 +93,7 @@ efc get table sys.match sys.match orderbook
 三. 用户交易步骤:  
 用户1:testb, 用户2:testa, 
 
-1. 买币(买币前授权 force.code 给合约账号 eosforce,买币后撤销权限)              
+1. 买币           
 
 efc push action relay.token trade '["testb", "eosfund1", "usdt1", "39500.0000 CUSDT", "1", "testb;testb;0;3950.00 CUSDT;1"]' -p testb
 
