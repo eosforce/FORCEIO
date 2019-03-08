@@ -249,7 +249,7 @@ void token::trade_imp( account_name payer, account_name receiver, uint32_t pair_
         //print("bid step0: quant_after_fee=",convert(itr1->quote, price)," base.amount =",base.amount, " precision =",precision(base.symbol.precision()));
         //quant_after_fee = exchange::exchange::convert(itr1->quote_sym, price) * base.amount / exchange::exchange::precision(base.symbol.precision());
          print("\n2222222 quantity.amount=", quantity.amount, ", quantity.symbol.precision=", precision(quantity.symbol.precision()));
-        print("\n22222221111 price.amount=", price.amount, ", price.symbol.precision()=", precision(price.symbol.precision()));
+        print("\n22222221111 price2.amount=", price2.amount, ", price2.symbol.precision()=", precision(price2.symbol.precision()));
         print("\n33333333 base_sym=", base_sym, ", amount=", amount);
         symbol_type sym;
         sym.value = base_sym.value & 0XFFFFFFFFFFFFFF00;
@@ -264,9 +264,9 @@ void token::trade_imp( account_name payer, account_name receiver, uint32_t pair_
     } else {
         base = convert(base_sym, quantity);
     }
-     price = convert(quote_sym, price2);
+    price = convert(quote_sym, price2);
     
-    print("before inline call sys.match --payer=",payer,", receiver=",receiver,", pair_id=",pair_id,", quantity=",quantity,", price=",price,", bid_or_ask=",bid_or_ask, ", base=",base);
+    print("\n before inline call sys.match --payer=",payer,", receiver=",receiver,", pair_id=",pair_id,", quantity=",quantity,", price=",price,", bid_or_ask=",bid_or_ask, ", base=",base);
     
     eosio::action(
             permission_level{ exc_acc, N(active) },
@@ -319,7 +319,7 @@ void token::trade( account_name from,
       trade_imp(smm.payer, smm.receiver, smm.pair_id, quantity, smm.price, smm.bid_or_ask);
    }
    else {
-      eosio_assert(false,"invalid type");
+      eosio_assert(false,"invalid trade type");
    }
    
    
