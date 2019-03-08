@@ -129,7 +129,7 @@ def stepMakeGenesis():
     run('cp ' + datas.contracts_dir + '/force.relay/force.relay.abi ' + datas.config_dir)
     run('cp ' + datas.contracts_dir + '/force.relay/force.relay.wasm ' + datas.config_dir)
     
-    run('cp ./genesis-data/config.ini ' + datas.config_dir)
+    run('cp ' + datas.args.root + 'tutorials/bios-script/genesis-data/config.ini ' + datas.config_dir)
 
     cpContract('relay.token')
     cpContract('sys.bridge')
