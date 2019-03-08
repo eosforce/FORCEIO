@@ -50,7 +50,7 @@ efc set contract sys.match ${FORCEIO}/build/contracts/exchange -p sys.match
 efc set setfee sys.match create "0.0100 SYS" 100000 1000000 1000
 efc set setfee relay.token trade "0.0100 SYS" 100000 1000000 1000
 efc set setfee sys.match cancel "0.0100 SYS" 100000 1000000 1000
-
+efc set setfee sys.match done "0.0100 SYS" 100000 1000000 1000
 
 4、授权 
 交易所账户授权 （假设交易所账户为 biosbpa ）
@@ -95,14 +95,14 @@ efc get table sys.match sys.match orderbook
 
 1. 买币           
 
-efc push action relay.token trade '["testb", "eosfund1", "usdt1", "39500.0000 CUSDT", "1", "testb;testb;0;3950.00 CUSDT;1"]' -p testb
+efc push action relay.token trade '["testb", "sys.match", "usdt1", "39500.0000 CUSDT", "1", "testb;testb;0;3950.00 CUSDT;1"]' -p testb
 
 2. 卖币   
 
-efc push action relay.token trade '["testa", "eosfund1", "btc1", "4.0000 CBTC", "1", "testa;testa;0;4000.00 CUSDT;0"]' -p testa
+efc push action relay.token trade '["testa", "sys.match", "btc1", "4.0000 CBTC", "1", "testa;testa;0;4000.00 CUSDT;0"]' -p testa
 
 3. 撤销订单     
 
-efc push action eosforce cancel '["0"]' -p testa
+efc push action sys.match cancel '["0"]' -p testa
 
 注意：只能撤销自己下的订单
