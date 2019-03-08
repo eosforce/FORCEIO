@@ -39,6 +39,10 @@ namespace exchange {
         
         void cancel(uint64_t order_id);
         
+        void done(asset price, asset quantity, uint32_t bid_or_ask, time_point_sec timestamp);
+        
+        void done_helper(account_name exc_acc, asset price, asset quantity, uint32_t bid_or_ask);
+        
         asset calcfee(asset quant, uint64_t fee_rate);
 
         inline symbol_type get_pair_base( uint32_t pair_id ) const;

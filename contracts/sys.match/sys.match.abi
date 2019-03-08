@@ -39,6 +39,16 @@
         {"name": "order_id","type": "uint64"}
        ]
      },{
+       "name": "done",
+       "base": "",
+       "fields": [
+        {"name": "price","type": "asset"},
+        {"name": "quantity","type": "asset"},
+        {"name": "bid_or_ask","type": "uint32"},
+        {"name": "timestamp","type": "time_point_sec"},
+        {"name": "taker_or_maker","type": "uint32"}
+       ]
+     },{
       "name": "trading_pair",
       "base": "",
       "fields": [
@@ -78,6 +88,10 @@
     },{
       "name": "cancel",
       "type": "cancel",
+      "ricardian_contract": ""
+    },{
+      "name": "done",
+      "type": "done",
       "ricardian_contract": ""
     }
   ],
