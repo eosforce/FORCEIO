@@ -201,9 +201,9 @@ def stepSetFuncs():
     createMapToken('eosforce','eosforce', "10000000.0000 EOS")
     createMapToken('eosforce','eosforce', "10000000.0000 SYS")
     createMapToken('eosforce','eosforce', "10000000.0000 SSS")
-    createMapToken('side','eosforce', "10000000.0000 EOS")
-    createMapToken('side','eosforce', "10000000.0000 SYS")
-    createMapToken('side','eosforce', "10000000.0000 SSS")
+    #createMapToken('side','eosforce', "10000000.0000 EOS")
+    #createMapToken('side','eosforce', "10000000.0000 SYS")
+    #createMapToken('side','eosforce', "10000000.0000 SSS")
 
 def clearData():
     stepKillAll()
