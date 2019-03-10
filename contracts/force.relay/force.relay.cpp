@@ -7,6 +7,35 @@ void relay::commit( const name chain, const account_name transfer, const relay::
 
    require_auth(transfer);
 
+   relaystat_table relaystats(_self, chain);
+   auto relaystat = relaystats.find(chain);
+
+   eosio_assert(relaystat != relaystats.end(), "no relay stats");
+
+   if(!relaystat->last.is_nil()){
+      eosio_assert(block.previous == relaystat->last.id, "previous id no last id");
+   }
+
+   bool has_commited = false;
+   for( const auto& ucblock : relaystat->unconfirms ){
+      if(    ucblock.base.id == block.id
+          && ucblock.base.mroot == block.mroot
+          && ucblock.base.action_mroot == block.action_mroot ){
+         has_commited = true;
+         break;
+      }
+   }
+   if(has_commited){
+      print("block has commited");
+      return;
+   }
+
+   relaystats.modify( relaystat, chain, [&]( auto& r ) {
+      r.unconfirms.push_back(unconfirm_block{
+         block, actions
+      });
+   });
+
    // TODO confirm
    onblock(chain, transfer, block, actions);
 
@@ -34,6 +63,12 @@ void relay::newchannel( const name chain, const checksum256 id ) {
    channels.emplace(chain, [&](auto& cc){
       cc.chain = chain;
       cc.id = id;
+   });
+
+   relaystat_table relaystats(_self, chain);
+   relaystats.emplace(chain, [&](auto& cc){
+      cc.chain = chain;
+      cc.last.producer = name{0};
    });
 }
 
@@ -93,6 +128,15 @@ void relay::onblock( const name chain, const account_name transfer, const block_
       }
    }
 
+   relaystat_table relaystats(_self, chain);
+   auto relaystat = relaystats.find(chain);
+
+   eosio_assert(relaystat != relaystats.end(), "no relay stats");
+
+   relaystats.modify( relaystat, chain, [&]( auto& r ) {
+      r.last = block;
+      r.unconfirms.clear();
+   });
 }
 
 void relay::onaction( const account_name transfer, const block_type& block, const action& act, const map_handler& handler ){

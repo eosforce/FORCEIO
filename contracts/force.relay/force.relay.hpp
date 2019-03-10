@@ -13,6 +13,7 @@
 #include <eosiolib/chain.h>
 #include <eosiolib/contract_config.hpp>
 #include <vector>
+#include <array>
 
 
 
@@ -41,7 +42,8 @@ public:
    // block
    struct block_type {
    public:
-      account_name            producer;
+      account_name            producer = name{0};
+      uint32_t                num = 0;
       checksum256             id;
       checksum256             previous;
       uint16_t                confirmed = 1;
@@ -49,11 +51,44 @@ public:
       checksum256             action_mroot;
       checksum256             mroot;
 
+      bool is_nil() const {
+         return this->producer == name{0};
+      }
+
+      uint32_t block_num() const {
+         return num;
+      }
+
       EOSLIB_SERIALIZE( block_type,
-            (producer)(id)(previous)(confirmed)
+            (producer)(num)(id)(previous)(confirmed)
             (transaction_mroot)(action_mroot)(mroot)
              )
    };
+
+   struct unconfirm_block {
+   public:
+      block_type     base;
+      vector<action> actions;
+
+      EOSLIB_SERIALIZE( unconfirm_block,
+                        (base)(actions)
+      )
+   };
+
+   // block relay stat
+   struct block_relay_stat {
+   public:
+      name       chain;
+      block_type last;
+      vector<unconfirm_block> unconfirms;
+
+      uint64_t primary_key() const { return chain; }
+
+      EOSLIB_SERIALIZE( block_relay_stat,
+                        (chain)(last)(unconfirms))
+   };
+
+   typedef eosio::multi_index<N(relaystat), block_relay_stat> relaystat_table;
 
    // map_handler
    struct map_handler {
