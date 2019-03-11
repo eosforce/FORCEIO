@@ -216,3 +216,39 @@ cleos push action sys.bridge removemarket '["eos.sys","biosbpa","eosforce","eosf
 + maker_recv：当前市场中market_coin的余额转入的账户
 
 **说明：移除合约之前会把对应的余额转入指定的账户，做市商不会受任何损失**
+
+
+### 13.force.token trade 功能
+功能：
+```C++
+ void trade(    account_name from,account_name to,asset quantity,func_type type,string memo);
+```
+示例：
+```bash
+cleos push action force.token trade '["eosforce","sys.bridge","10000.0000 EOS",2,"eos.sys;biosbpa;1"]' -p eosforce@active
+```
+参数说明：
++ from:转币的账户
++ to：接收币的账户      此账户一般为合约账户
++ quantity：转币的金额
++ type：此次trade的类型       1代币sys.match的create功能 2代表sys.bridge的addmortgage功能 3代表sys.bridge的exchange功能
++ memo：memo用于存放相关功能的参数，用;拆分  相关具体参数查看相关功能  
+
+**说明：force.token的trade功能在传递chain的时候  chain的值是self**
+
+### 14.relay.token trade 功能
+功能：
+```C++
+ void trade(    account_name from,account_name to,name chain,asset quantity,trade_type type,string memo);
+```
+示例：
+```bash
+cleos push action relay.token trade '["eosforce","sys.bridge","side","10000.0000 EOS",2,"eos.sys;biosbpa;1"]' -p eosforce@active
+```
+参数说明：
++ from:转币的账户
++ to：接收币的账户      此账户一般为合约账户
++ quantity：转币的金额
++ chain:这个币所在的chain
++ type：此次trade的类型       1代币sys.match的create功能 2代表sys.bridge的addmortgage功能 3代表sys.bridge的exchange功能
++ memo：memo用于存放相关功能的参数，用;拆分  相关具体参数查看相关功能 

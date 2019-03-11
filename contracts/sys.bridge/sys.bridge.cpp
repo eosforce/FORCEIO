@@ -343,7 +343,7 @@ namespace eosio {
       });
  
       send_transfer_action(type == coin_type::coin_market ? existing->base.chain:existing->market.chain,account_recv,recv_asset,
-            std::string("claim market transfer coin market"));
+            std::string("exchange market transfer coin market"));
    }
 
    void market::settranscon(name chain,asset quantity,account_name contract_name) {

@@ -209,3 +209,38 @@ Parameter Description：
 + maker_recv：the account to receive the market coin
 
 **Note: Before the contract is removed, the corresponding balance will be transferred to the designated account, and the market maker will not suffer any loss.**
+
+### 13.force.token trade 
+Function：
+```C++
+ void trade(    account_name from,account_name to,asset quantity,func_type type,string memo);
+```
+Example：
+```bash
+cleos push action force.token trade '["eosforce","sys.bridge","10000.0000 EOS",2,"eos.sys;biosbpa;1"]' -p eosforce@active
+```
+Parameter Description：
++ from:the account to transfer the coin
++ to：the account to receive the coin      the account must be the contract account 
++ quantity：the amount of the coin
++ type：the type of the trade     1 for create function of contract sys.match.  2 for addmortgage function of sys.bridge. 3 for exchange function of  contract sys.bridge 
++ memo：Memo is used to store the parameters of related functions, use; split related parameters to view related functions
+
+**Description: when  passing the chain,the value of chain is self on force.token**
+
+### 14.relay.token trade
+Function：
+```C++
+ void trade(    account_name from,account_name to,name chain,asset quantity,trade_type type,string memo);
+```
+Example：
+```bash
+cleos push action relay.token trade '["eosforce","sys.bridge","side","10000.0000 EOS",2,"eos.sys;biosbpa;1"]' -p eosforce@active
+```
+Parameter Description：
++ from:the account to transfer the coin
++ to：the account to receive the coin      the account must be the contract account 
++ quantity：the amount of the coin
++ chain : the chain which coin is created at
++ type：the type of the trade     1 for create function of contract sys.match.  2 for addmortgage function of sys.bridge. 3 for exchange function of  contract sys.bridge 
++ memo：Memo is used to store the parameters of related functions, use; split related parameters to view related functions
