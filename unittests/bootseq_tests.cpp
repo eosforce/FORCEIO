@@ -2,13 +2,13 @@
 #include <eosio/testing/tester.hpp>
 #include <eosio/chain/abi_serializer.hpp>
 
-#include <eosio.system/eosio.system.wast.hpp>
-#include <eosio.system/eosio.system.abi.hpp>
+#include <force.system/force.system.wast.hpp>
+#include <force.system/force.system.abi.hpp>
 // These contracts are still under dev
-#include <eosio.token/eosio.token.wast.hpp>
-#include <eosio.token/eosio.token.abi.hpp>
-#include <eosio.msig/eosio.msig.wast.hpp>
-#include <eosio.msig/eosio.msig.abi.hpp>
+#include <force.token/force.token.wast.hpp>
+#include <force.token/force.token.abi.hpp>
+#include <force.msig/force.msig.wast.hpp>
+#include <force.msig/force.msig.abi.hpp>
 
 #include <Runtime/Runtime.h>
 
@@ -186,8 +186,8 @@ BOOST_FIXTURE_TEST_CASE( bootseq_test, bootseq_tester ) {
         //  - eosio (code: eosio.bios) (already set by tester constructor)
         //  - eosio.msig (code: eosio.msig)
         //  - eosio.token (code: eosio.token)
-        set_code_abi(N(eosio.msig), eosio_msig_wast, eosio_msig_abi);//, &eosio_active_pk);
-        set_code_abi(N(eosio.token), eosio_token_wast, eosio_token_abi); //, &eosio_active_pk);
+        set_code_abi(N(eosio.msig), force_msig_wast, force_msig_abi);//, &eosio_active_pk);
+        set_code_abi(N(eosio.token), force_token_wast, force_token_abi); //, &eosio_active_pk);
 
         // Set privileged for eosio.msig and eosio.token
         set_privileged(N(eosio.msig));
@@ -216,7 +216,7 @@ BOOST_FIXTURE_TEST_CASE( bootseq_test, bootseq_tester ) {
         }
 
         // Set eosio.system to eosio
-        set_code_abi(config::system_account_name, eosio_system_wast, eosio_system_abi);
+        set_code_abi(config::system_account_name, force_system_wast, force_system_abi);
 
         // Buy ram and stake cpu and net for each genesis accounts
         for( const auto& a : test_genesis ) {

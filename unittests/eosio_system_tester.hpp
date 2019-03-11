@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#if 0
+
 #include <eosio/testing/tester.hpp>
 #include <eosio/chain/abi_serializer.hpp>
 
@@ -558,3 +560,4 @@ inline uint64_t M( const string& eos_str ) {
 }
 
 }
+#endif

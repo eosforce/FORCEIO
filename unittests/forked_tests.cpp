@@ -3,8 +3,8 @@
 #include <eosio/chain/abi_serializer.hpp>
 #include <eosio/chain/fork_database.hpp>
 
-#include <eosio.token/eosio.token.wast.hpp>
-#include <eosio.token/eosio.token.abi.hpp>
+#include <force.token/force.token.wast.hpp>
+#include <force.token/force.token.abi.hpp>
 
 #include <Runtime/Runtime.h>
 
@@ -158,8 +158,8 @@ BOOST_AUTO_TEST_CASE( forking ) try {
 
    auto r2 = c.create_accounts( {N(eosio.token)} );
    wdump((fc::json::to_pretty_string(r2)));
-   c.set_code( N(eosio.token), eosio_token_wast );
-   c.set_abi( N(eosio.token), eosio_token_abi );
+   c.set_code( N(eosio.token), force_token_wast );
+   c.set_abi( N(eosio.token), force_token_abi );
    c.produce_blocks(10);
 
 
