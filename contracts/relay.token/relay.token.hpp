@@ -84,12 +84,12 @@ public:
    
    inline asset get_supply( name chain, symbol_name sym )const;
 
-   void trade(    account_name from,
-                  account_name to,
-                  name chain,
-                  asset quantity,
-                  trade_type type,
-                  string memo);
+   void trade( account_name from,
+               account_name to,
+               name chain,
+               asset quantity,
+               trade_type type,
+               string memo);
                   
    void trade_imp( account_name payer, account_name receiver, uint32_t pair_id, asset quantity, asset price, uint32_t bid_or_ask );
 
