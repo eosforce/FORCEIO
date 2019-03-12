@@ -113,22 +113,40 @@ public:
       EOSLIB_SERIALIZE( handler_action, (chain)(block_id)(act) )
    };
 
+   struct relay_transfer {
+      name         chain;
+      account_name transfer;
+      asset        deposit = asset{0};
+      block_type   last;
+
+      uint64_t primary_key() const { return transfer; }
+
+      EOSLIB_SERIALIZE( relay_transfer, (chain)(transfer)(deposit)(last) )
+   };
+
    // channel
    struct channel {
-      name        chain;
-      checksum256 id;
+      name                   chain;
+      checksum256            id;
+      asset                  deposit_sum = asset{0};
 
       uint64_t primary_key() const { return chain; }
 
-      EOSLIB_SERIALIZE( channel, (chain)(id) )
+      EOSLIB_SERIALIZE( channel, (chain)(id)(deposit_sum) )
    };
 
-   typedef eosio::multi_index<N(channels), channel> channels_table;
-   typedef eosio::multi_index<N(handlers), map_handler> handlers_table;
+   typedef eosio::multi_index<N(channels),  channel>         channels_table;
+   typedef eosio::multi_index<N(transfers), relay_transfer>  transfers_table;
+   typedef eosio::multi_index<N(handlers),  map_handler>     handlers_table;
 
 private:
    void onblock( const name chain, const account_name transfer, const block_type& block, const vector<action>& actions );
    void onaction(  const account_name transfer, const block_type& block, const action& act, const map_handler& handler );
+   void new_transfer( name chain, account_name transfer, const asset& deposit );
+
+public:
+   void ontransfer( const account_name from, const account_name to,
+            const asset& quantity, const std::string& memo);
 
 public:
    /// @abi action

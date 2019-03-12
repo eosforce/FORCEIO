@@ -180,6 +180,28 @@
             ]
         },
         {
+            "name": "relay_transfer",
+            "base": "",
+            "fields": [
+                {
+                    "name": "chain",
+                    "type": "name"
+                },
+                {
+                    "name": "transfer",
+                    "type": "account_name"
+                },
+                {
+                    "name": "deposit",
+                    "type": "asset"
+                },
+                {
+                    "name": "last",
+                    "type": "block_type"
+                }
+            ]
+        },
+        {
             "name": "block_relay_stat",
             "base": "",
             "fields": [
@@ -238,6 +260,10 @@
                 {
                     "name": "id",
                     "type": "checksum256"
+                },
+                {
+                    "name": "deposit_sum",
+                    "type": "asset"
                 }
             ]
         },
@@ -378,6 +404,17 @@
         {
             "name": "relaystat",
             "type": "block_relay_stat",
+            "index_type": "i64",
+            "key_names": [
+                "chain"
+            ],
+            "key_types": [
+                "name"
+            ]
+        },
+        {
+            "name": "transfers",
+            "type": "relay_transfer",
             "index_type": "i64",
             "key_names": [
                 "chain"

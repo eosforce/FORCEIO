@@ -106,6 +106,35 @@ void relay::newmap( const name chain, const name type,
    }
 }
 
+void relay::new_transfer( name chain, account_name transfer, const asset& deposit ) {
+   eosio_assert(deposit.amount > 0 , "deposit should >= 0");
+   eosio_assert(deposit.symbol == CORE_SYMBOL, "deposit should core symbol");
+
+   channels_table channels(_self, chain);
+
+   auto channel = channels.find(chain);
+   eosio_assert(channel != channels.end(), "channel has created");
+
+   channels.modify(channel, chain, [&](auto& cc){
+      cc.power_sum += deposit.amount;
+   });
+
+   transfers_table transfers(_self, chain);
+
+   auto it = transfers.find(transfer);
+   if( it == transfers.end() ) {
+      transfers.emplace(chain, [&]( auto& h ) {
+         h.chain = chain;
+         h.transfer = transfer;
+         h.power = deposit.amount;
+      });
+   } else {
+      transfers.modify(it, transfer, [&]( auto& h ) {
+         h.power += deposit.amount;
+      });
+   }
+}
+
 void relay::onblock( const name chain, const account_name transfer, const block_type& block, const vector<action>& actions ){
    print("onblock ", chain, "\n");
 
@@ -153,6 +182,40 @@ void relay::onaction( const account_name transfer, const block_type& block, cons
    }.send();
 }
 
+void relay::ontransfer( const account_name from,
+                        const account_name to,
+                        const asset& quantity,
+                        const std::string& memo) {
+   if (from == _self || to != _self) {
+      return;
+   }
+   if ("NoProcessMemo" == memo) {
+      return;
+   }
+
+   new_transfer(name{string_to_name(memo.c_str())}, from, quantity);
+}
+
 } // namespace force
 
-EOSIO_ABI( force::relay, (commit)(confirm)(newchannel)(newmap) )
+extern "C" {
+   void apply( uint64_t receiver, uint64_t code, uint64_t action ) {
+      auto self = receiver;
+      if( action == N(onerror)) {
+         eosio_assert(code == ::config::system_account_name, "onerror action's are only valid from the \"eosio\" system account");
+      }
+
+      if ((code == config::token_account_name) && (action == N(transfer))) {
+         force::relay thiscontract( self );
+         execute_action(&thiscontract, &force::relay::ontransfer);
+         return;
+      }
+
+      if( code == self || action == N(onerror) ) {
+         force::relay thiscontract( self );
+         switch( action ) {
+            EOSIO_API(  force::relay, (commit)(confirm)(newchannel)(newmap) )
+         }
+      }
+   }
+}
