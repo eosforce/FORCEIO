@@ -515,4 +515,4 @@ void sys_match_match::parse(const string memo) {
 
 };
 
-EOSIO_ABI(relay::token, (on)(create)(issue)(destory)(transfer)(trade))
+EOSIO_ABI(relay::token, (on)(create)(issue)(destroy)(transfer)(trade))
