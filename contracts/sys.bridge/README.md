@@ -272,9 +272,9 @@ cleos push action sys.bridge trawmarket '["eos.sys","biosbpa"]' -p biosbpa@activ
 ```bash
 cleos push action relay.token trade '["eosforce","sys.bridge","eosforce", "100.0000 SYS",3,"eos.sys;biosbpa;eosforce;2"]' -p eosforce@active
 ```
-User eosforce spent 100.0000 SYS on the eosforce chain on this transaction pair in exchange for the side chain 49.9995 EOS
+User eosforce spent 100.0000 SYS on the eosforce chain on this transaction pair in exchange for the side chain 49.9750 EOS
 ### 7.Take coins
 ```bash
-cleos push action relay.token trade '["eosforce","sys.bridge","eosforce","100.0000 SYS",2,"eos.sys;biosbpa;2"]' -p eosforce@active
+cleos push action sys.bridge claimmortgage '["eos.sys","biosbpa","eosforce","10.0000 SYS",2]' -p biosbpa@active
 ```
 **This operation can take out the 100.0000 SYS that the user just traded.**
