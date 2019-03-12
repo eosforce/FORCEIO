@@ -153,7 +153,7 @@ void token::sub_balance( account_name owner, name chain, asset value ) {
 }
 
 void token::add_balance( account_name owner, name chain, asset value, account_name ram_payer ) {
-   accoun ts to_acnts(_self, owner);
+   accounts to_acnts(_self, owner);
    account_next_ids acntids(_self, owner);
 
    auto idx = to_acnts.get_index<N(bychain)>();
