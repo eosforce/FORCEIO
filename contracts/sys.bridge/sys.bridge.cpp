@@ -27,7 +27,7 @@ namespace eosio {
       //暂时先使用相同的代币进行转换
          eosio_assert(coinbase_sym != coinmarket_sym || base_chain != market_chain,"a market must on two coin");
          
-         eosio_assert( type < trade_type::trade_type_count, "invalid trade type");
+         eosio_assert( type == trade_type::equal_ratio, "invalid trade type");
          eosio_assert( market_weight > 0,"invalid market_weight");
          eosio_assert( base_weight > 0,"invalid base_weight");
          tradepairs tradepair( _self,trade_maker);
@@ -343,7 +343,7 @@ namespace eosio {
       });
  
       send_transfer_action(type == coin_type::coin_market ? existing->base.chain:existing->market.chain,account_recv,recv_asset,
-            std::string("claim market transfer coin market"));
+            std::string("exchange market transfer coin market"));
    }
 
    void market::settranscon(name chain,asset quantity,account_name contract_name) {

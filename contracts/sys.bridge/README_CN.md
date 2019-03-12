@@ -5,7 +5,6 @@ trade.market合约实现在中继链上进行代币交换的功能
 
 trade.market目前只提供两种功能：1.等比例兑换。2.bancor兑换
 + 1.等比例兑换 提供代币1 和 代币2以一种固定比例的形式进行兑换
-+ 2.bancor兑换  根据bancor形式进行兑换（暂时不建议使用bancor  等以后测试通过再说）
 
 ## 操作说明
 
@@ -216,3 +215,74 @@ cleos push action sys.bridge removemarket '["eos.sys","biosbpa","eosforce","eosf
 + maker_recv：当前市场中market_coin的余额转入的账户
 
 **说明：移除合约之前会把对应的余额转入指定的账户，做市商不会受任何损失**
+
+
+### 13.force.token trade 功能
+功能：
+```C++
+ void trade(    account_name from,account_name to,asset quantity,func_type type,string memo);
+```
+示例：
+```bash
+cleos push action force.token trade '["eosforce","sys.bridge","10000.0000 EOS",2,"eos.sys;biosbpa;1"]' -p eosforce@active
+```
+参数说明：
++ from:转币的账户
++ to：接收币的账户      此账户一般为合约账户
++ quantity：转币的金额
++ type：此次trade的类型       1代币sys.match的create功能 2代表sys.bridge的addmortgage功能 3代表sys.bridge的exchange功能
++ memo：memo用于存放相关功能的参数，用;拆分  相关具体参数查看相关功能  
+
+**说明：force.token的trade功能在传递chain的时候  chain的值是self**
+
+### 14.relay.token trade 功能
+功能：
+```C++
+ void trade(    account_name from,account_name to,name chain,asset quantity,trade_type type,string memo);
+```
+示例：
+```bash
+cleos push action relay.token trade '["eosforce","sys.bridge","side","10000.0000 EOS",2,"eos.sys;biosbpa;1"]' -p eosforce@active
+```
+参数说明：
++ from:转币的账户
++ to：接收币的账户      此账户一般为合约账户
++ quantity：转币的金额
++ chain:这个币所在的chain
++ type：此次trade的类型       1代币sys.match的create功能 2代表sys.bridge的addmortgage功能 3代表sys.bridge的exchange功能
++ memo：memo用于存放相关功能的参数，用;拆分  相关具体参数查看相关功能 
+
+## 做市商做市流程
+### 1.新建交易对
+```bash
+cleos push action sys.bridge addmarket '["eos.sys","biosbpa",1,"side","500.0000 EOS",1,"eosforce","1000.0000 SYS",2]' -p biosbpa@active
+```
+### 2.往交易对上面充币
+```bash
+cleos push action relay.token trade '["eosforce","sys.bridge","side","10000.0000 EOS",2,"eos.sys;biosbpa;1"]' -p eosforce@active
+```
+**说明：交易对上面有币之后该交易对就可以使用了**
+### 3.冻结交易对
+```bash
+cleos push action sys.bridge frozenmarket '["eos.sys","biosbpa"]' -p biosbpa@active
+```
+**冻结后用户不能做exchange操作，做市商可以修改交易对的相关参数**
+### 4.设置交易费用
+```bash
+cleos push action sys.bridge setprofee '["eos.sys","biosbpa",5,6]' -p biosbpa@active
+```
+**此操作将兑换base_coin的费用设置为万分之五，将兑换market_coin的费用设置为万分之六**
+### 5.解冻交易对
+```bash
+cleos push action sys.bridge trawmarket '["eos.sys","biosbpa"]' -p biosbpa@active
+```
+### 6.用户进行交易
+```bash
+cleos push action relay.token trade '["eosforce","sys.bridge","eosforce", "100.0000 SYS",3,"eos.sys;biosbpa;eosforce;2"]' -p eosforce@active
+```
+用户eosforce在此交易对上花费了 eosforce链的100.0000 SYS 换取side链的 49.9995 EOS币
+### 7.取币
+```bash
+cleos push action relay.token trade '["eosforce","sys.bridge","eosforce","100.0000 SYS",2,"eos.sys;biosbpa;2"]' -p eosforce@active
+```
+**此操作可以将刚才用户进行交易的100.0000 SYS取出来**

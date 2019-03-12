@@ -6,7 +6,6 @@ Trade.market contract realizes the function of token exchange on the relay chain
 
 Trade.market currently only offers two functions: 1. Equal conversion. 2.bancor exchange
 + 1. Proportional exchange. Substitution of token 1 and token 2 in a fixed ratio
-+ 2. Bancor exchange according to bancor form（以后或许有改进）
 
 ## Instructions
 
@@ -209,3 +208,73 @@ Parameter Description：
 + maker_recv：the account to receive the market coin
 
 **Note: Before the contract is removed, the corresponding balance will be transferred to the designated account, and the market maker will not suffer any loss.**
+
+### 13.force.token trade 
+Function：
+```C++
+ void trade(    account_name from,account_name to,asset quantity,func_type type,string memo);
+```
+Example：
+```bash
+cleos push action force.token trade '["eosforce","sys.bridge","10000.0000 EOS",2,"eos.sys;biosbpa;1"]' -p eosforce@active
+```
+Parameter Description：
++ from:the account to transfer the coin
++ to：the account to receive the coin      the account must be the contract account 
++ quantity：the amount of the coin
++ type：the type of the trade     1 for create function of contract sys.match.  2 for addmortgage function of sys.bridge. 3 for exchange function of  contract sys.bridge 
++ memo：Memo is used to store the parameters of related functions, use; split related parameters to view related functions
+
+**Description: when  passing the chain,the value of chain is self on force.token**
+
+### 14.relay.token trade
+Function：
+```C++
+ void trade(    account_name from,account_name to,name chain,asset quantity,trade_type type,string memo);
+```
+Example：
+```bash
+cleos push action relay.token trade '["eosforce","sys.bridge","side","10000.0000 EOS",2,"eos.sys;biosbpa;1"]' -p eosforce@active
+```
+Parameter Description：
++ from:the account to transfer the coin
++ to：the account to receive the coin      the account must be the contract account 
++ quantity：the amount of the coin
++ chain : the chain which coin is created at
++ type：the type of the trade     1 for create function of contract sys.match.  2 for addmortgage function of sys.bridge. 3 for exchange function of  contract sys.bridge 
++ memo：Memo is used to store the parameters of related functions, use; split related parameters to view related functions
+
+## Market maker market making process
+### 1.New trade pair
+```bash
+cleos push action sys.bridge addmarket '["eos.sys","biosbpa",1,"side","500.0000 EOS",1,"eosforce","1000.0000 SYS",2]' -p biosbpa@active
+```
+### 2.Recharge coin to the trade pair
+```bash
+cleos push action relay.token trade '["eosforce","sys.bridge","side","10000.0000 EOS",2,"eos.sys;biosbpa;1"]' -p eosforce@active
+```
+**Note: The trade pair can be used after the transaction has the above currency.**
+### 3.forzen the market
+```bash
+cleos push action sys.bridge frozenmarket '["eos.sys","biosbpa"]' -p biosbpa@active
+```
+**After freezing, the user cannot perform the exchange operation, and the market maker can modify the relevant parameters of the trade pair.**
+### 4.Set transaction fee
+```bash
+cleos push action sys.bridge setprofee '["eos.sys","biosbpa",5,6]' -p biosbpa@active
+```
+**This will set the cost of redeeming base_coin to five ten thousandth and the cost of redeeming market_coin to six ten thousandths.**
+### 5.thaw the market
+```bash
+cleos push action sys.bridge trawmarket '["eos.sys","biosbpa"]' -p biosbpa@active
+```
+### 6.User trading
+```bash
+cleos push action relay.token trade '["eosforce","sys.bridge","eosforce", "100.0000 SYS",3,"eos.sys;biosbpa;eosforce;2"]' -p eosforce@active
+```
+User eosforce spent 100.0000 SYS on the eosforce chain on this transaction pair in exchange for the side chain 49.9995 EOS
+### 7.Take coins
+```bash
+cleos push action relay.token trade '["eosforce","sys.bridge","eosforce","100.0000 SYS",2,"eos.sys;biosbpa;2"]' -p eosforce@active
+```
+**This operation can take out the 100.0000 SYS that the user just traded.**
