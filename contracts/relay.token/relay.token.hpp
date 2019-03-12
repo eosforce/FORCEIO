@@ -68,14 +68,20 @@ public:
    };
 
    /// @abi action
-   void on( const name chain, const checksum256 block_id, const force::relay::action& act );
+   void on( name chain, const checksum256 block_id, const force::relay::action& act );
 
+   /// @abi action
    void create( account_name issuer,
                 name chain,
                 asset maximum_supply );
 
-   void issue( const name chain, account_name to, asset quantity, string memo );
+   /// @abi action
+   void issue( name chain, account_name to, asset quantity, string memo );
 
+   /// @abi action
+   void destroy( name chain, account_name from, asset quantity, string memo );
+
+   /// @abi action
    void transfer( account_name from,
                   account_name to,
                   name chain,
@@ -84,6 +90,7 @@ public:
    
    inline asset get_supply( name chain, symbol_name sym )const;
 
+   /// @abi action
    void trade(    account_name from,
                   account_name to,
                   name chain,
