@@ -121,8 +121,8 @@ void relay::newmap( const name chain, const name type,
 }
 
 void relay::new_transfer( name chain, account_name transfer, const asset& deposit ) {
-   eosio_assert(deposit >= asset{0} , "deposit should > 0");
    eosio_assert(deposit.symbol == CORE_SYMBOL, "deposit should core symbol");
+   eosio_assert(deposit >= asset{0} , "deposit should > 0");
 
    channels_table channels(_self, chain);
    auto channel = channels.find(chain);
@@ -132,22 +132,22 @@ void relay::new_transfer( name chain, account_name transfer, const asset& deposi
    auto it = transfers.find(transfer);
    if( it == transfers.end() ) {
       channels.modify(channel, chain, [&](auto& cc){
-         cc.deposit_sum += deposit.amount;
+         cc.deposit_sum += deposit;
       });
       transfers.emplace(chain, [&]( auto& h ) {
          h.chain = chain;
          h.transfer = transfer;
-         h.deposit = deposit.amount;
+         h.deposit = deposit;
       });
    } else {
       const auto old = it->deposit;
       eosio_assert(old <= channel->deposit_sum, "old deposit should <= sum");
       channels.modify(channel, chain, [&](auto& cc){
          cc.deposit_sum -= old;
-         cc.deposit_sum += deposit.amount;
+         cc.deposit_sum += deposit;
       });
       transfers.modify(it, transfer, [&]( auto& h ) {
-         h.deposit = deposit.amount;
+         h.deposit = deposit;
       });
    }
 }
