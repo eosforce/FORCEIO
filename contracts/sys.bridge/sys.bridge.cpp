@@ -37,9 +37,11 @@ namespace eosio {
       trademarket.base.chain = base_chain;
       trademarket.base.amount = asset(0,coinbase_sym);
       trademarket.base.weight = base_weight;
+      trademarket.base.fee_amount = asset(0,coinbase_sym);
       trademarket.market.chain = market_chain;
       trademarket.market.amount = asset(0,coinmarket_sym);
       trademarket.market.weight = market_weight;
+      trademarket.market.fee_amount = asset(0,coinmarket_sym);
 
       trademarket.type = type;
       trademarket.isactive = true;
@@ -285,21 +287,21 @@ namespace eosio {
             recv_amount = existing->market.amount.amount * (pow(tempa,cw) - 1);
          }
       }
-
+      auto fee_amout = recv_amount;
       //fee
       if (type != coin_type::coin_base) { 
          if(existing->fee.fee_type == fee_type::fixed) {
-            recv_amount -= existing->fee.base.amount;
+            fee_amout = existing->fee.base.amount;
          }
          else if(existing->fee.fee_type == fee_type::proportion) {
-            recv_amount -= recv_amount*existing->fee.base_ratio/PROPORTION_CARD;
+            fee_amout = recv_amount*existing->fee.base_ratio/PROPORTION_CARD;
          }
          else if(existing->fee.fee_type == fee_type::proportion_mincost){
             if (recv_amount*existing->fee.base_ratio/PROPORTION_CARD > existing->fee.base.amount)
-               recv_amount -= recv_amount*existing->fee.base_ratio/PROPORTION_CARD;
+               fee_amout = recv_amount*existing->fee.base_ratio/PROPORTION_CARD;
             else
             {
-               recv_amount -= existing->fee.base.amount;
+               fee_amout = existing->fee.base.amount;
             }
             
          }
@@ -307,37 +309,40 @@ namespace eosio {
       else
       {
          if(existing->fee.fee_type == fee_type::fixed) {
-            recv_amount -= existing->fee.market.amount;
+            fee_amout = existing->fee.market.amount;
          }
          else if(existing->fee.fee_type == fee_type::proportion) {
-            recv_amount -= recv_amount*existing->fee.market_ratio/PROPORTION_CARD;
+            fee_amout = recv_amount*existing->fee.market_ratio/PROPORTION_CARD;
          }
          else if(existing->fee.fee_type == fee_type::proportion_mincost){
             if (recv_amount*existing->fee.market_ratio/PROPORTION_CARD > existing->fee.market.amount)
-               recv_amount -= recv_amount*existing->fee.market_ratio/PROPORTION_CARD;
+               fee_amout = recv_amount*existing->fee.market_ratio/PROPORTION_CARD;
             else
             {
-               recv_amount -= existing->fee.market.amount;
+               fee_amout = existing->fee.market.amount;
             }
             
          }
       }
       
-      
+      recv_amount -= fee_amout;
       eosio_assert(recv_amount < market_recv_amount.amount,
       "the market do not has enough dest coin");
 
       auto recv_asset = asset(recv_amount,market_recv_amount.symbol);
+      auto fee_asset = asset(fee_amout,market_recv_amount.symbol);
       // account_covert transfer to self
      
       tradepair.modify( *existing, 0, [&]( auto& s ) {
          if (type == coin_type::coin_base) {
             s.base.amount = s.base.amount + convert_amount;
-            s.market.amount = s.market.amount - recv_asset;
+            s.market.amount = s.market.amount - recv_asset - fee_asset;
+            s.market.fee_amount += fee_asset;
          }
          else {
             s.market.amount = s.market.amount + convert_amount;
-            s.base.amount = s.base.amount - recv_asset;
+            s.base.amount = s.base.amount - recv_asset - fee_asset;
+            s.base.fee_amount += fee_asset;
          }
       });
  
@@ -411,6 +416,29 @@ namespace eosio {
          s.market.amount -= s.market.amount;
       });
       tradepair.erase(existing);
+   }
+
+   void market::claimfee(name trade,account_name trade_maker,account_name recv_account,coin_type type) {
+      require_auth(trade_maker);
+      tradepairs tradepair( _self,trade_maker);
+      auto existing = tradepair.find( trade );
+      eosio_assert( existing != tradepair.end(), "the market is not exist" );
+
+      send_transfer_action(type == coin_type::coin_base ? existing->base.chain:existing->market.chain,
+                           recv_account,
+                           type == coin_type::coin_base ? existing->base.fee_amount:existing->market.fee_amount,
+                           std::string("claim fee transfer coin market")); 
+
+      tradepair.modify( *existing, 0, [&]( auto& s ) {
+         if (type == coin_type::coin_base) {
+            s.base.fee_amount = asset(0,s.base.fee_amount.symbol);
+         }
+         else {
+            s.market.fee_amount = asset(0,s.market.fee_amount.symbol);
+         }
+      });
+
+
    }
 
 } /// namespace eosio
