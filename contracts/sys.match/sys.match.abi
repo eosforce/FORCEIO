@@ -45,8 +45,7 @@
         {"name": "price","type": "asset"},
         {"name": "quantity","type": "asset"},
         {"name": "bid_or_ask","type": "uint32"},
-        {"name": "timestamp","type": "time_point_sec"},
-        {"name": "taker_or_maker","type": "uint32"}
+        {"name": "timestamp","type": "time_point_sec"}
        ]
      },{
       "name": "trading_pair",
