@@ -228,77 +228,77 @@ asset convert_asset( symbol_type expected_symbol, const asset& a ) {
 }
 
 void token::trade_imp( account_name payer, account_name receiver, uint32_t pair_id, asset quantity, asset price2, uint32_t bid_or_ask ) {
-    //account_name    exc_acc;// = N(sys.match);
-    //account_name    escrow  = N(eosfund1);
-    //const account_name relay_token_acc = N(relay.token);
-    
-    //exchange::exchange::trading_pairs   trading_pairs_table(exc_acc, exc_acc);
-    asset           quant_after_fee;
-    asset            base;
-    asset           price;
+   //account_name    exc_acc;// = N(sys.match);
+   //account_name    escrow  = N(eosfund1);
+   //const account_name relay_token_acc = N(relay.token);
+   
+   //exchange::exchange::trading_pairs   trading_pairs_table(exc_acc, exc_acc);
+   asset           quant_after_fee;
+   asset           base;
+   asset           price;
 
-    // test. walk through trading_pairs table
-     /*   {
-            print("\n ---------------- begin to trading_pairs table: ----------------");
-            auto walk_table_range = [&]( auto itr, auto end_itr ) {
-                for( ; itr != end_itr; ++itr ) {
-                    print("\n pair: id=", itr->id);
-                }
-            };
-            //auto lower_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::lowest();
-            auto lower_key = std::numeric_limits<uint64_t>::lowest();
-            auto lower = trading_pairs_table.lower_bound( lower_key );
-            //auto upper_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::max();
-            auto upper_key = std::numeric_limits<uint64_t>::max();
-            auto upper = trading_pairs_table.upper_bound( upper_key );
-            walk_table_range(lower, upper);
-            print("\n -------------------- walk through trading_pairs table ends ----------------:");
-        }*/
+   // test. walk through trading_pairs table
+    /*   {
+           print("\n ---------------- begin to trading_pairs table: ----------------");
+           auto walk_table_range = [&]( auto itr, auto end_itr ) {
+               for( ; itr != end_itr; ++itr ) {
+                   print("\n pair: id=", itr->id);
+               }
+           };
+           //auto lower_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::lowest();
+           auto lower_key = std::numeric_limits<uint64_t>::lowest();
+           auto lower = trading_pairs_table.lower_bound( lower_key );
+           //auto upper_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::max();
+           auto upper_key = std::numeric_limits<uint64_t>::max();
+           auto upper = trading_pairs_table.upper_bound( upper_key );
+           walk_table_range(lower, upper);
+           print("\n -------------------- walk through trading_pairs table ends ----------------:");
+       }*/
 
-    //uint128_t idxkey = (uint128_t(base_sym.name()) << 64) | price.symbol.name();
+   //uint128_t idxkey = (uint128_t(base_sym.name()) << 64) | price.symbol.name();
 
-    
+   
 
-    //auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
-    //auto itr1 = trading_pairs_table.find(pair_id);
-    //eosio_assert(itr1 != trading_pairs_table.end(), "trading pair does not exist");
+   //auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
+   //auto itr1 = trading_pairs_table.find(pair_id);
+   //eosio_assert(itr1 != trading_pairs_table.end(), "trading pair does not exist");
 
-    exchange::exchange e(N(sys.match));
-    auto base_sym = e.get_pair_base(pair_id);
-    auto quote_sym = e.get_pair_quote(pair_id);
-    auto exc_acc = e.get_exchange_account(pair_id);
-    
-    //price   = convert(itr1->quote, price);
-    if (bid_or_ask) {
-        int64_t amount = (quantity.amount / precision(quantity.symbol.precision())) / (price2.amount / precision(price2.symbol.precision()));
-        // first, transfer the quote currency to escrow account
-        //print("bid step0: quant_after_fee=",convert(itr1->quote, price)," base.amount =",base.amount, " precision =",precision(base.symbol.precision()));
-        //quant_after_fee = exchange::exchange::convert(itr1->quote_sym, price) * base.amount / exchange::exchange::precision(base.symbol.precision());
-         print("\n2222222 quantity.amount=", quantity.amount, ", quantity.symbol.precision=", precision(quantity.symbol.precision()));
-        print("\n22222221111 price2.amount=", price2.amount, ", price2.symbol.precision()=", precision(price2.symbol.precision()));
-        print("\n33333333 base_sym=", base_sym, ", amount=", amount);
-        symbol_type sym;
-        sym.value = base_sym.value & 0XFFFFFFFFFFFFFF00;
-        quant_after_fee = asset(amount, sym);
-        //quant_after_fee = convert(itr1->quote_sym, quant_after_fee);
-        base = convert(base_sym, quant_after_fee);
-        print("\n4444444 quant_after_fee=", quant_after_fee, ", base=", base);
-       
-        //print("bid step1: quant_after_fee=",quant_after_fee);
-        //quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
-        //print("bid step2: quant_after_fee=",quant_after_fee);
-    } else {
-        base = convert(base_sym, quantity);
-    }
-    price = convert(quote_sym, price2);
-    
-    print("\n before inline call sys.match --payer=",payer,", receiver=",receiver,", pair_id=",pair_id,", quantity=",quantity,", price=",price,", bid_or_ask=",bid_or_ask, ", base=",base);
-    
-    eosio::action(
-            permission_level{ exc_acc, N(active) },
-            N(sys.match), N(match),
-            std::make_tuple(payer, receiver, base, price, bid_or_ask)
-    ).send();
+   exchange::exchange e(N(sys.match));
+   auto base_sym = e.get_pair_base(pair_id);
+   auto quote_sym = e.get_pair_quote(pair_id);
+   auto exc_acc = e.get_exchange_account(pair_id);
+   
+   //price   = convert(itr1->quote, price);
+   if (bid_or_ask) {
+       int64_t amount = (quantity.amount / precision(quantity.symbol.precision())) / (price2.amount / precision(price2.symbol.precision()));
+       // first, transfer the quote currency to escrow account
+       //print("bid step0: quant_after_fee=",convert(itr1->quote, price)," base.amount =",base.amount, " precision =",precision(base.symbol.precision()));
+       //quant_after_fee = exchange::exchange::convert(itr1->quote_sym, price) * base.amount / exchange::exchange::precision(base.symbol.precision());
+        print("\n2222222 quantity.amount=", quantity.amount, ", quantity.symbol.precision=", precision(quantity.symbol.precision()));
+       print("\n22222221111 price2.amount=", price2.amount, ", price2.symbol.precision()=", precision(price2.symbol.precision()));
+       print("\n33333333 base_sym=", base_sym, ", amount=", amount);
+       symbol_type sym;
+       sym.value = base_sym.value & 0XFFFFFFFFFFFFFF00;
+       quant_after_fee = asset(amount, sym);
+       //quant_after_fee = convert(itr1->quote_sym, quant_after_fee);
+       base = convert(base_sym, quant_after_fee);
+       print("\n4444444 quant_after_fee=", quant_after_fee, ", base=", base);
+      
+       //print("bid step1: quant_after_fee=",quant_after_fee);
+       //quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
+       //print("bid step2: quant_after_fee=",quant_after_fee);
+   } else {
+       base = convert(base_sym, quantity);
+   }
+   price = convert(quote_sym, price2);
+   
+   print("\n before inline call sys.match --payer=",payer,", receiver=",receiver,", pair_id=",pair_id,", quantity=",quantity,", price=",price,", bid_or_ask=",bid_or_ask, ", base=",base);
+   
+   eosio::action(
+           permission_level{ exc_acc, N(active) },
+           N(sys.match), N(match),
+           std::make_tuple(payer, receiver, base, price, bid_or_ask)
+   ).send();
 }
 
 void token::trade( account_name from,
@@ -404,53 +404,50 @@ inline std::string trim(const std::string str) {
    return str1;
 }
 
-asset asset_from_string(const std::string& from)
-{
-    //std::string s = trim(from);
-    std::string s = from;
-    const char * str1 = s.c_str();
+asset asset_from_string(const std::string& from) {
+   //std::string s = trim(from);
+   std::string s = from;
+   const char * str1 = s.c_str();
 
-    // Find space in order to split amount and symbol
-    const char * pos = strchr(str1, ' ');
-    eosio_assert((pos != NULL), "Asset's amount and symbol should be separated with space");
-    auto space_pos = pos - str1;
-    //auto symbol_str = trim(s.substr(space_pos + 1));
-    auto symbol_str = s.substr(space_pos + 1);
-    auto amount_str = s.substr(0, space_pos);
-    eosio_assert((amount_str[0] != '-'), "now do not support negetive asset");
+   // Find space in order to split amount and symbol
+   const char * pos = strchr(str1, ' ');
+   eosio_assert((pos != NULL), "Asset's amount and symbol should be separated with space");
+   auto space_pos = pos - str1;
+   //auto symbol_str = trim(s.substr(space_pos + 1));
+   auto symbol_str = s.substr(space_pos + 1);
+   auto amount_str = s.substr(0, space_pos);
+   eosio_assert((amount_str[0] != '-'), "now do not support negetive asset");
 
-    // Ensure that if decimal point is used (.), decimal fraction is specified
-    const char * str2 = amount_str.c_str();
-    const char *dot_pos = strchr(str2, '.');
-    if (dot_pos != NULL) {
-       eosio_assert((dot_pos - str2 != amount_str.size() - 1), "Missing decimal fraction after decimal point");
-    }
-    print("------asset_from_string: symbol_str=",symbol_str, ", amount_str=",amount_str, "\n");
-    // Parse symbol
-    uint32_t precision_digits;
-    if (dot_pos != NULL) {
-       precision_digits = amount_str.size() - (dot_pos - str2 + 1);
-    } else {
-       precision_digits = 0;
-    }
+   // Ensure that if decimal point is used (.), decimal fraction is specified
+   const char * str2 = amount_str.c_str();
+   const char *dot_pos = strchr(str2, '.');
+   if (dot_pos != NULL) {
+      eosio_assert((dot_pos - str2 != amount_str.size() - 1), "Missing decimal fraction after decimal point");
+   }
+   print("------asset_from_string: symbol_str=",symbol_str, ", amount_str=",amount_str, "\n");
+   // Parse symbol
+   uint32_t precision_digits;
+   if (dot_pos != NULL) {
+      precision_digits = amount_str.size() - (dot_pos - str2 + 1);
+   } else {
+      precision_digits = 0;
+   }
 
-    symbol_type sym;
-    sym.value = ::eosio::string_to_symbol((uint8_t)precision_digits, symbol_str.c_str());
- print("----333--asset_from_string: sym=", sym, "\n");
-    // Parse amount
-    int64_t int_part, fract_part;
-    if (dot_pos != NULL) {
-       int_part = ::atoll(amount_str.substr(0, dot_pos - str2).c_str());
-       fract_part = ::atoll(amount_str.substr(dot_pos - str2 + 1).c_str());
-    } else {
-       int_part = ::atoll(amount_str.c_str());
-       fract_part = 0;
-    }
- print("----444--asset_from_string: int_part=", int_part, "precision_digits=", precision_digits, "\n");
-    int64_t amount = int_part * precision(precision_digits);
-    amount += fract_part;
+   symbol_type sym;
+   sym.value = ::eosio::string_to_symbol((uint8_t)precision_digits, symbol_str.c_str());
+   // Parse amount
+   int64_t int_part, fract_part;
+   if (dot_pos != NULL) {
+      int_part = ::atoll(amount_str.substr(0, dot_pos - str2).c_str());
+      fract_part = ::atoll(amount_str.substr(dot_pos - str2 + 1).c_str());
+   } else {
+      int_part = ::atoll(amount_str.c_str());
+      fract_part = 0;
+   }
+   int64_t amount = int_part * precision(precision_digits);
+   amount += fract_part;
 
-    return asset(amount, sym);
+   return asset(amount, sym);
 }
 
 void sys_match_match::parse(const string memo) {
@@ -460,9 +457,7 @@ void sys_match_match::parse(const string memo) {
    payer = ::eosio::string_to_name(memoParts[0].c_str());
    receiver = ::eosio::string_to_name(memoParts[1].c_str());
    pair_id = (uint32_t)atoi(memoParts[2].c_str());
-   print("------1111");
    price = asset_from_string(memoParts[3]);
-   print("------2222");
    bid_or_ask = (uint32_t)atoi(memoParts[4].c_str());
    eosio_assert(bid_or_ask == 0 || bid_or_ask == 1,"type is not adapted with sys_match_match");
    print("-------sys_match_match::parse payer=", payer, ", receiver=", receiver, ", pair_id=", pair_id, ", price=", price, " bid_or_ask=", bid_or_ask, "\n");
