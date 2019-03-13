@@ -244,6 +244,22 @@ Parameter Description：
 + type：the type of the trade     1 for create function of contract sys.match.  2 for addmortgage function of sys.bridge. 3 for exchange function of  contract sys.bridge 
 + memo：Memo is used to store the parameters of related functions, use; split related parameters to view related functions
 
+### 15.Take fees
+Function：
+```C++
+void claimfee(name trade,account_name trade_maker,account_name recv_account,coin_type type);
+```
+Example：
+```bash
+cleos push action sys.bridge claimfee '["eos.sys","biosbpa","eosforce",2]' -p biosbpa@active
+```
+Parameter Description：
++ trade:the name of market
++ trade_maker：the account who create the market
++ recv_account：the account to receive the  coin
++ type：the type of the coin            1 for base_coin and 2 for market_coin
+
+
 ## Market maker market making process
 ### 1.New trade pair
 ```bash
@@ -278,3 +294,7 @@ User eosforce spent 100.0000 SYS on the eosforce chain on this transaction pair 
 cleos push action sys.bridge claimmortgage '["eos.sys","biosbpa","eosforce","10.0000 SYS",2]' -p biosbpa@active
 ```
 **This operation can take out the 100.0000 SYS that the user just traded.**
+### 8.Take Fees
+```bash
+cleos push action sys.bridge claimfee '["eos.sys","biosbpa","eosforce",2]' -p biosbpa@active
+```
