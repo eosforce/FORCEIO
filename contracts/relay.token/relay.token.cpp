@@ -12,7 +12,7 @@
 namespace relay {
 
 // just a test version by contract
-void token::on( const name chain, const checksum256 block_id, const force::relay::action& act ) {
+void token::on( name chain, const checksum256 block_id, const force::relay::action& act ) {
    // TODO check account
 
    // TODO create accounts from diff chain
@@ -51,7 +51,7 @@ void token::create( account_name issuer,
 }
 
 
-void token::issue( const name chain, account_name to, asset quantity, string memo ) {
+void token::issue( name chain, account_name to, asset quantity, string memo ) {
    auto sym = quantity.symbol;
    eosio_assert(sym.is_valid(), "invalid symbol name");
    eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
@@ -80,6 +80,32 @@ void token::issue( const name chain, account_name to, asset quantity, string mem
    if( to != st.issuer ) {
       SEND_INLINE_ACTION(*this, transfer, { st.issuer, N(active) }, { st.issuer, to, chain, quantity, memo });
    }
+}
+
+void token::destroy( name chain, account_name from, asset quantity, string memo ) {
+   require_auth(from);
+
+   auto sym = quantity.symbol;
+   eosio_assert(sym.is_valid(), "invalid symbol name");
+   eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
+
+   auto sym_name = sym.name();
+   stats statstable(_self, chain);
+   auto existing = statstable.find(sym_name);
+   eosio_assert(existing != statstable.end(), "token with symbol does not exist, create token before issue");
+   const auto& st = *existing;
+
+   eosio_assert(quantity.is_valid(), "invalid quantity");
+   eosio_assert(quantity.amount > 0, "must issue positive quantity");
+
+   eosio_assert(quantity.symbol == st.supply.symbol, "symbol precision mismatch");
+   eosio_assert(quantity.amount <= st.supply.amount, "quantity exceeds available supply");
+
+   statstable.modify(st, 0, [&]( auto& s ) {
+      s.supply -= quantity;
+   });
+
+   sub_balance(from, chain, quantity);
 }
 
 void token::transfer( account_name from,
@@ -399,7 +425,7 @@ asset asset_from_string(const std::string& from)
     if (dot_pos != NULL) {
        eosio_assert((dot_pos - str2 != amount_str.size() - 1), "Missing decimal fraction after decimal point");
     }
- print("------asset_from_string: symbol_str=",symbol_str, ", amount_str=",amount_str, "\n");
+    print("------asset_from_string: symbol_str=",symbol_str, ", amount_str=",amount_str, "\n");
     // Parse symbol
     uint32_t precision_digits;
     if (dot_pos != NULL) {
@@ -434,7 +460,7 @@ void sys_match_match::parse(const string memo) {
    payer = ::eosio::string_to_name(memoParts[0].c_str());
    receiver = ::eosio::string_to_name(memoParts[1].c_str());
    pair_id = (uint32_t)atoi(memoParts[2].c_str());
-      print("------1111");
+   print("------1111");
    price = asset_from_string(memoParts[3]);
    print("------2222");
    bid_or_ask = (uint32_t)atoi(memoParts[4].c_str());
@@ -444,4 +470,4 @@ void sys_match_match::parse(const string memo) {
 
 };
 
-EOSIO_ABI(relay::token, (on)(create)(issue)(transfer)(trade))
+EOSIO_ABI(relay::token, (on)(create)(issue)(destroy)(transfer)(trade))
