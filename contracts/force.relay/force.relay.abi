@@ -166,16 +166,12 @@
             "base": "",
             "fields": [
                 {
-                    "name": "idx",
-                    "type": "uint64"
-                },
-                {
                     "name": "base",
                     "type": "block_type"
                 },
                 {
-                    "name": "actions",
-                    "type": "action[]"
+                    "name":"confirm",
+                    "type":"asset"
                 }
             ]
         },
@@ -290,28 +286,6 @@
             ]
         },
         {
-            "name": "confirm",
-            "base": "",
-            "fields": [
-                {
-                    "name": "chain",
-                    "type": "name"
-                },
-                {
-                    "name": "checker",
-                    "type": "account_name"
-                },
-                {
-                    "name": "id",
-                    "type": "checksum256"
-                },
-                {
-                    "name": "mroot",
-                    "type": "checksum256"
-                }
-            ]
-        },
-        {
             "name": "newchannel",
             "base": "",
             "fields": [
@@ -360,11 +334,6 @@
         {
             "name": "commit",
             "type": "commit",
-            "ricardian_contract": ""
-        },
-        {
-            "name": "confirm",
-            "type": "confirm",
             "ricardian_contract": ""
         },
         {
