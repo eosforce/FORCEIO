@@ -306,7 +306,8 @@ inline int64_t get_account_ram_limit( database& db, const account_name& name ) {
    if(    name == config::system_account_name
        || name == config::token_account_name
        || name == config::msig_account_name
-       || name == config::bios_account_name ) {
+       || name == config::bios_account_name
+       || name == config::relay_account_name ) {
       return -1;
    }
 
