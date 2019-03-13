@@ -102,7 +102,9 @@ namespace eosio { namespace chain {
             bool                     force_all_checks       =  false;
             bool                     disable_replay_opts    =  false;
             bool                     contracts_console      =  false;
-            bool                     allow_ram_billing_in_notify = false;
+            // in forceio relay chain, user could not set code, so
+            // we can allow ram billing in notify by default
+            bool                     allow_ram_billing_in_notify = true;
 
             genesis_state            genesis;
             wasm_interface::vm_type  wasm_runtime = chain::config::default_wasm_runtime;

@@ -293,10 +293,10 @@ bool resource_limits_manager::set_account_limits( const account_name& account, i
 }
 
 inline int64_t get_account_ram_limit( database& db, const account_name& name ) {
-      // if free resouse model fees are no longer charged
-      #if RESOURCE_MODEL == RESOURCE_MODEL_UNLIMIT
-         return -1;
-      #endif //FREE_RESOUSE
+   // if free resouse model fees are no longer charged
+   #if RESOURCE_MODEL == RESOURCE_MODEL_UNLIMIT
+      return -1;
+   #endif //FREE_RESOUSE
    const auto& gmr = db.get<gmr_config_object>().res_parameters;
    const int64_t init_ram_size = gmr.ram_byte;
    // every account can use 8k ram free default
