@@ -31,13 +31,16 @@ namespace eosio {
       eosio_assert( market_weight > 0,"invalid market_weight");
       eosio_assert( base_weight > 0,"invalid base_weight");
       tradepairs tradepair( _self,trade_maker);
+      
       trade_pair trademarket;
       trademarket.trade_name = trade;
       trademarket.trade_maker = trade_maker;
+
       trademarket.base.chain = base_chain;
       trademarket.base.amount = asset(0,coinbase_sym);
       trademarket.base.weight = base_weight;
       trademarket.base.fee_amount = asset(0,coinbase_sym);
+
       trademarket.market.chain = market_chain;
       trademarket.market.amount = asset(0,coinmarket_sym);
       trademarket.market.weight = market_weight;
@@ -411,9 +414,18 @@ namespace eosio {
       if(existing->market.amount.amount > 0) {
          send_transfer_action(existing->market.chain,maker_recv,existing->market.amount,std::string("remove market return the market coins"));
       }
+      if(existing->base.fee_amount.amount > 0) {
+         send_transfer_action(existing->base.chain,base_recv,existing->base.fee_amount,std::string("remove market return the base fee coins"));
+      }
+      if(existing->market.fee_amount.amount > 0) {
+         send_transfer_action(existing->market.chain,maker_recv,existing->market.fee_amount,std::string("remove market return the market fee coins"));
+      }
+
       tradepair.modify( *existing, 0, [&]( auto& s ) {
          s.base.amount -= s.base.amount;
          s.market.amount -= s.market.amount;
+         s.base.fee_amount -= s.base.amount;
+         s.market.fee_amount -= s.market.amount;
       });
       tradepair.erase(existing);
    }

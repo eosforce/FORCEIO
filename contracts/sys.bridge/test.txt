@@ -30,7 +30,7 @@
 
 ../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action relay.token trade '["eosforce","sys.bridge","eosforce","10000.0000 SYS",2,"eos.sys;biosbpa;2"]' -p eosforce@active
 
-../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action relay.token trade '["eosforce","sys.bridge","side","10000.0000 EOS",2,"eos.self;biosbpa;1"]' -p eosforce@active
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action relay.token trade '["eosforce","sys.bridge","eosforce","10000.0000 EOS",2,"eos.self;biosbpa;1"]' -p eosforce@active
 
 
 4.在交易对上面取钱
@@ -62,5 +62,12 @@
 ../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge frozenmarket '["eos.sys","biosbpa"]' -p biosbpa@active
 
 ../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge trawmarket '["eos.sys","biosbpa"]' -p biosbpa@active
+
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge claimfee '["eos.sys","biosbpa","eosforce",2]'  -p biosbpa@active
+
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge removemarket '["eos.sys","biosbpa","eosforce","eosforce"]'  -p biosbpa@active
+
+
+../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 --url http://127.0.0.1:8001 push action sys.bridge removemarket '["eos.sys","biosbpa","eosforce","eosforce"]'  -p biosbpa@active
 
 
