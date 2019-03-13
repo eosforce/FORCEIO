@@ -38,7 +38,7 @@ void relay::commit( const name chain, const account_name transfer, const relay::
    }
 
    if( has_commited ) {
-      relaystats.modify(relaystat, chain, [&]( auto& r ) {
+      relaystats.modify(relaystat, transfer, [&]( auto& r ) {
          for( auto& ucblock : r.unconfirms ) {
             if( ucblock.base.id == block.id
                 && ucblock.base.mroot == block.mroot
@@ -49,7 +49,7 @@ void relay::commit( const name chain, const account_name transfer, const relay::
          }
       });
    } else {
-      relaystats.modify(relaystat, chain, [&]( auto& r ) {
+      relaystats.modify(relaystat, transfer, [&]( auto& r ) {
          r.unconfirms.push_back(unconfirm_block{
                block, new_confirm
          });
@@ -63,13 +63,9 @@ void relay::commit( const name chain, const account_name transfer, const relay::
 }
 
 void relay::newchannel( const name chain, const checksum256 id ) {
-   print( "newchannel ", chain );
+   require_auth(chain);
 
-   // TODO account
-   account_name acc{chain};
-   require_auth(acc);
-
-   channels_table channels(_self, acc);
+   channels_table channels(_self, chain);
 
    eosio_assert(chain != 0 , "chain name cannot be zero");
    eosio_assert(channels.find(chain) == channels.end(), "channel has created");
@@ -89,14 +85,10 @@ void relay::newchannel( const name chain, const checksum256 id ) {
 void relay::newmap( const name chain, const name type,
                     const account_name act_account, const action_name act_name,
                     const account_name account, const bytes data ) {
-   print("newmap ", chain, " ", type);
+   require_auth(chain);
 
-   // TODO account
-   account_name acc{ chain };
-   require_auth(acc);
-
-   channels_table channels(_self, acc);
-   handlers_table handlers(_self, acc);
+   channels_table channels(_self, chain);
+   handlers_table handlers(_self, chain);
 
    eosio_assert(channels.find(chain) != channels.end(), "channel not created");
 
@@ -111,7 +103,7 @@ void relay::newmap( const name chain, const name type,
          h.data = data;
       });
    } else {
-      handlers.modify(hh, acc, [&]( auto& h ) {
+      handlers.modify(hh, chain, [&]( auto& h ) {
          h.actaccount = act_account;
          h.actname = act_name;
          h.account = account;
@@ -131,10 +123,10 @@ void relay::new_transfer( name chain, account_name transfer, const asset& deposi
    transfers_table transfers(_self, chain);
    auto it = transfers.find(transfer);
    if( it == transfers.end() ) {
-      channels.modify(channel, chain, [&](auto& cc){
+      channels.modify(channel, transfer, [&](auto& cc){
          cc.deposit_sum += deposit;
       });
-      transfers.emplace(chain, [&]( auto& h ) {
+      transfers.emplace(transfer, [&]( auto& h ) {
          h.chain = chain;
          h.transfer = transfer;
          h.deposit = deposit;
@@ -142,7 +134,7 @@ void relay::new_transfer( name chain, account_name transfer, const asset& deposi
    } else {
       const auto old = it->deposit;
       eosio_assert(old <= channel->deposit_sum, "old deposit should <= sum");
-      channels.modify(channel, chain, [&](auto& cc){
+      channels.modify(channel, transfer, [&](auto& cc){
          cc.deposit_sum -= old;
          cc.deposit_sum += deposit;
       });
@@ -179,7 +171,7 @@ void relay::onblock( const name chain, const account_name transfer, const block_
 
    eosio_assert(relaystat != relaystats.end(), "no relay stats");
 
-   relaystats.modify( relaystat, chain, [&]( auto& r ) {
+   relaystats.modify( relaystat, transfer, [&]( auto& r ) {
       r.last = block;
       r.unconfirms.clear();
    });
