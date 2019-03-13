@@ -49,10 +49,9 @@ namespace eosio { namespace chain {
       init_native_fee(config::msig_account_name, N(cancel),    asset(10000));
       init_native_fee(config::msig_account_name, N(exec),      asset(10000));
 
-      init_native_fee(config::relay_account_name, N(commit),     asset(5000));
-      init_native_fee(config::relay_account_name, N(confirm),    asset(5000));
-      init_native_fee(config::relay_account_name, N(newchannel), asset(15000));
-      init_native_fee(config::relay_account_name, N(newmap),     asset(15000));
+      init_native_fee(config::relay_account_name, N(commit),     asset(15000));
+      init_native_fee(config::relay_account_name, N(newchannel), asset(100*10000));
+      init_native_fee(config::relay_account_name, N(newmap),     asset(100*10000));
    }
 
    asset txfee_manager::get_required_fee( const controller& ctl, const action& act)const{
