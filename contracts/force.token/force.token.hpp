@@ -62,11 +62,11 @@ namespace eosio {
          
          inline asset get_balance( account_name owner, symbol_name sym )const;
 
-         void trade(    account_name from,
-                  account_name to,
-                  asset quantity,
-                  func_type type,
-                  string memo);
+         void trade( account_name   from,
+                     account_name   to,
+                     asset          quantity,
+                     func_type      type,
+                     string           memo);
 
       private:
          struct account {

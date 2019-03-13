@@ -304,6 +304,28 @@
       ]
     },
     {
+      "name": "claimfee",
+      "base": "",
+      "fields": [
+        {
+          "name": "trade",
+          "type": "name"
+        },
+        {
+          "name": "market_maker",
+          "type": "account_name"
+        },
+        {
+          "name": "recv_account",
+          "type": "account_name"
+        },
+        {
+          "name": "type",
+          "type": "uint64"
+        }
+      ]
+    },
+    {
       "name": "trans_contract",
       "base": "",
       "fields": [
@@ -366,6 +388,10 @@
         {
           "name": "weight",
           "type": "uint64"
+        },
+        {
+          "name": "fee_amount",
+          "type": "asset"
         }
       ]
     },
@@ -463,6 +489,11 @@
     {
       "name": "removemarket",
       "type": "removemarket",
+      "ricardian_contract": ""
+    },
+    {
+      "name": "claimfee",
+      "type": "claimfee",
       "ricardian_contract": ""
     }
   ],

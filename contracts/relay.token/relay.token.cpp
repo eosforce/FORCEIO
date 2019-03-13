@@ -12,7 +12,7 @@
 namespace relay {
 
 // just a test version by contract
-void token::on( const name chain, const checksum256 block_id, const force::relay::action& act ) {
+void token::on( name chain, const checksum256 block_id, const force::relay::action& act ) {
    // TODO check account
 
    // TODO create accounts from diff chain
@@ -51,7 +51,7 @@ void token::create( account_name issuer,
 }
 
 
-void token::issue( const name chain, account_name to, asset quantity, string memo ) {
+void token::issue( name chain, account_name to, asset quantity, string memo ) {
    auto sym = quantity.symbol;
    eosio_assert(sym.is_valid(), "invalid symbol name");
    eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
@@ -80,6 +80,32 @@ void token::issue( const name chain, account_name to, asset quantity, string mem
    if( to != st.issuer ) {
       SEND_INLINE_ACTION(*this, transfer, { st.issuer, N(active) }, { st.issuer, to, chain, quantity, memo });
    }
+}
+
+void token::destroy( name chain, account_name from, asset quantity, string memo ) {
+   require_auth(from);
+
+   auto sym = quantity.symbol;
+   eosio_assert(sym.is_valid(), "invalid symbol name");
+   eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
+
+   auto sym_name = sym.name();
+   stats statstable(_self, chain);
+   auto existing = statstable.find(sym_name);
+   eosio_assert(existing != statstable.end(), "token with symbol does not exist, create token before issue");
+   const auto& st = *existing;
+
+   eosio_assert(quantity.is_valid(), "invalid quantity");
+   eosio_assert(quantity.amount > 0, "must issue positive quantity");
+
+   eosio_assert(quantity.symbol == st.supply.symbol, "symbol precision mismatch");
+   eosio_assert(quantity.amount <= st.supply.amount, "quantity exceeds available supply");
+
+   statstable.modify(st, 0, [&]( auto& s ) {
+      s.supply -= quantity;
+   });
+
+   sub_balance(from, chain, quantity);
 }
 
 void token::transfer( account_name from,
@@ -289,12 +315,12 @@ void token::trade( account_name from,
       bri_add.parse(memo);
       
       eosio::action(
-            vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
-            SYS_BRIDGE,
-            N(addmortgage),
-            std::make_tuple(
-                  bri_add.trade_name.value,bri_add.trade_maker,from,chain,quantity,bri_add.type
-            )
+         vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
+         SYS_BRIDGE,
+         N(addmortgage),
+         std::make_tuple(
+               bri_add.trade_name.value,bri_add.trade_maker,from,chain,quantity,bri_add.type
+         )
       ).send();
    }
    else if (type == trade_type::bridge_exchange && to == SYS_BRIDGE) {
@@ -304,12 +330,12 @@ void token::trade( account_name from,
       bri_exchange.parse(memo);
 
       eosio::action(
-            vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
-            SYS_BRIDGE,
-            N(exchange),
-            std::make_tuple(
-                  bri_exchange.trade_name.value,bri_exchange.trade_maker,from,bri_exchange.recv,chain,quantity,bri_exchange.type
-            )
+         vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
+         SYS_BRIDGE,
+         N(exchange),
+         std::make_tuple(
+               bri_exchange.trade_name.value,bri_exchange.trade_maker,from,bri_exchange.recv,chain,quantity,bri_exchange.type
+         )
       ).send();
    }
    else if(type == trade_type::match && to == N(sys.match)) {
@@ -331,8 +357,8 @@ void splitMemo(std::vector<std::string>& results, const std::string& memo,char s
 
    for (auto it = start; it != end; ++it) {
      if (*it == separator) {
-       results.emplace_back(start, it);
-       start = it + 1;
+         results.emplace_back(start, it);
+         start = it + 1;
      }
    }
    if (start != end) results.emplace_back(start, end);
@@ -359,69 +385,24 @@ void sys_bridge_exchange::parse(const string memo) {
 }
 
 inline std::string ltrim(std::string str) {
-    auto str1 = str;
-    std::string::iterator p = std::find_if(str1.begin(), str1.end(), not1(std::ptr_fun<int, int>(isspace)));
-    str.erase(str1.begin(), p);
-    return str1;
+   auto str1 = str;
+   std::string::iterator p = std::find_if(str1.begin(), str1.end(), not1(std::ptr_fun<int, int>(isspace)));
+   str.erase(str1.begin(), p);
+   return str1;
 }
  
 inline std::string rtrim(std::string str) {
-    auto str1 = str;
-    std::string::reverse_iterator p = std::find_if(str1.rbegin(), str1.rend(), not1(std::ptr_fun<int , int>(isspace)));
-    str.erase(p.base(), str1.end());
-    return str1;
+   auto str1 = str;
+   std::string::reverse_iterator p = std::find_if(str1.rbegin(), str1.rend(), not1(std::ptr_fun<int , int>(isspace)));
+   str.erase(p.base(), str1.end());
+   return str1;
 }
 
 inline std::string trim(const std::string str) {
-    auto str1 = str;
-    ltrim(rtrim(str1));
-    return str1;
+   auto str1 = str;
+   ltrim(rtrim(str1));
+   return str1;
 }
-/*
-asset asset_from_string(const std::string& from)
-{
-    std::string s = trim(from);
-
-    // Find space in order to split amount and symbol
-    auto space_pos = s.find(' ');
-    eosio_assert((space_pos != std::string::npos), "Asset's amount and symbol should be separated with space");
-    auto symbol_str = trim(s.substr(space_pos + 1));
-    auto amount_str = s.substr(0, space_pos);
-    eosio_assert((amount_str[0] != '-'), "now do not support negetive asset");
-
-    // Ensure that if decimal point is used (.), decimal fraction is specified
-    auto dot_pos = amount_str.find('.');
-    if (dot_pos != std::string::npos) {
-       eosio_assert((dot_pos != amount_str.size() - 1), "Missing decimal fraction after decimal point");
-    }
-
-    // Parse symbol
-    uint32_t precision_digits;
-    if (dot_pos != std::string::npos) {
-       precision_digits = amount_str.size() - dot_pos - 1;
-    } else {
-       precision_digits = 0;
-    }
-
-    symbol_type sym;
-    sym.value = (::eosio::string_to_name(symbol_str.c_str()) << 8) | (uint8_t)precision_digits;
-
-    // Parse amount
-    int64_t int_part, fract_part;
-    if (dot_pos != string::npos) {
-       int_part = ::atoll(amount_str.substr(0, dot_pos).c_str());
-       fract_part = ::atoll(amount_str.substr(dot_pos + 1).c_str());
-    } else {
-       int_part = ::atoll(amount_str.c_str());
-       fract_part = 0;
-    }
-
-    int64_t amount = int_part * exchange::exchange::precision(precision_digits);
-    amount += fract_part;
-
-    return asset(amount, sym);
-}
-*/
 
 asset asset_from_string(const std::string& from)
 {
@@ -444,7 +425,7 @@ asset asset_from_string(const std::string& from)
     if (dot_pos != NULL) {
        eosio_assert((dot_pos - str2 != amount_str.size() - 1), "Missing decimal fraction after decimal point");
     }
- print("------asset_from_string: symbol_str=",symbol_str, ", amount_str=",amount_str, "\n");
+    print("------asset_from_string: symbol_str=",symbol_str, ", amount_str=",amount_str, "\n");
     // Parse symbol
     uint32_t precision_digits;
     if (dot_pos != NULL) {
@@ -479,7 +460,7 @@ void sys_match_match::parse(const string memo) {
    payer = ::eosio::string_to_name(memoParts[0].c_str());
    receiver = ::eosio::string_to_name(memoParts[1].c_str());
    pair_id = (uint32_t)atoi(memoParts[2].c_str());
-      print("------1111");
+   print("------1111");
    price = asset_from_string(memoParts[3]);
    print("------2222");
    bid_or_ask = (uint32_t)atoi(memoParts[4].c_str());
@@ -489,4 +470,4 @@ void sys_match_match::parse(const string memo) {
 
 };
 
-EOSIO_ABI(relay::token, (on)(create)(issue)(transfer)(trade))
+EOSIO_ABI(relay::token, (on)(create)(issue)(destroy)(transfer)(trade))

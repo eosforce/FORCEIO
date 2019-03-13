@@ -134,12 +134,11 @@ void token::add_balance( account_name owner, asset value, account_name ram_payer
    }
 }
 
-void token::trade( account_name from,
+void token::trade(account_name from,
                   account_name to,
                   asset quantity,
                   func_type type,
                   string memo ) {
-   //eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
    if (type == func_type::bridge_addmortgage && to == SYS_BRIDGE) {
       transfer(from, to,  quantity, memo);
       
@@ -147,12 +146,12 @@ void token::trade( account_name from,
       bri_add.parse(memo);
       
       eosio::action(
-            vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
-            SYS_BRIDGE,
-            N(addmortgage),
-            std::make_tuple(
-                  bri_add.trade_name.value,bri_add.trade_maker,from,N(self),quantity,bri_add.type
-            )
+         vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
+         SYS_BRIDGE,
+         N(addmortgage),
+         std::make_tuple(
+               bri_add.trade_name.value,bri_add.trade_maker,from,N(self),quantity,bri_add.type
+         )
       ).send();
    }
    else if (type == func_type::bridge_exchange && to == SYS_BRIDGE) {
@@ -162,21 +161,16 @@ void token::trade( account_name from,
       bri_exchange.parse(memo);
 
       eosio::action(
-            vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
-            SYS_BRIDGE,
-            N(exchange),
-            std::make_tuple(
-                  bri_exchange.trade_name.value,bri_exchange.trade_maker,from,bri_exchange.recv,N(self),quantity,bri_exchange.type
-            )
+         vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
+         SYS_BRIDGE,
+         N(exchange),
+         std::make_tuple(
+            bri_exchange.trade_name.value,bri_exchange.trade_maker,from,bri_exchange.recv,N(self),quantity,bri_exchange.type
+         )
       ).send();
    }
    else if(type == func_type::match) {
-      // account_name    escrow  = N(eosfund1);
-      // eosio_assert(to == escrow, "to must be escrow");
-      // transfer(from, to, chain, quantity, memo);
-      // sys_match_match smm;
-      // smm.parse(memo);
-      // trade_imp(smm.payer, smm.receiver, smm.pair_id, quantity, smm.price, smm.bid_or_ask);
+      eosio_assert(false,"invalid type");
    }
    else {
       eosio_assert(false,"invalid type");
@@ -191,8 +185,8 @@ void splitMemo(std::vector<std::string>& results, const std::string& memo,char s
 
    for (auto it = start; it != end; ++it) {
      if (*it == separator) {
-       results.emplace_back(start, it);
-       start = it + 1;
+         results.emplace_back(start, it);
+         start = it + 1;
      }
    }
    if (start != end) results.emplace_back(start, end);

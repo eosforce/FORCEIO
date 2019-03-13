@@ -252,6 +252,22 @@ cleos push action relay.token trade '["eosforce","sys.bridge","side","10000.0000
 + type：此次trade的类型       1代币sys.match的create功能 2代表sys.bridge的addmortgage功能 3代表sys.bridge的exchange功能
 + memo：memo用于存放相关功能的参数，用;拆分  相关具体参数查看相关功能 
 
+### 15.取费用
+功能：
+```C++
+void claimfee(name trade,account_name trade_maker,account_name recv_account,coin_type type);
+```
+示例：
+```bash
+cleos push action sys.bridge claimfee '["eos.sys","biosbpa","eosforce",2]' -p biosbpa@active
+```
+参数说明：
++ trade:交易对名称
++ trade_maker：创建交易对的账户的名称
++ recv_account：费用转入的账户
++ type：表明领取那个费用，1代表base_coin  2代表market_coin
+
+
 ## 做市商做市流程
 ### 1.新建交易对
 ```bash
@@ -280,9 +296,13 @@ cleos push action sys.bridge trawmarket '["eos.sys","biosbpa"]' -p biosbpa@activ
 ```bash
 cleos push action relay.token trade '["eosforce","sys.bridge","eosforce", "100.0000 SYS",3,"eos.sys;biosbpa;eosforce;2"]' -p eosforce@active
 ```
-用户eosforce在此交易对上花费了 eosforce链的100.0000 SYS 换取side链的 49.9995 EOS币
+用户eosforce在此交易对上花费了 eosforce链的100.0000 SYS 换取side链的 49.9750 EOS币
 ### 7.取币
 ```bash
-cleos push action relay.token trade '["eosforce","sys.bridge","eosforce","100.0000 SYS",2,"eos.sys;biosbpa;2"]' -p eosforce@active
+cleos push action sys.bridge claimmortgage '["eos.sys","biosbpa","eosforce","10.0000 SYS",2]' -p biosbpa@active
 ```
 **此操作可以将刚才用户进行交易的100.0000 SYS取出来**
+### 8.取费用
+```bash
+cleos push action sys.bridge claimfee '["eos.sys","biosbpa","eosforce",2]' -p biosbpa@active
+```

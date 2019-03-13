@@ -72,7 +72,7 @@ namespace eosio {
           * claim_amount ： the amount you claim the mortgage
           * type : to distinguish the base coin or the market coin 1 for base coin 2 for market coin
           */
-         void claimmortgage(name trade,account_name market_maker,account_name recv_account,asset claim_amount,coin_type type);
+         void claimmortgage(name trade,account_name trade_maker,account_name recv_account,asset claim_amount,coin_type type);
           /**
           * exchange the client use this function for exchange two coins
           * trade : the name of the trade market
@@ -113,6 +113,8 @@ namespace eosio {
          void settranscon(name chain,asset quantity,account_name contract_name);
 
          void removemarket(name trade,account_name trade_maker,account_name base_recv,account_name maker_recv);
+
+         void claimfee(name trade,account_name trade_maker,account_name recv_account,coin_type type);
       private:
          void send_transfer_action(name chain,account_name recv,asset quantity,string memo);
 
@@ -144,7 +146,8 @@ namespace eosio {
          struct coin {
             name chain;                //the name of chain
             asset  amount;             //the coin amont
-            uint64_t  weight;      //coin_base weight 
+            uint64_t  weight;          //coin_base weight 
+            asset fee_amount;          //the fee of the coin
          };
 
          struct trade_pair {          
@@ -165,5 +168,5 @@ namespace eosio {
                      const_mem_fun<trans_contract, uint128_t, &trans_contract::get_index_i128 >>> transcon;
    };
 
-   EOSIO_ABI( market, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket)(setfixedfee)(setprofee)(setprominfee)(setweight)(settranscon)(removemarket) ) 
+   EOSIO_ABI( market, (addmarket)(addmortgage)(claimmortgage)(exchange)(frozenmarket)(trawmarket)(setfixedfee)(setprofee)(setprominfee)(setweight)(settranscon)(removemarket)(claimfee) ) 
 } /// namespace eosio
