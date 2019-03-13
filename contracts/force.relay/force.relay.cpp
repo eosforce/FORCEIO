@@ -231,7 +231,7 @@ extern "C" {
       if( code == self || action == N(onerror) ) {
          force::relay thiscontract( self );
          switch( action ) {
-            EOSIO_API(  force::relay, (commit)(confirm)(newchannel)(newmap) )
+            EOSIO_API(  force::relay, (commit)(newchannel)(newmap) )
          }
       }
    }
