@@ -36,7 +36,10 @@
        "name": "cancel",
        "base": "",
        "fields": [
-        {"name": "order_id","type": "uint64"}
+        {"name": "maker","type": "account_name"},
+        {"name": "type","type": "uint32"},
+        {"name": "order_id","type": "uint64"},
+        {"name": "pair_id","type": "uint32"}
        ]
      },{
        "name": "done",

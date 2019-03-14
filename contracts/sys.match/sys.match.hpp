@@ -35,7 +35,7 @@ namespace exchange {
 
       void match( account_name payer, account_name receiver, asset base, asset price, uint32_t bid_or_ask );
       
-      void cancel(uint64_t order_id);
+      void cancel(account_name maker, uint32_t type, uint64_t order_id, uint32_t pair_id);
       
       void done(asset price, asset quantity, uint32_t bid_or_ask, time_point_sec timestamp);
       
@@ -46,8 +46,6 @@ namespace exchange {
       void match_for_ask( account_name payer, account_name receiver, asset base, asset price);
       
       asset calcfee(asset quant, uint64_t fee_rate);
-      
-      
 
       inline symbol_type get_pair_base( uint32_t pair_id ) const;
       inline symbol_type get_pair_quote( uint32_t pair_id ) const;

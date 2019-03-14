@@ -497,46 +497,96 @@ namespace exchange {
       
    }
 
-   void exchange::cancel(uint64_t order_id) {
+   /*
+   type: 0 - cancel designated order, 1 - cancel designated pairs' order, 2 - cancel all orders
+   */
+   void exchange::cancel(account_name maker, uint32_t type, uint64_t order_id, uint32_t pair_id) {
+      eosio_assert(type == 0 || type == 1 || type == 2, "invalid cancel type");
       trading_pairs   trading_pairs_table(_self,_self);
       orderbook       orders(_self,_self);
       asset           quant_after_fee;
       
-      auto itr = orders.find(order_id);
-      eosio_assert(itr != orders.cend(), "order record not found");
-      require_auth( itr->maker );
+      require_auth( maker );
       
-      uint128_t idxkey = (uint128_t(itr->base.symbol.name()) << 64) | itr->price.symbol.name();
-
-      //print("idxkey=",idxkey,",contract=",token_contract,",symbol=",token_symbol.value);
-
-      auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
-      auto itr1 = idx_pair.find(idxkey);
-      eosio_assert(itr1 != idx_pair.end(), "trading pair does not exist");
-      
-      // refund the escrow
-      if (itr->bid_or_ask) {
-         quant_after_fee = convert(itr1->quote_sym, itr->price) * itr->base.amount / precision(itr->base.symbol.precision());
-         //print("bid step1: quant_after_fee=",quant_after_fee);
-         quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
-         //print("bid step2: quant_after_fee=",quant_after_fee);
-         inline_transfer(escrow, itr->receiver, itr1->quote_chain, quant_after_fee, "");
+      if (type == 0) {
+         auto itr = orders.find(order_id);
+         eosio_assert(itr != orders.cend(), "order record not found");
+         eosio_assert(maker == itr->maker, "not the maker");
+         
+         uint128_t idxkey = (uint128_t(itr->base.symbol.name()) << 64) | itr->price.symbol.name();
+         
+         //print("idxkey=",idxkey,",contract=",token_contract,",symbol=",token_symbol.value);
+         
+         auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
+         auto itr1 = idx_pair.find(idxkey);
+         eosio_assert(itr1 != idx_pair.end(), "trading pair does not exist");
+         
+         // refund the escrow
+         if (itr->bid_or_ask) {
+            quant_after_fee = convert(itr1->quote_sym, itr->price) * itr->base.amount / precision(itr->base.symbol.precision());
+            //print("bid step1: quant_after_fee=",quant_after_fee);
+            quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
+            //print("bid step2: quant_after_fee=",quant_after_fee);
+            inline_transfer(escrow, itr->maker, itr1->quote_chain, quant_after_fee, "");
+         } else {
+            quant_after_fee = convert_asset(itr1->base_sym, itr->base);
+            quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, quant_after_fee);
+            //print("bid step2: quant_after_fee=",quant_after_fee);
+            inline_transfer(escrow, itr->maker, itr1->base_chain, quant_after_fee, "");
+         }
+         
+         orders.erase(itr);
       } else {
-         quant_after_fee = convert_asset(itr1->base_sym, itr->base);
-         quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, quant_after_fee);
-         //print("bid step2: quant_after_fee=",quant_after_fee);
-         inline_transfer(escrow, itr->receiver, itr1->base_chain, quant_after_fee, "");
+         auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
+
+         auto lower_key = std::numeric_limits<uint64_t>::lowest();
+         auto lower = orders.lower_bound( lower_key );
+         auto upper_key = std::numeric_limits<uint64_t>::max();
+         auto upper = orders.lower_bound( upper_key );
+         
+         if ( lower == orders.cend() ) {
+            return;
+         }
+         
+         for ( ; lower != upper; ) {
+            if (maker != lower->maker) {
+               lower++;
+               continue;
+            }
+            if (type == 1 && pair_id != lower->pair_id) {
+               lower++;
+               continue;
+            }
+            
+            auto itr = lower++;
+            uint128_t idxkey = compute_pair_index(itr->base.symbol, itr->price.symbol);
+            auto itr1 = idx_pair.find(idxkey);
+            // refund the escrow
+            if (itr->bid_or_ask) {
+               quant_after_fee = convert(itr1->quote_sym, itr->price) * itr->base.amount / precision(itr->base.symbol.precision());
+               //print("bid step1: quant_after_fee=",quant_after_fee);
+               quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
+               //print("bid step2: quant_after_fee=",quant_after_fee);
+               inline_transfer(escrow, itr->maker, itr1->quote_chain, quant_after_fee, "");
+            } else {
+               quant_after_fee = convert_asset(itr1->base_sym, itr->base);
+               quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, quant_after_fee);
+               //print("bid step2: quant_after_fee=",quant_after_fee);
+               inline_transfer(escrow, itr->maker, itr1->base_chain, quant_after_fee, "");
+            }
+            
+            orders.erase(itr);
+         }
       }
       
-      orders.erase(itr);
 
       return;
    }
    
    asset exchange::calcfee(asset quant, uint64_t fee_rate) {
-      asset fee = quant * fee_rate / max_fee_rate; // 万分之fee_rate,fee 是 asset已经防止溢出
+      asset fee = quant * fee_rate / max_fee_rate;
       if(fee_rate > 0 && fee.amount < 1) {
-          fee.amount = 1;//最少万分之一
+          fee.amount = 1;
       }
 
       return fee;
