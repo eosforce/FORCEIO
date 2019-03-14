@@ -270,19 +270,20 @@ void token::trade_imp( account_name payer, account_name receiver, uint32_t pair_
    
    //price   = convert(itr1->quote, price);
    if (bid_or_ask) {
-       int64_t amount = (quantity.amount / precision(quantity.symbol.precision())) / (price2.amount / precision(price2.symbol.precision()));
+       //int64_t amount = (quantity.amount / precision(quantity.symbol.precision())) / (price2.amount / precision(price2.symbol.precision()));
        // first, transfer the quote currency to escrow account
        //print("bid step0: quant_after_fee=",convert(itr1->quote, price)," base.amount =",base.amount, " precision =",precision(base.symbol.precision()));
        //quant_after_fee = exchange::exchange::convert(itr1->quote_sym, price) * base.amount / exchange::exchange::precision(base.symbol.precision());
-        print("\n2222222 quantity.amount=", quantity.amount, ", quantity.symbol.precision=", precision(quantity.symbol.precision()));
-       print("\n22222221111 price2.amount=", price2.amount, ", price2.symbol.precision()=", precision(price2.symbol.precision()));
-       print("\n33333333 base_sym=", base_sym, ", amount=", amount);
-       symbol_type sym;
-       sym.value = base_sym.value & 0XFFFFFFFFFFFFFF00;
-       quant_after_fee = asset(amount, sym);
+       //print("\n2222222 quantity.amount=", quantity.amount, ", quantity.symbol.precision=", precision(quantity.symbol.precision()));
+       //print("\n22222221111 price2.amount=", price2.amount, ", price2.symbol.precision()=", precision(price2.symbol.precision()));
+       //print("\n33333333 base_sym=", base_sym, ", amount=", amount);
+       //symbol_type sym;
+       //sym.value = base_sym.value & 0XFFFFFFFFFFFFFF00;
+       //quant_after_fee = asset(amount, sym);
+       quant_after_fee = quantity * precision(price2.symbol.precision()) / price2.amount; // to preserve precision
        //quant_after_fee = convert(itr1->quote_sym, quant_after_fee);
        base = convert(base_sym, quant_after_fee);
-       print("\n4444444 quant_after_fee=", quant_after_fee, ", base=", base);
+       print("\after convert: quant_after_fee=", quant_after_fee, ", base=", base);
       
        //print("bid step1: quant_after_fee=",quant_after_fee);
        //quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, quant_after_fee);
