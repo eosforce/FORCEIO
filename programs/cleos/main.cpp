@@ -1476,6 +1476,33 @@ struct bridge_setfixedfee_subcommand {
    }
 };
 
+struct bridge_removemarket_subcommand {
+   string trade_name;
+   string trade_maker;
+   string base_recv;
+   string market_recv;
+
+   bridge_removemarket_subcommand(CLI::App* actionRoot) {
+      auto bridge_removemarket = actionRoot->add_subcommand("removemarket", localized("remove the trade market"));
+      bridge_removemarket->add_option("trade_name", trade_name, localized("The name of the trade market"))->required();
+      bridge_removemarket->add_option("trade_maker", trade_maker, localized("The account who make the market"))->required();
+      bridge_removemarket->add_option("base_recv", base_recv, localized("The account to receive base coin and base fee"))->required();
+      bridge_removemarket->add_option("market_recv", market_recv, localized("The account to receive market coin and market fee"))->required();
+      
+      add_standard_transaction_options(bridge_removemarket);
+      
+      bridge_removemarket->set_callback([this] {
+         auto args = fc::mutable_variant_object()
+                     ("trade",trade_name)
+                     ("trade_maker",trade_maker)
+                     ("base_recv",base_recv)
+                     ("market_recv",market_recv);
+               
+         send_actions({create_action({permission_level{trade_maker,config::active_name}}, config::bridge_account_name, N(removemarket), args)});
+      });
+   }
+};
+
 struct bridge_setprofee_subcommand {
    string trade_name;
    string trade_maker;
@@ -3809,6 +3836,7 @@ int main( int argc, char** argv ) {
    auto bridge_exchange = bridge_exchange_subcommand(bridge);
    auto bridge_setweight = bridge_setweight_subcommand(bridge);
    auto bridge_claimfee = bridge_claimfee_subcommand(bridge);
+   auto bridge_removemarket = bridge_removemarket_subcommand(bridge);
 
    // system subcommand
    auto system = app.add_subcommand("system", localized("Send eosio.system contract action to the blockchain."), false);
