@@ -1192,6 +1192,70 @@ struct vote_producer_vote_subcommand {
    }
 };
 
+struct bridge_addmarket_subcommand {
+   string tradename;
+   string trade_maker;
+   int64_t type;
+   string base_chain;
+   string base_amount;
+   uint64_t base_weight;
+   string market_chain;
+   string market_amount;
+   uint64_t market_weight;
+
+   bridge_addmarket_subcommand(CLI::App* actionRoot) {
+      auto bridge_addmarket = actionRoot->add_subcommand("addmarket", localized("add a trade market on sys.bridge"));
+      bridge_addmarket->add_option("trade", tradename, localized("The name of the trade market"))->required();
+      bridge_addmarket->add_option("trade_maker", trade_maker, localized("The account(s) who make the market"))->required();
+      bridge_addmarket->add_option("type", type, localized("The type of the market 1 for fixed ratio"))->required();
+      bridge_addmarket->add_option("basechain", base_chain, localized("The chain name of the base coin"))->required();
+      bridge_addmarket->add_option("baseamount", base_amount, localized("The coin of the base coin"))->required();
+      bridge_addmarket->add_option("baseweight", base_weight, localized("The weight of the base coin"))->required();
+      bridge_addmarket->add_option("marketchain", market_chain, localized("The chain name of the market coin"))->required();
+      bridge_addmarket->add_option("marketamount", market_amount, localized("The coin of the market coin"))->required();
+      bridge_addmarket->add_option("marketweight", market_weight, localized("The weight of the market coin"))->required();
+      add_standard_transaction_options(bridge_addmarket);
+      
+      bridge_addmarket->set_callback([this] {
+         auto args = fc::mutable_variant_object()
+               ("trade", tradename )
+               ("trade_maker", trade_maker)
+               ("type", type)
+               ("base_chain", base_chain)
+               ("base_amount", base_amount )
+               ("base_weight", base_weight)
+               ("market_chain", market_chain)
+               ("market_amount", market_amount)
+               ("market_weight", market_weight);
+         send_actions({create_action({permission_level{trade_maker,config::active_name}}, config::bridge_account_name, N(addmarket), args)});
+      });
+   }
+};
+
+struct bridge_settranscon_subcommand {
+   string chain_name;
+   string quantity;
+   string contract_name;
+
+   bridge_settranscon_subcommand(CLI::App* actionRoot) {
+      auto bridge_settranscon = actionRoot->add_subcommand("settranscon", localized("add a trade market on sys.bridge"));
+      bridge_settranscon->add_option("chain_name", chain_name, localized("The chain name of the coin"))->required();
+      bridge_settranscon->add_option("quantity", quantity, localized("The coin"))->required();
+      bridge_settranscon->add_option("contract_name", contract_name, localized("The contract name to transfer the coin"))->required();
+      
+      add_standard_transaction_options(bridge_settranscon);
+      
+      bridge_settranscon->set_callback([this] {
+         auto args = fc::mutable_variant_object()
+            ("chain",chain_name)
+            ("quantity",quantity)
+            ("contract_name",contract_name);
+               
+         send_actions({create_action({permission_level{config::bridge_account_name,config::active_name}}, config::bridge_account_name, N(settranscon), args)});
+      });
+   }
+};
+
 struct list_bp_subcommand {
    uint32_t limit = 50;
    list_bp_subcommand(CLI::App* actionRoot) {
@@ -3424,6 +3488,13 @@ int main( int argc, char** argv ) {
 
       send_actions({chain::action{accountPermissions, wrap_con, "exec", variant_to_bin( wrap_con, N(exec), args ) }});
    });
+   // bridge subcommand
+   auto bridge = app.add_subcommand("bridge", localized("Send sys.bridge contract action to the blockchain."), false);
+   bridge->require_subcommand();
+
+   auto bridge_addmarket = bridge_addmarket_subcommand(bridge);
+   auto bridge_settranscon = bridge_settranscon_subcommand(bridge);
+
 
    // system subcommand
    auto system = app.add_subcommand("system", localized("Send eosio.system contract action to the blockchain."), false);
