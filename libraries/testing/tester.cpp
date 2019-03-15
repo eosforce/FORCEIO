@@ -168,6 +168,8 @@ namespace eosio { namespace testing {
 #include <force.token/force.token.abi.hpp>
 #include <force.msig/force.msig.wast.hpp>
 #include <force.msig/force.msig.abi.hpp>
+#include <force.relay/force.relay.wast.hpp>
+#include <force.relay/force.relay.abi.hpp>
 
          std::vector<uint8_t> wasm;
          abi_def abi;
@@ -189,6 +191,12 @@ namespace eosio { namespace testing {
          abi  = fc::json::from_string(force_msig_abi).as<abi_def>();
          cfg.msig.abi = fc::raw::pack(abi);
          cfg.msig.name = config::msig_account_name;
+            
+         wasm = wast_to_wasm(force_relay_wast);
+         cfg.relay.code.assign(wasm.begin(), wasm.end());
+         abi  = fc::json::from_string(force_relay_abi).as<abi_def>();
+         cfg.relay.abi = fc::raw::pack(abi);
+         cfg.relay.name = config::relay_account_name;
 		}
 
       open(nullptr);

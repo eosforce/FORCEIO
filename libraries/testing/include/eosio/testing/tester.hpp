@@ -426,6 +426,8 @@ namespace eosio { namespace testing {
 #include <force.token/force.token.abi.hpp>
 #include <force.msig/force.msig.wast.hpp>
 #include <force.msig/force.msig.abi.hpp>
+#include <force.relay/force.relay.wast.hpp>
+#include <force.relay/force.relay.abi.hpp>
 
          std::vector<uint8_t> wasm;
          abi_def abi;
@@ -447,6 +449,12 @@ namespace eosio { namespace testing {
          abi  = fc::json::from_string(force_msig_abi).as<abi_def>();
          vcfg.msig.abi = fc::raw::pack(abi);
          vcfg.msig.name = config::msig_account_name;
+            
+         wasm = wast_to_wasm(force_relay_wast);
+         vcfg.relay.code.assign(wasm.begin(), wasm.end());
+         abi  = fc::json::from_string(force_relay_abi).as<abi_def>();
+         vcfg.relay.abi = fc::raw::pack(abi);
+         vcfg.relay.name = config::relay_account_name;
 		}
 		
          for(int i = 0; i < boost::unit_test::framework::master_test_suite().argc; ++i) {
