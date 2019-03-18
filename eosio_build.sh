@@ -38,6 +38,10 @@
       exit 1
    }
 
+   is_noninteractive() {
+      [[ -n "${EOSIO_BUILD_NONINTERACTIVE+1}" ]]
+   }
+
    ARCH=$( uname )
    if [ "${SOURCE_DIR}" == "${PWD}" ]; then
       BUILD_DIR="${PWD}/build"
@@ -130,6 +134,9 @@
             h)
                usage
                exit 1
+            ;;
+            y)
+               EOSIO_BUILD_NONINTERACTIVE=1
             ;;
             \? )
                printf "\\n\\tInvalid Option: %s\\n" "-${OPTARG}" 1>&2
