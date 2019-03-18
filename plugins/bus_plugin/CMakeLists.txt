@@ -42,7 +42,7 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 file(GLOB HEADERS "include/eosio/grpc_plugin/*.hpp")
 include_directories("/usr/local/include/grpcpp")
 include_directories("/usr/local/include/google/protobuf")
-LINK_LIBRARIES("/usr/local/lib/libgrpc++.so" "/usr/local/lib/libgrpc++.so.1")
+#LINK_LIBRARIES("/usr/local/lib/libgrpc++.so" "/usr/local/lib/libgrpc++.so.1")
 add_library( bus_plugin
              bus_plugin.cpp
              relay_commit.grpc.pb.cc
