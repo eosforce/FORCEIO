@@ -41,6 +41,7 @@ Subcommands:
   sign                        Sign a transaction
   push                        Push arbitrary transactions to the blockchain
   multisig                    Multisig contract commands
+  trade                       Exchange tokens
 
 ```
 To get help with any particular subcommand, run it with no arguments as well:
@@ -1584,6 +1585,106 @@ struct bridge_setweight_subcommand {
                      ("base_weight",base_weight)
                      ("market_weight",market_weight);
          send_actions({create_action({permission_level{trade_maker,config::active_name}}, config::bridge_account_name, N(setweight), args)});
+      });
+   }
+};
+
+struct match_createpair_subcommand {
+   string base;
+   string base_chain;
+   string base_sym;
+   string quote;
+   string quote_chain;
+   string quote_sym;
+   string fee_rate;
+   string exc_acc;
+
+   match_createpair_subcommand(CLI::App* actionRoot) {
+      auto match_createpair = actionRoot->add_subcommand("create", localized("to create a trading pair."));
+      match_createpair->add_option("base", base, localized("The display name of base token of the trading pair"))->required();
+      match_createpair->add_option("base_chain", base_chain, localized("from which chain"))->required();
+      match_createpair->add_option("base_sym", base_sym, localized("from which token"))->required();
+      match_createpair->add_option("quote", quote, localized("The display name of quote token of the trading pair"))->required();
+      match_createpair->add_option("quote_chain", quote_chain, localized("from which chain"))->required();
+      match_createpair->add_option("quote_sym", quote_sym, localized("from which token"))->required();
+      match_createpair->add_option("fee_rate", fee_rate, localized("fee rate"))->required();
+      match_createpair->add_option("exc_acc", exc_acc, localized("exchange account"))->required();
+      
+      add_standard_transaction_options(match_createpair);
+      
+      match_createpair->set_callback([this] {
+         auto args = fc::mutable_variant_object()
+                     ("base", base)
+                     ("base_chain", base_chain)
+                     ("base_sym", base_sym)
+                     ("quote", quote)
+                     ("quote_chain", quote_chain)
+                     ("quote_sym", quote_sym)
+                     ("fee_rate", fee_rate)
+                     ("exc_acc", exc_acc);
+         send_actions({create_action({permission_level{exc_acc, config::active_name}}, N(sys.match), N(create), args)});
+      });
+   }
+};
+
+struct match_trade_subcommand {
+   string bid_or_ask;
+   string pair_id;
+   string payer;
+   string receiver;
+   string chain;
+   string quantity;
+   string price;
+
+   match_trade_subcommand(CLI::App* actionRoot) {
+      auto match_trade = actionRoot->add_subcommand("trade", localized("to exchange a token for another token."));
+      match_trade->add_option("bid_or_ask", bid_or_ask, localized("1 - buy, 0 - sell"))->required();
+      match_trade->add_option("pair_id", pair_id, localized("pair id"))->required();
+      match_trade->add_option("payer", payer, localized("originating account"))->required();
+      match_trade->add_option("receiver", receiver, localized("receiving account"))->required();
+      match_trade->add_option("chain", chain, localized("from which chain"))->required();
+      match_trade->add_option("quantity", quantity, localized("the amount to pay"))->required();
+      match_trade->add_option("price", price, localized("price"))->required();
+      
+      add_standard_transaction_options(match_trade);
+      
+      match_trade->set_callback([this] {
+         string memo = payer + ";" + receiver + ";" + pair_id + ";" + price + ";" + bid_or_ask;
+        
+         auto args = fc::mutable_variant_object()
+                     ("from", payer)
+                     ("to", "sys.match")
+                     ("chain", chain)
+                     ("quantity", quantity)
+                     ("type", 1)
+                     ("memo", memo);
+         send_actions({create_action({permission_level{payer, config::active_name}}, config::relay_token_account_name, N(trade), args)});
+      });
+   }
+};
+
+struct match_cancel_subcommand {
+   string maker;
+   string type;
+   string order_id;
+   string pair_id;
+
+   match_cancel_subcommand(CLI::App* actionRoot) {
+      auto match_cancel = actionRoot->add_subcommand("cancel", localized("to cancel orders."));
+      match_cancel->add_option("maker", maker, localized("the account that makes the order"))->required();
+      match_cancel->add_option("type", type, localized("cancel type: 0 - designated order_id , 1 - designated pair_id, 2 - all orders"))->required();
+      match_cancel->add_option("order_id", order_id, localized("order id"))->required();
+      match_cancel->add_option("pair_id", pair_id, localized("the trading pair id"))->required();
+      
+      add_standard_transaction_options(match_cancel);
+      
+      match_cancel->set_callback([this] {
+         auto args = fc::mutable_variant_object()
+                     ("maker", maker)
+                     ("type", type)
+                     ("order_id", order_id)
+                     ("pair_id", pair_id);
+         send_actions({create_action({permission_level{maker, config::active_name}}, N(sys.match), N(cancel), args)});
       });
    }
 };
@@ -3837,6 +3938,14 @@ int main( int argc, char** argv ) {
    auto bridge_setweight = bridge_setweight_subcommand(bridge);
    auto bridge_claimfee = bridge_claimfee_subcommand(bridge);
    auto bridge_removemarket = bridge_removemarket_subcommand(bridge);
+
+   // match subcommand
+   auto match = app.add_subcommand("match", localized("Send sys.match contract action to the blockchain."), false);
+   match->require_subcommand();
+   
+   auto match_createpair = match_createpair_subcommand(match);
+   auto match_trade = match_trade_subcommand(match);
+   auto match_cancel = match_cancel_subcommand(match);
 
    // system subcommand
    auto system = app.add_subcommand("system", localized("Send eosio.system contract action to the blockchain."), false);
