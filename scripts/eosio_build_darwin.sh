@@ -70,6 +70,7 @@
 	then
 		printf "\\tHomebrew must be installed to compile EOS.IO\\n\\n"
 		printf "\\tDo you wish to install Home Brew?\\n"
+		if is_noninteractive; then exec <<< "1"; fi
 		select yn in "Yes" "No"; do
 			case "${yn}" in
 				[Yy]* )
@@ -138,6 +139,7 @@
 		printf "\\n\\tThe following dependencies are required to install EOSIO.\\n"
 		printf "\\n\\t${DISPLAY}\\n\\n"
 		echo "Do you wish to install these packages?"
+		if is_noninteractive; then exec <<< "1"; fi
 		select yn in "Yes" "No"; do
 			case $yn in
 				[Yy]* )
@@ -159,13 +161,12 @@
 						printf "\\tExiting now.\\n\\n"
 						exit 1;
 					fi
-                                        if [[ "$DEP" == "llvm@4" ]]; then
-                                                "${BREW}" unlink ${DEP}
-					elif ! "${BREW}" unlink ${DEP} && "${BREW}" link --force ${DEP}
-					then
-						printf "\\tHomebrew exited with the above errors.\\n"
-						printf "\\tExiting now.\\n\\n"
-						exit 1;
+					if [ $PERMISSION_GETTEXT -eq 1 ]; then
+						if ! "${BREW}" link --force gettext; then
+							printf "\\tHomebrew exited with the above errors.\\n"
+							printf "\\tExiting now.\\n\\n"
+							exit 1;
+						fi
 					fi
 				break;;
 				[Nn]* ) echo "User aborting installation of required dependencies, Exiting now."; exit;;
@@ -184,6 +185,7 @@
 			printf "\\tFound Boost Version %s.\\n" "${BVERSION}"
 			printf "\\tEOS.IO requires Boost version 1.67.\\n"
 			printf "\\tWould you like to uninstall version %s and install Boost version 1.67.\\n" "${BVERSION}"
+			if is_noninteractive; then exec <<< "1"; fi
 			select yn in "Yes" "No"; do
 				case $yn in
 					[Yy]* )
@@ -218,7 +220,7 @@
 			done
 		fi
 		printf "\\tInstalling boost libraries.\\n"
-		if ! "${BREW}" install https://raw.githubusercontent.com/Homebrew/homebrew-core/f946d12e295c8a27519b73cc810d06593270a07f/Formula/boost.rb
+		if ! "${BREW}" install "${SOURCE_DIR}/scripts/boost.rb"
 		then
 			printf "\\tUnable to install boost 1.67 libraries at this time. 0\\n"
 			printf "\\tExiting now.\\n\\n"
@@ -478,6 +480,64 @@
 	else
 		printf "\\tWASM found at /usr/local/wasm/bin/.\\n"
 	fi
+	
+	if [ ! -e "${PROTOC}" ]; then
+		printf "\\n\\tstart to install protobuf\\n"
+		if ! cd externals/grpc/third_party/protobuf/ 
+		then
+			printf "\\n\\tunable to enter direction protobuf.\\n"
+			printf "\\n\\tExiting now.\\n\\n"
+			exit 1;
+		fi
+		if ! ./autogen.sh 
+		then
+			printf "\\n\\tunable to make configure.\\n"
+			printf "\\n\\tExiting now.\\n\\n"
+			exit 1;
+		fi
+		if ! ./configure --prefix="${HOME}"/opt/protobuf
+		then
+			printf "\\n\\tconfigure fail.\\n"
+			printf "\\n\\tExiting now.\\n\\n"
+			exit 1;
+		fi
+		if ! make -j"${CPU_CORE}"
+		then
+			printf "\\n\\tprotobuf make fail.\\n"
+			printf "\\n\\tExiting now.\\n\\n"
+			exit 1;
+		fi
+		if ! make install
+		then
+			printf "\\n\\tprotobuf unable to enter direction protobuf.\\n"
+			printf "\\n\\tExiting now.\\n\\n"
+			exit 1;
+		fi	
+	fi
+	if [ ! -e "${GRPC_CPP_PLUGIN}" ]; then
+		printf "\\n\\tstart to install grpc\\n"
+		if ! cd ../..
+		then
+			printf "\\n\\tunable to enter direction grpc.\\n"
+			printf "\\n\\tExiting now.\\n\\n"
+			exit 1;
+		fi
+		if ! make -j"${CPU_CORE}"
+		then
+			printf "\\n\\tgrpc make fail.\\n"
+			printf "\\n\\tExiting now.\\n\\n"
+			exit 1;
+		fi
+		if ! make install prefix="${HOME}"/opt/grpc
+		then
+			printf "\\n\\tgrpc make install fail.\\n"
+			printf "\\n\\tExiting now.\\n\\n"
+			exit 1;
+		fi
+	fi
+
+
+
 
 	function print_instructions()
 	{

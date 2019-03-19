@@ -166,16 +166,34 @@
             "base": "",
             "fields": [
                 {
-                    "name": "idx",
-                    "type": "uint64"
-                },
-                {
                     "name": "base",
                     "type": "block_type"
                 },
                 {
-                    "name": "actions",
-                    "type": "action[]"
+                    "name":"confirm",
+                    "type":"asset"
+                }
+            ]
+        },
+        {
+            "name": "relay_transfer",
+            "base": "",
+            "fields": [
+                {
+                    "name": "chain",
+                    "type": "name"
+                },
+                {
+                    "name": "transfer",
+                    "type": "account_name"
+                },
+                {
+                    "name": "deposit",
+                    "type": "asset"
+                },
+                {
+                    "name": "last",
+                    "type": "block_type"
                 }
             ]
         },
@@ -238,6 +256,10 @@
                 {
                     "name": "id",
                     "type": "checksum256"
+                },
+                {
+                    "name": "deposit_sum",
+                    "type": "asset"
                 }
             ]
         },
@@ -260,28 +282,6 @@
                 {
                     "name": "actions",
                     "type": "action[]"
-                }
-            ]
-        },
-        {
-            "name": "confirm",
-            "base": "",
-            "fields": [
-                {
-                    "name": "chain",
-                    "type": "name"
-                },
-                {
-                    "name": "checker",
-                    "type": "account_name"
-                },
-                {
-                    "name": "id",
-                    "type": "checksum256"
-                },
-                {
-                    "name": "mroot",
-                    "type": "checksum256"
                 }
             ]
         },
@@ -337,11 +337,6 @@
             "ricardian_contract": ""
         },
         {
-            "name": "confirm",
-            "type": "confirm",
-            "ricardian_contract": ""
-        },
-        {
             "name": "newchannel",
             "type": "newchannel",
             "ricardian_contract": ""
@@ -378,6 +373,17 @@
         {
             "name": "relaystat",
             "type": "block_relay_stat",
+            "index_type": "i64",
+            "key_names": [
+                "chain"
+            ],
+            "key_types": [
+                "name"
+            ]
+        },
+        {
+            "name": "transfers",
+            "type": "relay_transfer",
             "index_type": "i64",
             "key_names": [
                 "chain"
