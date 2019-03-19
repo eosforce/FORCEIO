@@ -110,9 +110,8 @@ namespace exchange {
                        account_name payer, 
                        account_name receiver);
 
-      static asset to_asset( account_name code, name chain, const asset& a );
+      static asset to_asset( account_name code, name chain, symbol_type sym, const asset& a );
       static asset convert( symbol_type expected_symbol, const asset& a );
-      static asset convert_asset( symbol_type expected_symbol, const asset& a );
       static int64_t precision(uint64_t decimals)
       {
          int64_t p10 = 1;
