@@ -805,25 +805,25 @@ namespace eosio { namespace testing {
    }
 
    void base_tester::set_fee( account_name account, 
-     			 action_name action, 
-   				 asset fee, 
-   				 uint32_t cpu_limit, 
-   				 uint32_t net_limit,
-   				 uint32_t ram_limit,
-   				 const private_key_type* signer) {
+     			                  action_name action, 
+   				               asset fee, 
+   				               uint32_t cpu_limit, 
+   				               uint32_t net_limit,
+   				               uint32_t ram_limit,
+   				               const private_key_type* signer) {
    	//   if(fee_map[action] == account) return ;
       //   fee_map[action] = account;
-   	  signed_transaction trx;
-   	  account_name auth_acc;
-   	  if (cpu_limit == 0 && net_limit == 0 && ram_limit)
-   	    auth_acc = account;
-   	  else 
+   	signed_transaction trx;
+   	account_name auth_acc;
+   	if (cpu_limit == 0 && net_limit == 0 && ram_limit)
+   	   auth_acc = account;
+   	else 
       {
-        auth_acc = config::chain_config_name;
+         auth_acc = config::chain_config_name;
       }
       trx.actions.emplace_back( vector<permission_level>{{auth_acc, config::active_name}},
                                 setfee{
-                                   .account    = auth_acc,
+                                   .account    = account,
                                    .action     = action,
                                    .fee        = fee,
                                    .cpu_limit  = cpu_limit,
@@ -835,22 +835,22 @@ namespace eosio { namespace testing {
       if( signer ) {
          trx.sign( *signer, control->get_chain_id()  );
       } else {
-         trx.sign( get_private_key( account, "active" ), control->get_chain_id()  );
+         trx.sign( get_private_key( auth_acc, "active" ), control->get_chain_id()  );
       }
       push_transaction( trx );
    }
 
    void base_tester::set_fee( account_name auth, 
-   				 account_name account,
-     			 action_name action, 
-   				 asset fee, 
-   				 uint32_t cpu_limit, 
-   				 uint32_t net_limit,
-   				 uint32_t ram_limit,
-   				 const private_key_type* signer) {
+   				               account_name account,
+     			                  action_name action, 
+   				               asset fee, 
+   				               uint32_t cpu_limit, 
+   				               uint32_t net_limit,
+   				               uint32_t ram_limit,
+   				               const private_key_type* signer) {
    	//   if(fee_map[action] == account) return ;
       //   fee_map[action] = account;
-   	  signed_transaction trx;
+   	signed_transaction trx;
       trx.actions.emplace_back( vector<permission_level>{{auth,config::active_name}},
                                 setfee{
                                    .account    = account,
@@ -874,7 +874,6 @@ namespace eosio { namespace testing {
       return chain_transactions.count(txid) != 0;
    }
 
-
    const transaction_receipt& base_tester::get_transaction_receipt( const transaction_id_type& txid ) const {
       return chain_transactions.at(txid);
    }
@@ -882,7 +881,6 @@ namespace eosio { namespace testing {
    /**
     *  Reads balance as stored by generic_currency contract
     */
-
    asset base_tester::get_currency_balance( const account_name& code,
                                        const symbol&       asset_symbol,
                                        const account_name& account ) const {
@@ -902,6 +900,49 @@ namespace eosio { namespace testing {
       return asset(result, asset_symbol);
    }
 
+   /**
+    *  Reads balance as stored by generic_currency contract
+    */
+   asset base_tester::get_relay_token_currency_balance( const account_name& code,
+                                       const name&         asset_chain,
+                                       const symbol&       asset_symbol,
+                                       const account_name& account ) const {
+      const auto& db  = control->db();
+      const auto* tbl = db.template find<table_id_object, by_code_scope_table>(boost::make_tuple(code, account, N(accounts)));
+      share_type  result = 0;
+      symbol      asset_symbol2 = asset_symbol;
+      struct account {
+               uint64_t id;
+               asset balance;
+               name  chain;
+            } acc;
+
+      // the balance is implied to be 0 if either the table or row does not exist
+      if (tbl) {
+         //const auto& kv_index = db.get_index<key_value_index, by_scope_primary>();
+         const auto& secondary_index = db.get_index<index128_index>().indices();
+         //const auto& secondary_index_by_primary = secondary_index.get<by_primary>();
+         const auto& secondary_index_by_secondary = secondary_index.get<by_secondary>();
+         uint128_t acnt_idx = (uint128_t(asset_chain.value) << 64) + uint128_t(asset_symbol.to_symbol_code());
+         const auto idx_obj_iter = secondary_index_by_secondary.lower_bound(boost::make_tuple(tbl->id, acnt_idx, 0));
+         if ( idx_obj_iter == secondary_index_by_secondary.cend() || 
+            !( idx_obj_iter->t_id == tbl->id && idx_obj_iter->secondary_key == acnt_idx ) ) {
+            return asset(0, asset_symbol);
+         }
+         const auto *obj = db.template find<key_value_object, by_scope_primary>(boost::make_tuple(tbl->id, idx_obj_iter->primary_key));
+         if (obj) {
+            //balance is the second field in the serialization
+            fc::datastream<const char *> ds(obj->value.data(), obj->value.size());
+            fc::raw::unpack(ds, result);
+            fc::raw::unpack(ds, result);
+            fc::raw::unpack(ds, asset_symbol2);
+            ilog("get_relay_token_currency_balance balance: ${balance}",
+               ("balance", result)
+            );
+         }
+      }
+      return asset(result, asset_symbol2);
+   }
 
    vector<char> base_tester::get_row_by_account( uint64_t code, uint64_t scope, uint64_t table, const account_name& act ) const {
       vector<char> data;

@@ -219,6 +219,11 @@ namespace eosio { namespace testing {
          asset                         get_currency_balance( const account_name& contract,
                                                              const symbol&       asset_symbol,
                                                              const account_name& account ) const;
+                                                             
+         asset get_relay_token_currency_balance( const account_name& code,
+                                       const name&         asset_chain,
+                                       const symbol&       asset_symbol,
+                                       const account_name& account ) const;
 
          vector<char> get_row_by_account( uint64_t code, uint64_t scope, uint64_t table, const account_name& act ) const;
 
