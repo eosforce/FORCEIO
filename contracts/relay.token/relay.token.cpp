@@ -137,6 +137,11 @@ void token::transfer( account_name from,
    add_balance(to, chain, quantity, from);
 }
 
+int64_t token::get_current_age(asset balance,int64_t first,int64_t last) {
+   return balance.amount * 0.1 * (last - first);
+}
+
+//当币改变的时候算力的权重同时加以改变
 void token::sub_balance( account_name owner, name chain, asset value ) {
    accounts from_acnts(_self, owner);
 
@@ -146,13 +151,17 @@ void token::sub_balance( account_name owner, name chain, asset value ) {
    eosio_assert(from.balance.amount >= value.amount, "overdrawn balance");
    eosio_assert(from.chain == chain, "symbol chain mismatch");
 
-   if( from.balance.amount == value.amount ) {
-      from_acnts.erase(from);
-   } else {
+   // if( from.balance.amount == value.amount ) {
+   //    //from_acnts.erase(from);
+      
+   // } else {
+    //  auto NewAge = 
       from_acnts.modify(from, owner, [&]( auto& a ) {
+         a.mineage += get_current_age(a.balance,a.mineage_update_height,current_block_num());
+         a.mineage_update_height = current_block_num();
          a.balance -= value;
       });
-   }
+   // }
 }
 
 void token::add_balance( account_name owner, name chain, asset value, account_name ram_payer ) {
@@ -182,10 +191,12 @@ void token::add_balance( account_name owner, name chain, asset value, account_na
          a.balance = value;
          a.chain = chain;
          a.mineage = 0;
-         a.mineage_update_height = 0;
+         a.mineage_update_height = current_block_num();
       });
    } else {
       idx.modify(to, 0, [&]( auto& a ) {
+         a.mineage += get_current_age(a.balance,a.mineage_update_height,current_block_num());
+         a.mineage_update_height = current_block_num();
          a.balance += value;
       });
    }

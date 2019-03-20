@@ -312,6 +312,44 @@
                "type":"name"
             }
          ]
+      },
+      {
+         "name":"reward_currency",
+         "base":"",
+         "fields":[
+            {
+               "name":"supply",
+               "type":"asset"
+            },
+            {
+               "name":"chain",
+               "type":"name"
+            }
+         ]
+      },
+      {
+         "name":"addreward",
+         "base":"",
+         "fields":[
+            {
+               "name":"chain",
+               "type":"name"
+            },
+            {
+               "name":"supply",
+               "type":"asset"
+            }
+         ]
+      },
+      {
+         "name":"rewardmine",
+         "base":"",
+         "fields":[
+            {
+               "name":"quantity",
+               "type":"asset"
+            }
+         ]
       }
    ],
    "actions":[
@@ -339,11 +377,20 @@
          "name":"transfer",
          "type":"transfer",
          "ricardian_contract":""
-      }
-      ,
+      },
       {
          "name":"trade",
          "type":"trade",
+         "ricardian_contract":""
+      },
+      {
+         "name":"addreward",
+         "type":"addreward",
+         "ricardian_contract":""
+      },
+      {
+         "name":"rewardmine",
+         "type":"rewardmine",
          "ricardian_contract":""
       }
    ],
@@ -373,6 +420,17 @@
       {
          "name":"stat",
          "type":"currency_stats",
+         "index_type":"i64",
+         "key_names":[
+            "currency"
+         ],
+         "key_types":[
+            "uint64"
+         ]
+      },
+      {
+         "name":"reward",
+         "type":"reward_currency",
          "index_type":"i64",
          "key_names":[
             "currency"

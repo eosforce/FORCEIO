@@ -157,6 +157,8 @@ private:
    void sub_balance( account_name owner, name chain, asset value );
    void add_balance( account_name owner, name chain, asset value, account_name ram_payer );
 
+   int64_t get_current_age(asset balance,int64_t first,int64_t last);
+
 public:
    struct transfer_args {
       account_name from;

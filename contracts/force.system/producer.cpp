@@ -112,7 +112,14 @@ namespace eosiosystem {
    }
 
    void system_contract::reward_mines() {
-
+      eosio::action(
+         vector<eosio::permission_level>{{N(force.relay),N(active)}},
+         N(force.relay),
+         N(rewardmine),
+         std::make_tuple(
+            asset(BLOCK_REWARDS_MINERS)
+         )
+      ).send();
    }
 
    // TODO it need change if no bonus to accounts
