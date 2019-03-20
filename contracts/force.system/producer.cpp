@@ -34,10 +34,15 @@ namespace eosiosystem {
                                                  { ::config::system_account_name, 
                                                    asset(BLOCK_REWARDS_BP), 
                                                    "issue tokens for producer pay"} );
-      //reward bps
-      reward_bps(block_producers);
+
 
       if( current_block_num() % UPDATE_CYCLE == 0 ) {
+         //先做奖励结算 然后再做BP换届
+         //开发者账户   略
+         //reward bps
+         reward_bps(block_producers);
+         //reward miners
+         reward_mines();
          //update schedule
          update_elected_bps();
       }
@@ -106,6 +111,10 @@ namespace eosiosystem {
       set_proposed_producers(packed_schedule.data(), packed_schedule.size());
    }
 
+   void system_contract::reward_mines() {
+
+   }
+
    // TODO it need change if no bonus to accounts
 
    void system_contract::reward_bps( account_name block_producers[] ) {
@@ -129,16 +138,16 @@ namespace eosiosystem {
             continue;
          }
 
-         auto bp_reward = static_cast<int64_t>( BLOCK_REWARDS_BP * double(it->total_staked) / double(staked_all_bps));
+         auto bp_reward = static_cast<int64_t>( BLOCK_REWARDS_BP / 2 * double(it->total_staked) / double(staked_all_bps));
 
          //reward bp account
-         auto bp_account_reward = bp_reward * 15 / 100 + bp_reward * 70 / 100 * it->commission_rate / 10000;
+         auto bp_account_reward = bp_reward * 30 / 100 + bp_reward * 70 / 100 * it->commission_rate / 10000;
          if( is_super_bp(block_producers, it->name)) {
-            bp_account_reward += bp_reward * 15 / 100;
+            bp_account_reward += bp_reward * 30 / 100;
          }
 
          //reward bp and pool
-         auto bp_rewards_pool = bp_reward * 70 / 100 * ( 10000 - it->commission_rate ) / 10000;
+         auto bp_rewards_pool = bp_reward * 40 / 100 * ( 10000 - it->commission_rate ) / 10000;
          const auto& bp = bps_tbl.get(it->name, "bpname is not registered");
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
             b.rewards_pool += asset(bp_rewards_pool);

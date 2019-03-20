@@ -47,6 +47,9 @@ void token::create( account_name issuer,
       s.max_supply = maximum_supply;
       s.issuer = issuer;
       s.chain = chain;
+      s.reward_pool = asset(0);
+      s.total_mineage = 0;
+      s.total_mineage_update_height = current_block_num();
    });
 }
 
@@ -178,6 +181,8 @@ void token::add_balance( account_name owner, name chain, asset value, account_na
          a.id = id;
          a.balance = value;
          a.chain = chain;
+         a.mineage = 0;
+         a.mineage_update_height = 0;
       });
    } else {
       idx.modify(to, 0, [&]( auto& a ) {
@@ -319,7 +324,45 @@ void token::trade( account_name from,
       eosio_assert(false,"invalid trade type");
    }
    
+}
+
+void token::addreward(name chain,asset supply) {
+   require_auth(_self);
+
+   auto sym = supply.symbol;
+   eosio_assert(sym.is_valid(), "invalid symbol name");
    
+   rewards rewardtable(_self, _self);
+   auto existing = rewardtable.find(sym.name());
+   eosio_assert(existing == rewardtable.end(), "token with symbol already exists");
+
+   rewardtable.emplace(_self, [&]( auto& s ) {
+      s.supply = supply;
+      s.chain = chain;
+   });
+}
+
+void token::rewardmine(asset quantity) {
+   //遍历所有可以领取分红的币种  获取总算力  然后根据币种的算力分配分红
+   rewards rewardtable(_self, _self);
+   uint64_t total_power = 0;
+   //先算总算力
+   for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
+      //根据it->chain  和it->supply 获取算力值     暂订算力值为supply.amount的0.1
+      total_power += it->supply.amount * 0.1;
+   }
+   //根据不同币种的不同算力值来分配分红
+   for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
+      stats statstable(_self, it->chain);
+      auto existing = statstable.find(it->supply.symbol.name());
+      eosio_assert(existing == statstable.end(), "token with symbol already exists");
+
+      auto devide_amount = quantity.amount * it->supply.amount * 0.1 / total_power;
+      statstable.modify(*existing, 0, [&]( auto& s ) {
+         s.reward_pool += asset(devide_amount);
+      });
+   }
+
 }
 
 void splitMemo(std::vector<std::string>& results, const std::string& memo,char separator) {

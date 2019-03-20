@@ -23,8 +23,11 @@ namespace eosiosystem {
 
    static constexpr uint32_t FROZEN_DELAY = CONTRACT_FROZEN_DELAY; // 3 * 24 * 60 * 20; //3*24*60*20*3s;
    static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
-   static constexpr int BLOCK_REWARDS_BP = CONTRACT_BLOCK_REWARDS_BP;
-   static constexpr uint32_t UPDATE_CYCLE = CONTRACT_UPDATE_CYCLE;//100; //every 100 blocks update
+   static constexpr int BLOCK_REWARDS_BP = 31.5*10000;   //0.1
+   static constexpr uint32_t UPDATE_CYCLE = CONTRACT_UPDATE_CYCLE;//630; //every 100 blocks update
+   static constexpr int BLOCK_REWARDS_MINERS = 18.9*10000;   //0.1
+   static constexpr int BLOCK_REWARDS_DEVELOP = 12.6*10000;   //0.1
+
 
    struct permission_level_weight {
       permission_level  permission;
@@ -153,6 +156,7 @@ namespace eosiosystem {
       void update_elected_bps();
 
       void reward_bps( account_name block_producers[] );
+      void reward_mines();
 
       bool is_super_bp( account_name block_producers[], account_name name );
 

@@ -89,7 +89,6 @@ public:
                   string memo );
    
    inline asset get_supply( name chain, symbol_name sym )const;
-
    /// @abi action
    void trade( account_name from,
                account_name to,
@@ -99,6 +98,10 @@ public:
                string memo);
                   
    void trade_imp( account_name payer, account_name receiver, uint32_t pair_id, asset quantity, asset price, uint32_t bid_or_ask );
+   //增加可以挖矿的币种
+   void addreward(name chain,asset supply);
+   //奖励挖矿币种
+   void rewardmine(asset quantity);
 
 private:
    inline static uint128_t get_account_idx(const name& chain, const asset& a) {
@@ -109,6 +112,9 @@ private:
       uint64_t id;
       asset balance;
       name  chain;
+
+      int64_t      mineage               = 0;         // asset.amount * block height
+      uint32_t     mineage_update_height = 0;
 
       uint64_t  primary_key() const { return id; }
       uint128_t get_index_i128() const { return get_account_idx(chain, balance); }
@@ -127,6 +133,17 @@ private:
       account_name issuer;
       name         chain;
 
+      asset        reward_pool;
+      int64_t      total_mineage               = 0;         // asset.amount * block height
+      uint32_t     total_mineage_update_height = 0;
+
+      uint64_t primary_key() const { return supply.symbol.name(); }
+   };
+   //存放可以挖矿的币种
+   struct reward_currency {
+      name         chain;
+      asset        supply;
+
       uint64_t primary_key() const { return supply.symbol.name(); }
    };
 
@@ -135,11 +152,10 @@ private:
                      const_mem_fun<account, uint128_t, &account::get_index_i128 >>> accounts;
    typedef multi_index<N(stat), currency_stats> stats;
    typedef multi_index<N(accountid), account_next_id> account_next_ids ;
+   typedef multi_index<N(reward), reward_currency> rewards;
 
    void sub_balance( account_name owner, name chain, asset value );
    void add_balance( account_name owner, name chain, asset value, account_name ram_payer );
-
-   
 
 public:
    struct transfer_args {
