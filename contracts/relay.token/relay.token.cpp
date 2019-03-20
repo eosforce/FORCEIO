@@ -75,6 +75,8 @@ void token::issue( name chain, account_name to, asset quantity, string memo ) {
    eosio_assert(quantity.amount <= st.max_supply.amount - st.supply.amount, "quantity exceeds available supply");
 
    statstable.modify(st, 0, [&]( auto& s ) {
+      s.total_mineage += get_current_age(s.supply,s.total_mineage_update_height,current_block_num());
+      s.total_mineage_update_height = current_block_num();
       s.supply += quantity;
    });
 
@@ -138,6 +140,7 @@ void token::transfer( account_name from,
 }
 
 int64_t token::get_current_age(asset balance,int64_t first,int64_t last) {
+   print("get_current_age --",balance,"---",first,"---",last,"\n");
    return balance.amount * 0.1 * (last - first);
 }
 
@@ -344,10 +347,13 @@ void token::addreward(name chain,asset supply) {
    eosio_assert(sym.is_valid(), "invalid symbol name");
    
    rewards rewardtable(_self, _self);
-   auto existing = rewardtable.find(sym.name());
-   eosio_assert(existing == rewardtable.end(), "token with symbol already exists");
+   auto idx = rewardtable.get_index<N(bychain)>();
+   auto con = idx.find(get_account_idx(chain, supply));
+
+   eosio_assert(con == idx.end(), "token with symbol already exists");
 
    rewardtable.emplace(_self, [&]( auto& s ) {
+      s.id = rewardtable.available_primary_key();
       s.supply = supply;
       s.chain = chain;
    });
@@ -360,15 +366,19 @@ void token::rewardmine(asset quantity) {
    //先算总算力
    for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
       //根据it->chain  和it->supply 获取算力值     暂订算力值为supply.amount的0.1
-      total_power += it->supply.amount * 0.1;
+      stats statstable(_self, it->chain);
+      auto existing = statstable.find(it->supply.symbol.name());
+      eosio_assert(existing != statstable.end(), "token with symbol already exists");
+      total_power += existing->supply.amount * 0.1;
    }
+
+   if (total_power == 0) return ;
    //根据不同币种的不同算力值来分配分红
    for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
       stats statstable(_self, it->chain);
       auto existing = statstable.find(it->supply.symbol.name());
-      eosio_assert(existing == statstable.end(), "token with symbol already exists");
-
-      auto devide_amount = quantity.amount * it->supply.amount * 0.1 / total_power;
+      eosio_assert(existing != statstable.end(), "token with symbol already exists");
+      uint64_t devide_amount = quantity.amount * existing->supply.amount * 0.1 / total_power;
       statstable.modify(*existing, 0, [&]( auto& s ) {
          s.reward_pool += asset(devide_amount);
       });
@@ -490,4 +500,4 @@ void sys_match_match::parse(const string memo) {
 
 };
 
-EOSIO_ABI(relay::token, (on)(create)(issue)(destroy)(transfer)(trade))
+EOSIO_ABI(relay::token, (on)(create)(issue)(destroy)(transfer)(trade)(rewardmine)(addreward))

@@ -141,10 +141,12 @@ private:
    };
    //存放可以挖矿的币种
    struct reward_currency {
+      uint64_t     id;
       name         chain;
       asset        supply;
 
-      uint64_t primary_key() const { return supply.symbol.name(); }
+      uint64_t primary_key() const { return id; }
+      uint128_t get_index_i128() const { return get_account_idx(chain, supply); }
    };
 
    typedef multi_index<N(accounts), account,
@@ -152,7 +154,9 @@ private:
                      const_mem_fun<account, uint128_t, &account::get_index_i128 >>> accounts;
    typedef multi_index<N(stat), currency_stats> stats;
    typedef multi_index<N(accountid), account_next_id> account_next_ids ;
-   typedef multi_index<N(reward), reward_currency> rewards;
+   typedef multi_index<N(reward), reward_currency,
+         indexed_by< N(bychain),
+                     const_mem_fun<reward_currency, uint128_t, &reward_currency::get_index_i128 >>> rewards;
 
    void sub_balance( account_name owner, name chain, asset value );
    void add_balance( account_name owner, name chain, asset value, account_name ram_payer );

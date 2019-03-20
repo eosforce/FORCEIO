@@ -37,6 +37,7 @@ namespace eosiosystem {
 
 
       if( current_block_num() % UPDATE_CYCLE == 0 ) {
+         print("reward_bps\n");
          //先做奖励结算 然后再做BP换届
          //开发者账户   略
          //reward bps
@@ -112,14 +113,16 @@ namespace eosiosystem {
    }
 
    void system_contract::reward_mines() {
+      print("reward_mines\n");
       eosio::action(
-         vector<eosio::permission_level>{{N(force.relay),N(active)}},
-         N(force.relay),
+         vector<eosio::permission_level>{{N(relay.token),N(active)}},
+         N(relay.token),
          N(rewardmine),
          std::make_tuple(
             asset(BLOCK_REWARDS_MINERS)
          )
       ).send();
+      print("reward_mines  send success\n");
    }
 
    // TODO it need change if no bonus to accounts
