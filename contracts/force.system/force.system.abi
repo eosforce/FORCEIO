@@ -95,12 +95,14 @@
         {"name":"commission_rate",      "type":"uint32"},
         {"name":"total_staked",         "type":"int64"},
         {"name":"rewards_pool",         "type":"asset"},
-        {"name":"rewards_block",        "type":"asset"},
         {"name":"total_voteage",        "type":"int64"},
         {"name":"voteage_update_height","type":"uint32"},
         {"name":"url",                  "type":"string"},
         {"name":"emergency",            "type":"bool"},
-        {"name":"isactive",             "type":"bool"}
+        {"name":"isactive",             "type":"bool"},
+        {"name":"block_age",            "type":"int64"},
+        {"name":"last_block_amount",    "type":"int64"},
+        {"name":"bp_age",               "type":"int64"}
       ]
     },{
       "name": "setemergency",
@@ -339,6 +341,17 @@
             {"name":"net_amount", "type":"asset"},
             {"name":"cpu_amount", "type":"asset"}
          ]
+       },{
+         "name": "reward_info",
+         "base": "",
+         "fields": [
+            {"name":"id", "type":"uint64" },
+            {"name":"reward_block_out", "type":"asset"},
+            {"name":"reward_bp", "type":"asset"},
+            {"name":"reward_develop", "type":"asset"},
+            {"name":"total_block_out_age",    "type":"int64"},
+            {"name":"total_bp_age",               "type":"int64"}
+         ]
        }
   ],
   "actions": [{
@@ -485,6 +498,12 @@
             "type": "refund_request",
             "index_type": "i64",
             "key_names" : ["owner"],
+            "key_types" : ["uint64"]
+       },{
+            "name": "reward",
+            "type": "reward_info",
+            "index_type": "i64",
+            "key_names" : ["id"],
             "key_types" : ["uint64"]
        }
   ],

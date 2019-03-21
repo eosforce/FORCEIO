@@ -23,10 +23,17 @@ namespace eosiosystem {
 
    static constexpr uint32_t FROZEN_DELAY = CONTRACT_FROZEN_DELAY; // 3 * 24 * 60 * 20; //3*24*60*20*3s;
    static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
-   static constexpr int BLOCK_REWARDS_BP = 31.5*10000;   //0.1
-   static constexpr uint32_t UPDATE_CYCLE = CONTRACT_UPDATE_CYCLE;//630; //every 100 blocks update
+   
+   static constexpr uint32_t UPDATE_CYCLE = 42;//CONTRACT_UPDATE_CYCLE;//630; //every 100 blocks update
    static constexpr int BLOCK_REWARDS_MINERS = 18.9*10000;   //0.1
    static constexpr int BLOCK_REWARDS_DEVELOP = 12.6*10000;   //0.1
+   static constexpr int BLOCK_REWARDS_BP = 1.2*10000;   //0.1
+   static constexpr int BLOCK_REWARDS_VOTE = 1.2*10000;
+   static constexpr int BLOCK_REWARDS_BLOCK = 1.2*10000;
+
+   static constexpr uint64_t REWARD_ID = 1;
+
+   
 
 
    struct permission_level_weight {
@@ -108,13 +115,15 @@ namespace eosiosystem {
          uint32_t     commission_rate = 0; // 0 - 10000 for 0% - 100%
          int64_t      total_staked    = 0;
          asset        rewards_pool    = asset(0);
-         asset        rewards_block   = asset(0);
          int64_t      total_voteage   = 0; // asset.amount * block height
          uint32_t     voteage_update_height = current_block_num();
          std::string  url;
-
          bool emergency = false;
          bool isactive = true;
+
+         int64_t      block_age = 0;
+         int64_t      last_block_amount = 0;
+         int64_t      bp_age = 0;
 
          uint64_t primary_key() const { return name; }
 
@@ -125,7 +134,8 @@ namespace eosiosystem {
          }
          void     deactivate()       {isactive = false;}
          EOSLIB_SERIALIZE(bp_info, ( name )(block_signing_key)(commission_rate)(total_staked)
-               (rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(isactive))
+               (rewards_pool)(total_voteage)(voteage_update_height)(url)(emergency)(isactive)
+               (block_age)(last_block_amount)(bp_age))
       };
 
       struct producer {
@@ -143,6 +153,18 @@ namespace eosiosystem {
          EOSLIB_SERIALIZE(schedule_info, ( version )(block_height)(producers))
       };
 
+      struct reward_info {
+         uint64_t     id;
+         asset reward_block_out = asset(0);
+         asset reward_bp = asset(0);
+         asset reward_develop = asset(0);
+         int64_t total_block_out_age = 0;
+         int64_t total_bp_age = 0;
+
+         uint64_t primary_key() const { return id; }
+         EOSLIB_SERIALIZE(reward_info, ( id )(reward_block_out)(reward_bp)(reward_develop)(total_block_out_age)(total_bp_age))
+      };
+
       typedef eosio::multi_index<N(freezed),     freeze_info>   freeze_table;
       typedef eosio::multi_index<N(votes),       vote_info>     votes_table;
       typedef eosio::multi_index<N(mvotes),      votes_info>    mvotes_table;
@@ -150,12 +172,16 @@ namespace eosiosystem {
       typedef eosio::multi_index<N(vote4ramsum), vote4ram_info> vote4ramsum_table;
       typedef eosio::multi_index<N(bps),         bp_info>       bps_table;
       typedef eosio::multi_index<N(schedules),   schedule_info> schedules_table;
+      typedef eosio::multi_index<N(reward),   reward_info> reward_table;
 
       mvotes_table _voters;
+      //这个是否是可查询的
+      //reward_info reward;
 
       void update_elected_bps();
 
-      void reward_bps( account_name block_producers[] );
+      void reward_bps();
+      void reward_block(const uint32_t schedule_version);
       void reward_mines();
 
       bool is_super_bp( account_name block_producers[], account_name name );

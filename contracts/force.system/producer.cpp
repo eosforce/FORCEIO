@@ -13,7 +13,7 @@ namespace eosiosystem {
       if( sch == schs_tbl.end()) {
          schs_tbl.emplace(bpname, [&]( schedule_info& s ) {
             s.version = schedule_version;
-            s.block_height = current_block_num();
+            s.block_height = current_block_num();           //这个地方有一个清零的过程 不管
             for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
                s.producers[i].amount = block_producers[i] == bpname ? 1 : 0;
                s.producers[i].bpname = block_producers[i];
@@ -35,13 +35,14 @@ namespace eosiosystem {
                                                    asset(BLOCK_REWARDS_BP), 
                                                    "issue tokens for producer pay"} );
 
-
+      print("UPDATE_CYCLE","---",current_block_num(),"---",UPDATE_CYCLE);
       if( current_block_num() % UPDATE_CYCLE == 0 ) {
          print("reward_bps\n");
          //先做奖励结算 然后再做BP换届
          //开发者账户   略
          //reward bps
-         reward_bps(block_producers);
+         reward_bps();
+         reward_block(schedule_version);
          //reward miners
          reward_mines();
          //update schedule
@@ -113,7 +114,6 @@ namespace eosiosystem {
    }
 
    void system_contract::reward_mines() {
-      print("reward_mines\n");
       eosio::action(
          vector<eosio::permission_level>{{N(relay.token),N(active)}},
          N(relay.token),
@@ -122,16 +122,61 @@ namespace eosiosystem {
             asset(BLOCK_REWARDS_MINERS)
          )
       ).send();
-      print("reward_mines  send success\n");
    }
 
    // TODO it need change if no bonus to accounts
 
-   void system_contract::reward_bps( account_name block_producers[] ) {
-      bps_table bps_tbl(_self, _self);
+   void system_contract::reward_block(const uint32_t schedule_version ) {
       schedules_table schs_tbl(_self, _self);
+      bps_table bps_tbl(_self, _self);
+      print("reward_block",schedule_version,"\n");
+      auto sch = schs_tbl.find(uint64_t(schedule_version));
+      eosio_assert(sch != schs_tbl.end(),"cannot find schedule");
+      int64_t total_block_out_age = 0;
+      for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
+         auto bp = bps_tbl.find(sch->producers[i].bpname);
+         eosio_assert(bp != bps_tbl.end(),"cannot find bpinfo");
+         print("reward_block --- ","modify bpinfo","\n");
+         bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
+            if ( sch->producers[i].amount > b.last_block_amount ) {
+               b.block_age +=  sch->producers[i].amount - b.last_block_amount;
+               total_block_out_age += sch->producers[i].amount - b.last_block_amount;
+            }
+            else if (sch->producers[i].amount == b.last_block_amount || sch->producers[i].amount == 0) {
+               //直接清零或者扣除保证金？ 不应该每次都清零吧
+               total_block_out_age -= b.block_age;
+               b.block_age = 0;
+            }
+            else {
+               b.block_age +=  sch->producers[i].amount;
+               total_block_out_age +=  sch->producers[i].amount;
+            }
+            b.last_block_amount = sch->producers[i].amount;
+         });
+      }
+      reward_table reward_inf(_self,_self);
+      auto reward = reward_inf.find(REWARD_ID);
+      if(reward == reward_inf.end()) {
+         reward_inf.emplace(_self, [&]( reward_info& s ) {
+            s.id = REWARD_ID;
+            s.reward_block_out = asset(BLOCK_REWARDS_BLOCK);
+            s.reward_bp = asset(0);
+            s.reward_develop = asset(0);
+            s.total_block_out_age = total_block_out_age;
+            s.total_bp_age = 0;
+         });
+      }
+      else {
+         reward_inf.modify(reward, 0, [&]( reward_info& s ) {
+            s.reward_block_out += asset(BLOCK_REWARDS_BLOCK);
+            s.total_block_out_age += total_block_out_age;
+         });
+      }
 
-      //calculate total staked all of the bps
+   }
+
+   void system_contract::reward_bps() {
+      bps_table bps_tbl(_self, _self);
       int64_t staked_all_bps = 0;
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
          staked_all_bps += it->total_staked;
@@ -139,29 +184,39 @@ namespace eosiosystem {
       if( staked_all_bps <= 0 ) {
          return;
       }
-      //0.5% of staked_all_bps
       const auto rewarding_bp_staked_threshold = staked_all_bps / 200;
-
+      int64_t total_bp_age = 0;
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
          if( !it->isactive || it->total_staked <= rewarding_bp_staked_threshold || it->commission_rate < 1 ||
              it->commission_rate > 10000 ) {
             continue;
          }
-
-         auto bp_reward = static_cast<int64_t>( BLOCK_REWARDS_BP / 2 * double(it->total_staked) / double(staked_all_bps));
-
-         //reward bp account
-         auto bp_account_reward = bp_reward * 30 / 100 + bp_reward * 70 / 100 * it->commission_rate / 10000;
-         if( is_super_bp(block_producers, it->name)) {
-            bp_account_reward += bp_reward * 30 / 100;
-         }
-
-         //reward bp and pool
-         auto bp_rewards_pool = bp_reward * 40 / 100 * ( 10000 - it->commission_rate ) / 10000;
+         auto vote_reward = static_cast<int64_t>( BLOCK_REWARDS_VOTE  * double(it->total_staked) / double(staked_all_bps));
+         //暂时先给所有的BP都增加BP奖励   还需要增加vote池的奖励
          const auto& bp = bps_tbl.get(it->name, "bpname is not registered");
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-            b.rewards_pool += asset(bp_rewards_pool);
-            b.rewards_block += asset(bp_account_reward);
+            b.bp_age += 1;
+            b.rewards_pool += asset(vote_reward);
+         });
+         total_bp_age +=1;
+      }
+
+      reward_table reward_inf(_self,_self);
+      auto reward = reward_inf.find(REWARD_ID);
+      if(reward == reward_inf.end()) {
+         reward_inf.emplace(_self, [&]( reward_info& s ) {
+            s.id = REWARD_ID;
+            s.reward_block_out = asset(0);
+            s.reward_bp = asset(BLOCK_REWARDS_BP);
+            s.reward_develop = asset(0);
+            s.total_block_out_age = 0;
+            s.total_bp_age = total_bp_age;
+         });
+      }
+      else {
+         reward_inf.modify(reward, 0, [&]( reward_info& s ) {
+            s.reward_bp += asset(BLOCK_REWARDS_BP);
+            s.total_bp_age += total_bp_age;
          });
       }
    }
