@@ -6,7 +6,7 @@
 namespace exchange {
    using namespace eosio;
    const int64_t max_fee_rate = 10000;
-   const account_name relay_token_acc = N(relay.token);
+  
    const account_name escrow = N(sys.match);
 
    uint128_t compute_pair_index(symbol_type base, symbol_type quote)
@@ -129,6 +129,7 @@ namespace exchange {
       trading_pairs   trading_pairs_table(_self,_self);
       orderbook       orders(_self,_self);
       asset           quant_after_fee;
+      asset           converted_price;
       asset           fee;
       uint32_t        bid_or_ask = 1;
 
@@ -184,7 +185,8 @@ namespace exchange {
                // eat the order
                //quant_after_fee = convert_asset(itr1->base_sym, base);
                quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, base);
-               done_helper(itr1->exc_acc, itr->price, base, bid_or_ask);
+               converted_price = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, itr->price);   
+               done_helper(itr1->exc_acc, itr1->quote_chain, converted_price, itr1->base_chain, quant_after_fee, bid_or_ask);
                fee = calcfee(quant_after_fee, itr1->fee_rate);
                quant_after_fee -= fee;
                inline_transfer(escrow, receiver, itr1->base_chain, quant_after_fee, "");
@@ -226,7 +228,8 @@ namespace exchange {
             } else { // partial match
                //quant_after_fee = convert_asset(itr1->base_sym, itr->base);
                quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, itr->base);
-               done_helper(itr1->exc_acc, itr->price, itr->base, bid_or_ask);
+               converted_price = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, itr->price);
+               done_helper(itr1->exc_acc, itr1->quote_chain, converted_price, itr1->base_chain, quant_after_fee, bid_or_ask);
                fee = calcfee(quant_after_fee, itr1->fee_rate);
                quant_after_fee -= fee;
                inline_transfer(escrow, receiver, itr1->base_chain, quant_after_fee, "");
@@ -304,6 +307,8 @@ namespace exchange {
       trading_pairs  trading_pairs_table(_self,_self);
       orderbook      orders(_self,_self);
       asset          quant_after_fee;
+      asset          converted_price;
+      asset          converted_base;
       asset          fee;
       uint32_t       bid_or_ask = 0;
 
@@ -364,7 +369,9 @@ namespace exchange {
                else
                   quant_after_fee = base * price.amount / precision(price.symbol.precision()) ;
                quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, quant_after_fee);
-               done_helper(itr1->exc_acc, price, base, bid_or_ask);
+               converted_price = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, price);
+               converted_base = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, base);
+               done_helper(itr1->exc_acc, itr1->quote_chain, converted_price, itr1->base_chain, converted_base, bid_or_ask);
                fee = calcfee(quant_after_fee, itr1->fee_rate);
                quant_after_fee -= fee;
                from.value = escrow; to.value = payer;
@@ -410,7 +417,9 @@ namespace exchange {
                else
                   quant_after_fee = end_itr->base * price.amount / precision(price.symbol.precision());
                quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, quant_after_fee);
-               done_helper(itr1->exc_acc, price, end_itr->base, bid_or_ask);
+               converted_price = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, price);
+               converted_base = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, end_itr->base);
+               done_helper(itr1->exc_acc, itr1->quote_chain, converted_price, itr1->base_chain, converted_base, bid_or_ask);
                fee = calcfee(quant_after_fee, itr1->fee_rate);
                quant_after_fee -= fee;
                inline_transfer(escrow, receiver, itr1->quote_chain, quant_after_fee, "");
@@ -509,18 +518,28 @@ namespace exchange {
       return;
    }
    
-   void exchange::done_helper(account_name exc_acc, asset price, asset quantity, uint32_t bid_or_ask) {
+   void exchange::done_helper(account_name exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t bid_or_ask) {
       auto timestamp = time_point_sec(uint32_t(current_time() / 1000000ll));
       action(
             permission_level{ exc_acc, N(active) },
             N(sys.match), N(done),
-            std::make_tuple(price, quantity, bid_or_ask, timestamp)
+            std::make_tuple(exc_acc, quote_chain, price, base_chain, quantity, bid_or_ask, timestamp)
       ).send();
    }
    
    // now do nothing, only for action capture
-   void exchange::done(asset price, asset quantity, uint32_t bid_or_ask, time_point_sec timestamp) {
+   void exchange::done(account_name exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t bid_or_ask, time_point_sec timestamp) {
+      require_auth(exc_acc);
       
+      asset quant_after_fee;
+      
+      print("exchange::done: exc_acc=", exc_acc, ", price=", price,", quantity=", quantity, ", bid_or_ask=", bid_or_ask, "\n");
+      if (price.symbol.precision() >= quantity.symbol.precision())
+         quant_after_fee = price * quantity.amount / precision(quantity.symbol.precision());
+      else
+         quant_after_fee = quantity * price.amount / precision(price.symbol.precision());
+      quant_after_fee = to_asset(relay_token_acc, quote_chain, price.symbol, quant_after_fee);
+      upd_mark( base_chain, quantity.symbol, quote_chain, price.symbol, quant_after_fee, quantity );
    }
 
    /*
@@ -610,9 +629,15 @@ namespace exchange {
             orders.erase(itr);
          }
       }
-      
 
       return;
+   }
+   
+   void exchange::mark(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym) {
+      require_auth(_self);
+      
+      get_pair(base_chain, base_sym, quote_chain, quote_sym);
+      get_mark(base_chain, base_sym, quote_chain, quote_sym);
    }
    
    asset exchange::calcfee(asset quant, uint64_t fee_rate) {
@@ -625,5 +650,4 @@ namespace exchange {
    }   
 }
 
-
-EOSIO_ABI( exchange::exchange, (create)(match)(cancel))
+EOSIO_ABI( exchange::exchange, (create)(match)(cancel)(done)(mark))
