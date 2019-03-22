@@ -101,8 +101,10 @@
         {"name":"emergency",            "type":"bool"},
         {"name":"isactive",             "type":"bool"},
         {"name":"block_age",            "type":"int64"},
-        {"name":"last_block_amount",    "type":"int64"},
-        {"name":"bp_age",               "type":"int64"}
+        {"name":"last_block_amount",    "type":"uint32"},
+        {"name":"bp_age",               "type":"int64"},
+        {"name":"block_weight",    "type":"int64"},
+        {"name":"bp_mortgageage",               "type":"asset"}
       ]
     },{
       "name": "setemergency",
@@ -346,11 +348,27 @@
          "base": "",
          "fields": [
             {"name":"id", "type":"uint64" },
-            {"name":"reward_block_out", "type":"asset"},
-            {"name":"reward_bp", "type":"asset"},
-            {"name":"reward_develop", "type":"asset"},
-            {"name":"total_block_out_age",    "type":"int64"},
-            {"name":"total_bp_age",               "type":"int64"}
+            {"name":"reward_block_out",      "type":"asset"},
+            {"name":"reward_bp",             "type":"asset"},
+            {"name":"reward_develop",        "type":"asset"},
+            {"name":"total_block_out_age",   "type":"int64"},
+            {"name":"total_bp_age",          "type":"int64"}
+         ]
+       },{
+         "name": "addmortgage",
+         "base": "",
+         "fields": [
+            {"name":"bpname",                "type":"account_name"},
+            {"name":"payer",              "type":"account_name"},
+            {"name":"quantity",              "type":"asset"}
+         ]
+       },{
+         "name": "claimmortgage",
+         "base": "",
+         "fields": [
+            {"name":"bpname",                "type":"account_name"},
+            {"name":"receiver",              "type":"account_name"},
+            {"name":"quantity",              "type":"asset"}
          ]
        }
   ],
@@ -441,6 +459,14 @@
       },{
          "name": "refund",
          "type": "refund",
+         "ricardian_contract": ""
+      },{
+         "name": "addmortgage",
+         "type": "addmortgage",
+         "ricardian_contract": ""
+      },{
+         "name": "claimmortgage",
+         "type": "claimmortgage",
          "ricardian_contract": ""
       }
   ],

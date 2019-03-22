@@ -1,4 +1,5 @@
 #include "force.system.hpp"
+#include <relay.token/relay.token.hpp>
 
 namespace eosiosystem {
 
@@ -11,6 +12,7 @@ namespace eosiosystem {
       get_active_producers(block_producers, sizeof(account_name) * NUM_OF_TOP_BPS);
       auto sch = schs_tbl.find(uint64_t(schedule_version));
       if( sch == schs_tbl.end()) {
+         //换届
          schs_tbl.emplace(bpname, [&]( schedule_info& s ) {
             s.version = schedule_version;
             s.block_height = current_block_num();           //这个地方有一个清零的过程 不管
@@ -19,6 +21,7 @@ namespace eosiosystem {
                s.producers[i].bpname = block_producers[i];
             }
          });
+         reset_block_weight(block_producers);
       } else {
          schs_tbl.modify(sch, 0, [&]( schedule_info& s ) {
             for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
@@ -38,13 +41,14 @@ namespace eosiosystem {
       print("UPDATE_CYCLE","---",current_block_num(),"---",UPDATE_CYCLE);
       if( current_block_num() % UPDATE_CYCLE == 0 ) {
          print("reward_bps\n");
-         //先做奖励结算 然后再做BP换届
-         //开发者账户   略
-         //reward bps
-         reward_bps();
+         uint64_t  vote_power = get_vote_power();
+         uint64_t  coin_power = get_coin_power();
+         uint64_t total_power = vote_power + coin_power;
+         print("before reward_block ",vote_power,"---",coin_power,"\n");
          reward_block(schedule_version);
          //reward miners
-         reward_mines();
+         reward_mines(BLOCK_REWARDS_POWER * coin_power / total_power);
+         reward_bps(BLOCK_REWARDS_POWER * vote_power / total_power);
          //update schedule
          update_elected_bps();
       }
@@ -113,13 +117,13 @@ namespace eosiosystem {
       set_proposed_producers(packed_schedule.data(), packed_schedule.size());
    }
 
-   void system_contract::reward_mines() {
+   void system_contract::reward_mines(const uint64_t reward_amount) {
       eosio::action(
          vector<eosio::permission_level>{{N(relay.token),N(active)}},
          N(relay.token),
          N(rewardmine),
          std::make_tuple(
-            asset(BLOCK_REWARDS_MINERS)
+            asset(reward_amount)
          )
       ).send();
    }
@@ -136,20 +140,25 @@ namespace eosiosystem {
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
          auto bp = bps_tbl.find(sch->producers[i].bpname);
          eosio_assert(bp != bps_tbl.end(),"cannot find bpinfo");
-         print("reward_block --- ","modify bpinfo","\n");
+         //eosio_assert(bp->mortgage > asset(88888888),"");
+         if(bp->mortgage < asset(MORTGAGE)) {
+            //抵押不足,没有出块奖励
+            print("missing mortgage ",bp->name,"\n");
+            continue;
+         }
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-            if ( sch->producers[i].amount > b.last_block_amount ) {
-               b.block_age +=  sch->producers[i].amount - b.last_block_amount;
-               total_block_out_age += sch->producers[i].amount - b.last_block_amount;
-            }
-            else if (sch->producers[i].amount == b.last_block_amount || sch->producers[i].amount == 0) {
-               //直接清零或者扣除保证金？ 不应该每次都清零吧
-               total_block_out_age -= b.block_age;
-               b.block_age = 0;
-            }
-            else {
-               b.block_age +=  sch->producers[i].amount;
-               total_block_out_age +=  sch->producers[i].amount;
+            //先检测是否有漏块情况
+            if(sch->producers[i].amount - b.last_block_amount != PER_CYCLE_AMOUNT && sch->producers[i].amount > b.last_block_amount) {
+               b.block_age +=  (sch->producers[i].amount - b.last_block_amount) * b.block_weight;
+               total_block_out_age += (sch->producers[i].amount - b.last_block_amount) * b.block_weight;
+               b.block_weight = MORTGAGE;
+               b.mortgage -= asset(0.2*10000);
+               print("some block missing ",b.name,"\n");
+            } else {
+               b.block_age +=  (sch->producers[i].amount > b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
+               total_block_out_age +=  (sch->producers[i].amount > b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
+               b.block_weight += 1;
+               print("normal reward block ",b.name,"\n");
             }
             b.last_block_amount = sch->producers[i].amount;
          });
@@ -172,10 +181,9 @@ namespace eosiosystem {
             s.total_block_out_age += total_block_out_age;
          });
       }
-
    }
 
-   void system_contract::reward_bps() {
+   void system_contract::reward_bps(const uint64_t reward_amount) {
       bps_table bps_tbl(_self, _self);
       int64_t staked_all_bps = 0;
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
@@ -191,7 +199,7 @@ namespace eosiosystem {
              it->commission_rate > 10000 ) {
             continue;
          }
-         auto vote_reward = static_cast<int64_t>( BLOCK_REWARDS_VOTE  * double(it->total_staked) / double(staked_all_bps));
+         auto vote_reward = static_cast<int64_t>( reward_amount  * double(it->total_staked) / double(staked_all_bps));
          //暂时先给所有的BP都增加BP奖励   还需要增加vote池的奖励
          const auto& bp = bps_tbl.get(it->name, "bpname is not registered");
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
@@ -219,6 +227,68 @@ namespace eosiosystem {
             s.total_bp_age += total_bp_age;
          });
       }
+   }
+
+   void system_contract::reset_block_weight(account_name block_producers[]) {
+      bps_table bps_tbl(_self, _self);
+      for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
+         const auto& bp = bps_tbl.get(block_producers[i], "bpname is not registered");
+         bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
+            b.block_weight = BLOCK_OUT_WEIGHT;
+         });
+      }
+   }
+
+   int64_t system_contract::get_coin_power() {
+      int64_t total_power = 0; 
+      rewards coin_reward(N(relay.token),N(relay.token));
+      for( auto it = coin_reward.cbegin(); it != coin_reward.cend(); ++it ) {
+         //根据it->chain  和it->supply 获取算力值     暂订算力值为supply.amount的0.1
+         stats statstable(N(relay.token), it->chain);
+         auto existing = statstable.find(it->supply.symbol.name());
+         eosio_assert(existing != statstable.end(), "token with symbol already exists");
+         total_power += existing->supply.amount * 0.1;
+      }
+      return total_power * 10000;
+   }
+
+   int64_t system_contract::get_vote_power() {
+      bps_table bps_tbl(_self, _self);
+      int64_t staked_all_bps = 0;
+      for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
+         staked_all_bps += it->total_staked;
+      }
+      return staked_all_bps;
+   }
+   //增加抵押
+   void system_contract::addmortgage(const account_name bpname,const account_name payer,asset quantity) {
+      require_auth(payer);
+      bps_table bps_tbl(_self, _self);
+      auto bp = bps_tbl.find(bpname);
+      eosio_assert(bp != bps_tbl.end(),"can not find the bp");
+      bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
+            b.mortgage += quantity;
+         });
+
+      INLINE_ACTION_SENDER(eosio::token, transfer)(
+               config::token_account_name,
+               { payer, N(active) },
+               { payer, ::config::system_account_name, asset(quantity), "add mortgage" });
+   }
+   //提取抵押
+   void system_contract::claimmortgage(const account_name bpname,const account_name receiver,asset quantity) {
+      require_auth(bpname);
+      bps_table bps_tbl(_self, _self);
+      auto bp = bps_tbl.find(bpname);
+      eosio_assert(bp != bps_tbl.end(),"can not find the bp");
+      bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
+            b.mortgage -= quantity;
+         });
+      
+      INLINE_ACTION_SENDER(eosio::token, transfer)(
+         config::token_account_name,
+         { ::config::system_account_name, N(active) },
+         { ::config::system_account_name, receiver, quantity, "claim bp mortgage" });
    }
 
    bool system_contract::is_super_bp( account_name block_producers[], account_name name ) {

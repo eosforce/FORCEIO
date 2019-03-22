@@ -25,16 +25,22 @@ namespace eosiosystem {
    static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
    
    static constexpr uint32_t UPDATE_CYCLE = 42;//CONTRACT_UPDATE_CYCLE;//630; //every 100 blocks update
-   static constexpr int BLOCK_REWARDS_MINERS = 18.9*10000;   //0.1
-   static constexpr int BLOCK_REWARDS_DEVELOP = 12.6*10000;   //0.1
-   static constexpr int BLOCK_REWARDS_BP = 1.2*10000;   //0.1
-   static constexpr int BLOCK_REWARDS_VOTE = 1.2*10000;
-   static constexpr int BLOCK_REWARDS_BLOCK = 1.2*10000;
+   
+   static constexpr uint64_t BLOCK_REWARDS_DEVELOP = 12.6*10000;   //0.1
+   static constexpr uint64_t BLOCK_REWARDS_BP = 1.2*10000;   //0.1
+   
+   static constexpr uint64_t BLOCK_REWARDS_BLOCK = 1.2*10000;
+
+   static constexpr uint64_t BLOCK_REWARDS_POWER = 59.9*10000;   //0.1
+  // static constexpr int BLOCK_REWARDS_VOTE = 1.2*10000;
 
    static constexpr uint64_t REWARD_ID = 1;
-
-   
-
+   //权重   第一个出块周期是有问题的
+   static constexpr uint64_t BLOCK_OUT_WEIGHT = 1000;
+   static constexpr uint64_t MORTGAGE = 828.8*10000;
+   //static constexpr asset MIN_MORTGAGE = asset(MORTGAGE);
+   //每一轮每一个BP应该出块的个数
+   static constexpr uint32_t PER_CYCLE_AMOUNT = 2; 
 
    struct permission_level_weight {
       permission_level  permission;
@@ -122,8 +128,10 @@ namespace eosiosystem {
          bool isactive = true;
 
          int64_t      block_age = 0;
-         int64_t      last_block_amount = 0;
+         uint32_t     last_block_amount = 0;
          int64_t      bp_age = 0;
+         int64_t      block_weight = BLOCK_OUT_WEIGHT;   //换届如何清零?
+         asset        mortgage = asset(0);
 
          uint64_t primary_key() const { return name; }
 
@@ -135,7 +143,7 @@ namespace eosiosystem {
          void     deactivate()       {isactive = false;}
          EOSLIB_SERIALIZE(bp_info, ( name )(block_signing_key)(commission_rate)(total_staked)
                (rewards_pool)(total_voteage)(voteage_update_height)(url)(emergency)(isactive)
-               (block_age)(last_block_amount)(bp_age))
+               (block_age)(last_block_amount)(bp_age)(block_weight)(mortgage))
       };
 
       struct producer {
@@ -165,6 +173,38 @@ namespace eosiosystem {
          EOSLIB_SERIALIZE(reward_info, ( id )(reward_block_out)(reward_bp)(reward_develop)(total_block_out_age)(total_bp_age))
       };
 
+      /** from relay.token begin*/
+      inline static uint128_t get_account_idx(const eosio::name& chain, const asset& a) {
+         return (uint128_t(uint64_t(chain)) << 64) + uint128_t(a.symbol.name());
+      }
+
+      struct currency_stats {
+         asset        supply;
+         asset        max_supply;
+         account_name issuer;
+         eosio::name         chain;
+
+         asset        reward_pool;
+         int64_t      total_mineage               = 0;         // asset.amount * block height
+         uint32_t     total_mineage_update_height = 0;
+
+         uint64_t primary_key() const { return supply.symbol.name(); }
+      };
+      //存放可以挖矿的币种
+      struct reward_currency {
+         uint64_t     id;
+         eosio::name         chain;
+         asset        supply;
+
+         uint64_t primary_key() const { return id; }
+         uint128_t get_index_i128() const { return get_account_idx(chain, supply); }
+      };
+
+      typedef eosio::multi_index<N(stat), currency_stats> stats;
+      typedef eosio::multi_index<N(reward), reward_currency,
+         eosio::indexed_by< N(bychain),
+                     eosio::const_mem_fun<reward_currency, uint128_t, &reward_currency::get_index_i128 >>> rewards;
+      /** from relay.token end*/
       typedef eosio::multi_index<N(freezed),     freeze_info>   freeze_table;
       typedef eosio::multi_index<N(votes),       vote_info>     votes_table;
       typedef eosio::multi_index<N(mvotes),      votes_info>    mvotes_table;
@@ -180,9 +220,9 @@ namespace eosiosystem {
 
       void update_elected_bps();
 
-      void reward_bps();
+      void reward_bps(const uint64_t reward_amount);
       void reward_block(const uint32_t schedule_version);
-      void reward_mines();
+      void reward_mines(const uint64_t reward_amount);
 
       bool is_super_bp( account_name block_producers[], account_name name );
 
@@ -191,6 +231,10 @@ namespace eosiosystem {
                       asset stake_net_quantity, asset stake_cpu_quantity, bool transfer );
 
       void update_votes( const account_name voter, const std::vector<account_name>& producers, bool voting );
+
+      void reset_block_weight(account_name block_producers[]);
+      int64_t get_coin_power();
+      int64_t get_vote_power();
 
    public:
       // @abi action
@@ -246,6 +290,10 @@ namespace eosiosystem {
       void setfee(account_name account,action_name action,asset fee,uint32_t cpu_limit,uint32_t net_limit,uint32_t ram_limit);
       // @abi action
       void setabi(account_name account,bytes abi);
+      // 增加抵押
+      void addmortgage(const account_name bpname,const account_name payer,asset quantity);
+      // 领取抵押
+      void claimmortgage(const account_name bpname,const account_name receiver,asset quantity);
 
 #if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
       // @abi action
@@ -272,7 +320,7 @@ EOSIO_ABI( eosiosystem::system_contract,
       (onblock)
       (setparams)(removebp)
       (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)
-      (onerror)
+      (onerror)(addmortgage)(claimmortgage)
       (setconfig)(setcode)(setfee)(setabi)
 #if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
       (delegatebw)(undelegatebw)(refund)
