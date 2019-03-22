@@ -121,6 +121,7 @@ namespace eosiosystem {
          uint32_t     commission_rate = 0; // 0 - 10000 for 0% - 100%
          int64_t      total_staked    = 0;
          asset        rewards_pool    = asset(0);
+         asset        rewards_block   = asset(0);
          int64_t      total_voteage   = 0; // asset.amount * block height
          uint32_t     voteage_update_height = current_block_num();
          std::string  url;
@@ -142,7 +143,7 @@ namespace eosiosystem {
          }
          void     deactivate()       {isactive = false;}
          EOSLIB_SERIALIZE(bp_info, ( name )(block_signing_key)(commission_rate)(total_staked)
-               (rewards_pool)(total_voteage)(voteage_update_height)(url)(emergency)(isactive)
+               (rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(isactive)
                (block_age)(last_block_amount)(bp_age)(block_weight)(mortgage))
       };
 
@@ -294,6 +295,10 @@ namespace eosiosystem {
       void addmortgage(const account_name bpname,const account_name payer,asset quantity);
       // 领取抵押
       void claimmortgage(const account_name bpname,const account_name receiver,asset quantity);
+      //领取投票分红
+      void claimvote(const account_name bpname,const account_name receiver);
+      //BP领取分红
+      void claimbp(const account_name bpname,const account_name receiver);
 
 #if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
       // @abi action
@@ -320,7 +325,7 @@ EOSIO_ABI( eosiosystem::system_contract,
       (onblock)
       (setparams)(removebp)
       (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)
-      (onerror)(addmortgage)(claimmortgage)
+      (onerror)(addmortgage)(claimmortgage)(claimbp)(claimvote)
       (setconfig)(setcode)(setfee)(setabi)
 #if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
       (delegatebw)(undelegatebw)(refund)
