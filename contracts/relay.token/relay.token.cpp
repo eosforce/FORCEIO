@@ -8,6 +8,7 @@
 #include <eosiolib/action.hpp>
 #include <string>
 #include <stdlib.h>
+//#include "force.system/force.system.hpp"
 
 namespace relay {
 
@@ -74,8 +75,17 @@ void token::issue( name chain, account_name to, asset quantity, string memo ) {
    eosio_assert(quantity.symbol == st.supply.symbol, "symbol precision mismatch");
    eosio_assert(quantity.amount <= st.max_supply.amount - st.supply.amount, "quantity exceeds available supply");
 
+   auto current_block = current_block_num();
+   auto last_devidend_num = current_block - current_block % UPDATE_CYCLE;
+
    statstable.modify(st, 0, [&]( auto& s ) {
-      s.total_mineage += get_current_age(s.supply,s.total_mineage_update_height,current_block_num());
+      if (s.total_mineage_update_height < last_devidend_num) {
+         s.total_mineage += get_current_age(s.supply,s.total_mineage_update_height,last_devidend_num) + s.total_pending_mineage;
+         s.total_pending_mineage = get_current_age(s.supply,last_devidend_num,current_block);
+      }
+      else {
+         s.total_pending_mineage += get_current_age(s.supply,s.total_mineage_update_height,current_block);
+      }
       s.total_mineage_update_height = current_block_num();
       s.supply += quantity;
    });
@@ -106,7 +116,18 @@ void token::destroy( name chain, account_name from, asset quantity, string memo 
    eosio_assert(quantity.symbol == st.supply.symbol, "symbol precision mismatch");
    eosio_assert(quantity.amount <= st.supply.amount, "quantity exceeds available supply");
 
+   auto current_block = current_block_num();
+   auto last_devidend_num = current_block - current_block % UPDATE_CYCLE;
+   //这个地方矿龄需要修改
    statstable.modify(st, 0, [&]( auto& s ) {
+      if (s.total_mineage_update_height < last_devidend_num) {
+         s.total_mineage += get_current_age(s.supply,s.total_mineage_update_height,last_devidend_num) + s.total_pending_mineage;
+         s.total_pending_mineage = get_current_age(s.supply,last_devidend_num,current_block);
+      }
+      else {
+         s.total_pending_mineage += get_current_age(s.supply,s.total_mineage_update_height,current_block);
+      }
+      s.total_mineage_update_height = current_block;
       s.supply -= quantity;
    });
 
@@ -153,18 +174,21 @@ void token::sub_balance( account_name owner, name chain, asset value ) {
    const auto& from = idx.get(get_account_idx(chain, value), "no balance object found");
    eosio_assert(from.balance.amount >= value.amount, "overdrawn balance");
    eosio_assert(from.chain == chain, "symbol chain mismatch");
+   auto current_block = current_block_num();
+   auto last_devidend_num = current_block - current_block % UPDATE_CYCLE;
 
-   // if( from.balance.amount == value.amount ) {
-   //    //from_acnts.erase(from);
-      
-   // } else {
-    //  auto NewAge = 
-      from_acnts.modify(from, owner, [&]( auto& a ) {
-         a.mineage += get_current_age(a.balance,a.mineage_update_height,current_block_num());
-         a.mineage_update_height = current_block_num();
-         a.balance -= value;
-      });
-   // }
+   from_acnts.modify(from, owner, [&]( auto& a ) {
+      if (a.mineage_update_height < last_devidend_num) {
+         a.mineage += get_current_age(a.balance,a.mineage_update_height,last_devidend_num) + a.pending_mineage;
+         a.pending_mineage = get_current_age(a.balance,last_devidend_num,current_block);
+      }
+      else {
+         a.pending_mineage += get_current_age(a.balance,a.mineage_update_height,current_block);
+      }
+      a.mineage_update_height = current_block;
+      a.balance -= value;
+   });
+
 }
 
 void token::add_balance( account_name owner, name chain, asset value, account_name ram_payer ) {
@@ -174,6 +198,8 @@ void token::add_balance( account_name owner, name chain, asset value, account_na
    auto idx = to_acnts.get_index<N(bychain)>();
 
    auto to = idx.find(get_account_idx(chain, value));
+   auto current_block = current_block_num();
+   auto last_devidend_num = current_block - current_block % UPDATE_CYCLE;
    if( to == idx.end() ) {
       uint64_t id = 1;
       auto ids = acntids.find(owner);
@@ -194,11 +220,19 @@ void token::add_balance( account_name owner, name chain, asset value, account_na
          a.balance = value;
          a.chain = chain;
          a.mineage = 0;
+         a.pending_mineage = 0;
          a.mineage_update_height = current_block_num();
       });
    } else {
+      //计算相关的   last_devidend  current_block  
       idx.modify(to, 0, [&]( auto& a ) {
-         a.mineage += get_current_age(a.balance,a.mineage_update_height,current_block_num());
+         if (a.mineage_update_height < last_devidend_num) {
+            a.mineage += get_current_age(a.balance,a.mineage_update_height,last_devidend_num) + a.pending_mineage;
+            a.pending_mineage = get_current_age(a.balance,last_devidend_num,current_block);
+         }
+         else {
+            a.pending_mineage += get_current_age(a.balance,a.mineage_update_height,current_block);
+         }
          a.mineage_update_height = current_block_num();
          a.balance += value;
       });
@@ -360,7 +394,8 @@ void token::addreward(name chain,asset supply) {
 }
 
 void token::rewardmine(asset quantity) {
-   //遍历所有可以领取分红的币种  获取总算力  然后根据币种的算力分配分红
+   //require_auth(_self);
+   //遍历所有可以领取分红的币种  获取总算力  然后根据币种的算力分配分红 现在同意使用0.1作为权重,稍后修改为取前一天的价格作为权重
    rewards rewardtable(_self, _self);
    uint64_t total_power = 0;
    //先算总算力
@@ -383,7 +418,84 @@ void token::rewardmine(asset quantity) {
          s.reward_pool += asset(devide_amount);
       });
    }
+}
 
+//领取分红
+void token::claim(name chain,asset quantity,account_name receiver) {
+
+   require_auth(receiver);
+   auto sym = quantity.symbol;
+   eosio_assert(sym.is_valid(), "invalid symbol name");
+   
+   rewards rewardtable(_self, _self);
+   auto idx = rewardtable.get_index<N(bychain)>();
+   auto con = idx.find(get_account_idx(chain, quantity));
+   eosio_assert(con != idx.end(), "token with symbol donot participate in dividends ");
+
+   stats statstable(_self, chain);
+   auto existing = statstable.find(quantity.symbol.name());
+   eosio_assert(existing != statstable.end(), "token with symbol already exists");
+
+   auto reward_pool = existing->reward_pool;
+   auto total_mineage = existing->total_mineage;
+   auto total_mineage_update_height = existing->total_mineage_update_height;
+   auto total_pending_mineage = existing->total_pending_mineage;
+   auto supply = existing->supply;
+
+   accounts to_acnts(_self, receiver);
+   auto idxx = to_acnts.get_index<N(bychain)>();
+   const auto& to = idxx.get(get_account_idx(chain, quantity), "no balance object found");
+   eosio_assert(to.chain == chain, "symbol chain mismatch");
+   auto current_block = current_block_num();
+   auto last_devidend_num = current_block - current_block % UPDATE_CYCLE;
+
+   auto power = to.mineage;
+   if (to.mineage_update_height < last_devidend_num) {
+      power = to.mineage + get_current_age(to.balance,to.mineage_update_height,last_devidend_num) + to.pending_mineage ;
+   }
+
+   if (power == 0) {
+      print("the devident is zreo");
+      return ;
+   }
+   auto total_power = total_mineage;
+   if (total_mineage_update_height < last_devidend_num) {
+      total_power = total_mineage + get_current_age(supply,total_mineage_update_height,last_devidend_num) + total_pending_mineage;
+   }
+
+   auto total_reward = reward_pool * power / total_power;
+   // print("claim  to --- ",to.mineage,"---",to.balance,"----",to.mineage_update_height,"---",last_devidend_num,"\n");
+   // print("claim  total --- ",total_mineage,"---",supply,"----",total_mineage_update_height,"---",last_devidend_num,"\n");
+   // print("claim --- ",power,"---",total_power,"----",reward_pool,"---",total_reward,"\n");
+   //接下来的更新 总分红   减去当前分红   总矿龄减去当前矿龄      用户历史矿龄归零  计算待领取分红 高度为当前高度
+   statstable.modify( existing,0,[&](auto &st) {
+      st.reward_pool -= total_reward;
+      st.total_mineage = total_power - power;
+      
+      if (st.total_mineage_update_height < last_devidend_num) {
+         st.total_mineage += st.total_pending_mineage;
+         st.total_pending_mineage = 0;
+      }
+      st.total_mineage_update_height = last_devidend_num;
+   });
+   print("modify statstable \n");
+   to_acnts.modify(to, receiver, [&]( auto& a ) {
+      a.mineage = 0;
+      if (a.mineage_update_height < last_devidend_num) {
+         a.pending_mineage = get_current_age(a.balance,last_devidend_num,current_block);
+      }
+      else {
+         a.pending_mineage += get_current_age(a.balance,a.mineage_update_height,current_block);
+      }
+      a.mineage_update_height = current_block;
+   });
+   print("modify to_acnts \n");
+   //转账功能暂时没有实现,因为没有该合约没有force的权限
+   // eosio::action(
+   //         permission_level{ ::config::system_account_name, N(active) },
+   //         N(force.token), N(transfer),
+   //         std::make_tuple(::config::system_account_name, receiver,total_reward,"claim Dividend")
+   // ).send();
 }
 
 void splitMemo(std::vector<std::string>& results, const std::string& memo,char separator) {
@@ -500,4 +612,4 @@ void sys_match_match::parse(const string memo) {
 
 };
 
-EOSIO_ABI(relay::token, (on)(create)(issue)(destroy)(transfer)(trade)(rewardmine)(addreward))
+EOSIO_ABI(relay::token, (on)(create)(issue)(destroy)(transfer)(trade)(rewardmine)(addreward)(claim))

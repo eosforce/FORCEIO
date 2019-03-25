@@ -277,6 +277,7 @@
             },
             {"name":"mineage",        "type":"int64"},
             {"name":"mineage_update_height","type":"uint32"},
+            {"name":"pending_mineage",        "type":"int64"},
          ]
       },
       {
@@ -316,6 +317,7 @@
             {"name":"rewards_pool",         "type":"asset"},
             {"name":"total_mineage",        "type":"int64"},
             {"name":"total_mineage_update_height","type":"uint32"},
+            {"name":"total_pending_mineage",        "type":"int64"},
          ]
       },
       {
@@ -359,6 +361,24 @@
                "type":"asset"
             }
          ]
+      },
+      {
+         "name":"claim",
+         "base":"",
+         "fields":[
+            {
+               "name":"chain",
+               "type":"name"
+            },
+            {
+               "name":"quantity",
+               "type":"asset"
+            },
+            {
+               "name":"receiver",
+               "type":"account_name"
+            }
+         ]
       }
    ],
    "actions":[
@@ -400,6 +420,11 @@
       {
          "name":"rewardmine",
          "type":"rewardmine",
+         "ricardian_contract":""
+      },
+      {
+         "name":"claim",
+         "type":"claim",
          "ricardian_contract":""
       }
    ],

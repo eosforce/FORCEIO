@@ -51,7 +51,7 @@ using std::string;
 
    const account_name SYS_BRIDGE = N(sys.bridge);
 
-
+static constexpr uint32_t UPDATE_CYCLE = 42;
 class token : public eosio::contract {
 public:
    using contract::contract;
@@ -102,6 +102,8 @@ public:
    void addreward(name chain,asset supply);
    //奖励挖矿币种
    void rewardmine(asset quantity);
+   //领取分红
+   void claim(name chain,asset quantity,account_name receiver);
 
 private:
    inline static uint128_t get_account_idx(const name& chain, const asset& a) {
@@ -115,6 +117,7 @@ private:
 
       int64_t      mineage               = 0;         // asset.amount * block height
       uint32_t     mineage_update_height = 0;
+      int64_t      pending_mineage       = 0;
 
       uint64_t  primary_key() const { return id; }
       uint128_t get_index_i128() const { return get_account_idx(chain, balance); }
@@ -136,6 +139,7 @@ private:
       asset        reward_pool;
       int64_t      total_mineage               = 0;         // asset.amount * block height
       uint32_t     total_mineage_update_height = 0;
+      int64_t      total_pending_mineage       = 0;
 
       uint64_t primary_key() const { return supply.symbol.name(); }
    };
