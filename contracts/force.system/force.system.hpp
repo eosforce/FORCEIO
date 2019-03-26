@@ -224,6 +224,7 @@ namespace eosiosystem {
       void reward_bps(const uint64_t reward_amount);
       void reward_block(const uint32_t schedule_version);
       void reward_mines(const uint64_t reward_amount);
+      void reward_develop();
 
       bool is_super_bp( account_name block_producers[], account_name name );
 
@@ -299,7 +300,8 @@ namespace eosiosystem {
       void claimvote(const account_name bpname,const account_name receiver);
       //BP领取分红
       void claimbp(const account_name bpname,const account_name receiver);
-
+      //DEVELOP领取分红
+      void claimdevelop(const account_name develop);
 #if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
       // @abi action
       void delegatebw( account_name from, account_name receiver,

@@ -38,13 +38,10 @@ namespace eosiosystem {
                                                    asset(BLOCK_REWARDS_BP), 
                                                    "issue tokens for producer pay"} );
 
-      print("UPDATE_CYCLE","---",current_block_num(),"---",UPDATE_CYCLE);
       if( current_block_num() % UPDATE_CYCLE == 0 ) {
-         print("reward_bps\n");
          uint64_t  vote_power = get_vote_power();
          uint64_t  coin_power = get_coin_power();
          uint64_t total_power = vote_power + coin_power;
-         print("before reward_block ",vote_power,"---",coin_power,"---",BLOCK_REWARDS_POWER,"\n");
          reward_block(schedule_version);
          //reward miners
          reward_mines(BLOCK_REWARDS_POWER * coin_power / total_power);
@@ -128,37 +125,52 @@ namespace eosiosystem {
       ).send();
    }
 
+   void system_contract::reward_develop() {
+      reward_table reward_inf(_self,_self);
+      auto reward = reward_inf.find(REWARD_ID);
+      if(reward == reward_inf.end()) {
+         reward_inf.emplace(_self, [&]( reward_info& s ) {
+            s.id = REWARD_ID;
+            s.reward_block_out = asset(0);
+            s.reward_bp = asset(0);
+            s.reward_develop = asset(BLOCK_REWARDS_DEVELOP);
+            s.total_block_out_age = 0;
+            s.total_bp_age = 0;
+         });
+      }
+      else {
+         reward_inf.modify(reward, 0, [&]( reward_info& s ) {
+            s.reward_develop += asset(BLOCK_REWARDS_DEVELOP);      
+         });
+      }
+   }
+
    // TODO it need change if no bonus to accounts
 
    void system_contract::reward_block(const uint32_t schedule_version ) {
       schedules_table schs_tbl(_self, _self);
       bps_table bps_tbl(_self, _self);
-      print("reward_block",schedule_version,"\n");
       auto sch = schs_tbl.find(uint64_t(schedule_version));
       eosio_assert(sch != schs_tbl.end(),"cannot find schedule");
       int64_t total_block_out_age = 0;
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
          auto bp = bps_tbl.find(sch->producers[i].bpname);
          eosio_assert(bp != bps_tbl.end(),"cannot find bpinfo");
-         //eosio_assert(bp->mortgage > asset(88888888),"");
          if(bp->mortgage < asset(MORTGAGE)) {
             //抵押不足,没有出块奖励
-            print("missing mortgage ",bp->name,"\n");
             continue;
          }
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-            //先检测是否有漏块情况
-            if(sch->producers[i].amount - b.last_block_amount != PER_CYCLE_AMOUNT && sch->producers[i].amount > b.last_block_amount) {
-               b.block_age +=  (sch->producers[i].amount - b.last_block_amount) * b.block_weight;
-               total_block_out_age += (sch->producers[i].amount - b.last_block_amount) * b.block_weight;
+            //先检测是否有漏块情况  稍后再看一下
+             b.block_age +=  (sch->producers[i].amount > b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
+            total_block_out_age += (sch->producers[i].amount > b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
+               
+            if(sch->producers[i].amount - b.last_block_amount != PER_CYCLE_AMOUNT) {
+              b.block_weight += 1;
                b.block_weight = MORTGAGE;
                b.mortgage -= asset(0.2*10000);
-               print("some block missing ",b.name,"\n");
             } else {
-               b.block_age +=  (sch->producers[i].amount > b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
-               total_block_out_age +=  (sch->producers[i].amount > b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
-               b.block_weight += 1;
-               print("normal reward block ",b.name,"\n");
+              b.block_weight += 1;
             }
             b.last_block_amount = sch->producers[i].amount;
          });
@@ -190,7 +202,6 @@ namespace eosiosystem {
          staked_all_bps += it->total_staked;
       }
       if( staked_all_bps <= 0 ) {
-         print("staked_all_bps <= 0 renturn \n");
          return;
       }
       const auto rewarding_bp_staked_threshold = staked_all_bps / 200;
@@ -198,13 +209,11 @@ namespace eosiosystem {
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
          if( !it->isactive || it->total_staked <= rewarding_bp_staked_threshold || it->commission_rate < 1 ||
              it->commission_rate > 10000 ) {
-            print("bp not normal comtinue \n");
             continue;
          }
          auto vote_reward = static_cast<int64_t>( reward_amount  * double(it->total_staked) / double(staked_all_bps));
          //暂时先给所有的BP都增加BP奖励   还需要增加vote池的奖励
          const auto& bp = bps_tbl.get(it->name, "bpname is not registered");
-         print("bp age add 1 --",it->name,"---",vote_reward,"---",reward_amount,"\n");
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
             b.bp_age += 1;
             b.rewards_pool += asset(vote_reward * b.commission_rate / 10000);
@@ -262,7 +271,6 @@ namespace eosiosystem {
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
          staked_all_bps += it->total_staked;
       }
-      print("get_vote_power --",staked_all_bps,"\n");
       return staked_all_bps* 10000;
    }
    //增加抵押
@@ -295,6 +303,24 @@ namespace eosiosystem {
          { ::config::system_account_name, N(active) },
          { ::config::system_account_name, receiver, quantity, "claim bp mortgage" });
    }
+
+   void system_contract::claimdevelop(const account_name develop) {
+      require_auth(develop);
+      eosio_assert (develop == ::config::system_account_name,"invaild develop account");
+      reward_table reward_inf(_self,_self);
+      auto reward = reward_inf.find(REWARD_ID);
+      eosio_assert(reward != reward_inf.end(),"reward info do not find");
+
+      auto reward_develop = reward->reward_develop;
+      reward_inf.modify(reward, 0, [&]( reward_info& s ) {
+         s.reward_develop = asset(0);
+      });
+      eosio_assert(reward_develop > asset(10000),"claim amount must > 1");
+      INLINE_ACTION_SENDER(eosio::token, castcoin)(
+         config::token_account_name,
+         { ::config::system_account_name, N(active) },
+         { ::config::system_account_name, develop, reward_develop });
+   }
    //BP领取分红
    void system_contract::claimbp(const account_name bpname,const account_name receiver) {
       require_auth(bpname);
@@ -314,11 +340,9 @@ namespace eosiosystem {
       int64_t block_age = bp->block_age;
       int64_t bp_age = bp->bp_age;
 
-      //auto total_reward = reward_block_out * block_age/total_block_out_age + reward_bp * bp_age / total_bp_age;
       auto claim_block = reward_block_out * block_age/total_block_out_age;
       auto claim_bp = reward_bp * bp_age / total_bp_age;
-      print("claim bp -----",reward_block_out,"---",block_age,"---",total_block_out_age,"---",claim_block,"\n");
-      print("claim bp -----",reward_bp,"---",bp_age,"---",total_bp_age,"---",claim_bp,"\n");
+
       bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
             b.block_age = 0;
             b.bp_age = 0;
@@ -330,11 +354,11 @@ namespace eosiosystem {
             s.total_block_out_age -= block_age;
             s.total_bp_age -= bp_age;
          });
-
-      INLINE_ACTION_SENDER(eosio::token, transfer)(
+      eosio_assert(claim_block + claim_bp > asset(10000),"claim amount must > 1");
+      INLINE_ACTION_SENDER(eosio::token, castcoin)(
          config::token_account_name,
          { ::config::system_account_name, N(active) },
-         { ::config::system_account_name, receiver, claim_block + claim_bp, "claim Dividend" });
+         { ::config::system_account_name, receiver, claim_block + claim_bp });
    }
 
    void system_contract::claimvote(const account_name bpname,const account_name receiver) {
@@ -357,14 +381,12 @@ namespace eosiosystem {
             static_cast<int128_t>(vts.voteage + vts.vote.amount / 10000 * (last_devide_num - vts.voteage_update_height));
       const auto newest_total_voteage =
             static_cast<int128_t>(bp.total_voteage + bp.total_staked * (last_devide_num - bp.voteage_update_height));
-      print("claimvote voteage --- ",vts.voteage,"---",vts.vote.amount,"---",last_devide_num,"---",vts.voteage_update_height,"\n");
-      print("claimvote total voteage --- ",bp.total_voteage,"---",bp.total_staked,"---",last_devide_num,"---",bp.voteage_update_height,"\n");
+
       eosio_assert(0 < newest_total_voteage, "claim is not available yet");
 
       //奖池构成  15%给BP  其他给投票人   commission_rate / 10000 来奖励BP
       const auto amount_voteage = static_cast<int128_t>(bp.rewards_pool.amount) * newest_voteage;
       asset reward = asset(static_cast<int64_t>( amount_voteage / newest_total_voteage ));
-      print("claimvote ---",bp.rewards_pool.amount,"---",bp.commission_rate,"---",newest_voteage,"---",newest_total_voteage,"\n");
       eosio_assert(asset{} <= reward && reward <= bp.rewards_pool,
                    "need 0 <= claim reward quantity <= rewards_pool");
 
@@ -373,18 +395,17 @@ namespace eosiosystem {
          reward_all += bp.rewards_block;
       }
 
-      print("claimvote ---",bp.rewards_pool.amount,"---",bp.commission_rate,"---",reward_all,"\n");
-      eosio_assert(reward_all > asset{}, "no any reward!");
-      INLINE_ACTION_SENDER(eosio::token, transfer)(
+      eosio_assert(reward_all> asset(10000),"claim amount must > 1");
+      INLINE_ACTION_SENDER(eosio::token, castcoin)(
             config::token_account_name,
             { ::config::system_account_name, N(active) },
-            { ::config::system_account_name, receiver, reward_all, "claim Dividend" });
+            { ::config::system_account_name, receiver, reward_all});
 
       votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
          v.voteage = 0;
          v.voteage_update_height = last_devide_num;
       });
-
+      
       bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
          b.rewards_pool -= reward_all;
          b.total_voteage = static_cast<int64_t>(newest_total_voteage - newest_voteage);

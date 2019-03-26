@@ -478,7 +478,7 @@ void token::claim(name chain,asset quantity,account_name receiver) {
       }
       st.total_mineage_update_height = last_devidend_num;
    });
-   print("modify statstable \n");
+
    to_acnts.modify(to, receiver, [&]( auto& a ) {
       a.mineage = 0;
       if (a.mineage_update_height < last_devidend_num) {
@@ -489,13 +489,14 @@ void token::claim(name chain,asset quantity,account_name receiver) {
       }
       a.mineage_update_height = current_block;
    });
-   print("modify to_acnts \n");
+
+   eosio_assert(total_reward > asset(10000),"claim amount must > 1");
    //转账功能暂时没有实现,因为没有该合约没有force的权限
-   // eosio::action(
-   //         permission_level{ ::config::system_account_name, N(active) },
-   //         N(force.token), N(transfer),
-   //         std::make_tuple(::config::system_account_name, receiver,total_reward,"claim Dividend")
-   // ).send();
+   eosio::action(
+           permission_level{ ::config::system_account_name, N(active) },
+           N(force.token), N(castcoin),
+           std::make_tuple(::config::system_account_name, receiver,total_reward)
+   ).send();
 }
 
 void splitMemo(std::vector<std::string>& results, const std::string& memo,char separator) {

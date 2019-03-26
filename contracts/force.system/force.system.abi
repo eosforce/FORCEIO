@@ -385,6 +385,12 @@
             {"name":"bpname",                "type":"account_name"},
             {"name":"receiver",              "type":"account_name"}
          ]
+       },{
+         "name": "claimdevelop",
+         "base": "",
+         "fields": [
+            {"name":"develop",                "type":"account_name"}
+         ]
        }
   ],
   "actions": [{
@@ -490,6 +496,10 @@
       },{
          "name": "claimvote",
          "type": "claimvote",
+         "ricardian_contract": ""
+      },{
+         "name": "claimdevelop",
+         "type": "claimdevelop",
          "ricardian_contract": ""
       }
   ],
