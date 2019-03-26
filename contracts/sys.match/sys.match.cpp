@@ -58,7 +58,8 @@ namespace exchange {
          p.quote_sym    = quote_sym.value | (quote.value & 0xff);
          p.fee_rate     = fee_rate;
          p.exc_acc      = exc_acc;
-          
+         p.fees_base    = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym));
+         p.fees_quote   = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym));
       });
    }
 
@@ -169,17 +170,6 @@ namespace exchange {
             if (price < itr->price) {
                // insert the order
                insert_order(orders, itr1->id, bid_or_ask, base, price, payer, receiver);
-               /*auto pk = orders.available_primary_key();
-               orders.emplace( _self, [&]( auto& o ) {
-                   o.id            = pk;
-                   o.pair_id       = itr1->id;
-                   o.bid_or_ask    = bid_or_ask;
-                   o.base          = convert(itr1->base, base);
-                   o.price         = convert(itr1->quote, price);
-                   o.maker         = payer;
-                   o.receiver      = receiver;
-                   o.timestamp     = time_point_sec(uint32_t(current_time() / 1000000ll));
-               });*/
                return;
             }
             if( base <= itr->base ) { // full match
@@ -192,8 +182,13 @@ namespace exchange {
                quant_after_fee -= fee;
                inline_transfer(escrow, receiver, itr1->base_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_base += fee;
+                  });
+               }
+                  
                //quant_after_fee = convert(itr1->quote_sym, itr->price) * base.amount / precision(base.symbol.precision());
                if (itr->price.symbol.precision() >= base.symbol.precision())
                   quant_after_fee = itr->price * base.amount / precision(base.symbol.precision());
@@ -204,8 +199,12 @@ namespace exchange {
                quant_after_fee -= fee;
                inline_transfer(escrow, itr->receiver, itr1->quote_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_quote += base;
+                  });
+               }
                // refund the difference to payer
                if ( price > itr->price) {
                   auto diff = price - itr->price;
@@ -235,8 +234,13 @@ namespace exchange {
                quant_after_fee -= fee;
                inline_transfer(escrow, receiver, itr1->base_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_base += fee;
+                  });
+               }
+                  
                if (itr->price.symbol.precision() >= itr->base.symbol.precision())
                   quant_after_fee = itr->price * itr->base.amount / precision(itr->base.symbol.precision());
                else
@@ -246,8 +250,13 @@ namespace exchange {
                quant_after_fee -= fee;
                inline_transfer(escrow, itr->receiver, itr1->quote_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_quote += fee;
+                  });
+               }
+                  
                base -= itr->base;
                // refund the difference to payer
                if ( price > itr->price) {
@@ -379,8 +388,13 @@ namespace exchange {
                print("\n 1: from=", from.to_string().c_str(), ", to=", to.to_string().c_str(),  ", amount=", quant_after_fee);
                inline_transfer(escrow, receiver, itr1->quote_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_quote += fee;
+                  });
+               }
+                  
                quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, base);
                fee = calcfee(quant_after_fee, itr1->fee_rate);
                quant_after_fee -= fee;
@@ -388,9 +402,13 @@ namespace exchange {
                print("\n 2: from=", from.to_string().c_str(), ", to=", to.to_string().c_str(),  ", amount=", quant_after_fee);
                inline_transfer(escrow, end_itr->receiver, itr1->base_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
-               
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_base += fee;
+                  });
+               }
+                  
                // refund the difference
                if ( end_itr->price > price) {
                   auto diff = end_itr->price - price;
@@ -425,15 +443,25 @@ namespace exchange {
                quant_after_fee -= fee;
                inline_transfer(escrow, receiver, itr1->quote_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_quote += fee;
+                  });
+               }
+                  
                quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, end_itr->base);
                fee = calcfee(quant_after_fee, itr1->fee_rate);
                quant_after_fee -= fee;
                inline_transfer(escrow, end_itr->receiver, itr1->base_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_base += fee;
+                  });
+               }
+                  
                base -= end_itr->base;
                // refund the difference
                if ( end_itr->price > price ) {
@@ -450,17 +478,6 @@ namespace exchange {
                if (exit_on_done) {
                   idx_orderbook.erase(end_itr);
                   insert_order(orders, itr1->id, bid_or_ask, base, price, payer, receiver);
-                  /*auto pk = orders.available_primary_key();
-                  orders.emplace( _self, [&]( auto& o ) {
-                      o.id            = pk;
-                      o.pair_id       = itr1->id;
-                      o.bid_or_ask    = bid_or_ask;
-                      o.base          = base;
-                      o.price         = price;
-                      o.maker         = payer;
-                      o.receiver      = receiver;
-                      o.timestamp     = time_point_sec(uint32_t(current_time() / 1000000ll));
-                  });*/
                } else
                   idx_orderbook.erase(end_itr--);
             }
@@ -475,17 +492,6 @@ namespace exchange {
       if (lower == idx_orderbook.cend()) {
          print("\n sell: buy orderbook empty, lookup_key=", lookup_key);
          insert_order(orders, itr1->id, bid_or_ask, base, price, payer, receiver);
-         /*auto pk = orders.available_primary_key();
-         orders.emplace( _self, [&]( auto& o ) {
-             o.id            = pk;
-             o.pair_id       = itr1->id;
-             o.bid_or_ask    = bid_or_ask;
-             o.base          = base;
-             o.price         = price;
-             o.maker         = payer;
-             o.receiver      = receiver;
-             o.timestamp     = time_point_sec(uint32_t(current_time() / 1000000ll));
-         });*/
       } else {
          if (upper == idx_orderbook.cend()) {
             print("\n 8888888888888");
@@ -649,6 +655,47 @@ namespace exchange {
       get_mark(base_chain, base_sym, quote_chain, quote_sym);
    }
    
+   void exchange::claim(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc, account_name fee_acc) {
+      require_auth(exc_acc);
+      
+      trading_pairs   trading_pairs_table(_self, _self);
+      bool claimed = false;
+     
+      auto lower_key = std::numeric_limits<uint64_t>::lowest();
+      auto lower = trading_pairs_table.lower_bound( lower_key );
+      auto upper_key = std::numeric_limits<uint64_t>::max();
+      auto upper = trading_pairs_table.upper_bound( upper_key );
+      
+      for ( auto itr = lower; itr != upper; ++itr ) {
+         if (itr->base_chain == base_chain && itr->base_sym == base_sym && 
+               itr->quote_chain == quote_chain && itr->quote_sym == quote_sym && itr->exc_acc == exc_acc) {
+            print("exchange::claim -- pair: id=", itr->id, "\n");
+            if (escrow != fee_acc && itr->fees_base.amount > 0)
+            {
+               inline_transfer(escrow, fee_acc, itr->base_chain, itr->fees_base, "");
+               trading_pairs_table.modify(itr, _self, [&]( auto& p ) {
+                  p.fees_base = to_asset(relay_token_acc, itr->base_chain, itr->base_sym, asset(0, itr->base_sym));
+               });
+               claimed = true;
+            }
+            if (escrow != fee_acc && itr->fees_quote.amount > 0)
+            {
+               inline_transfer(escrow, fee_acc, itr->quote_chain, itr->fees_quote, "");
+               trading_pairs_table.modify(itr, _self, [&]( auto& p ) {
+                  p.fees_quote = to_asset(relay_token_acc, itr->quote_chain, itr->quote_sym, asset(0, itr->quote_sym));
+               });
+               claimed = true;
+            }   
+         }
+         eosio_assert(claimed, "no fees or fee_acc is escrow account");
+
+         return;
+      }
+
+      eosio_assert(false, "trading pair does not exist");
+      return;
+   }
+   
    asset exchange::calcfee(asset quant, uint64_t fee_rate) {
       asset fee = quant * fee_rate / max_fee_rate;
       if(fee_rate > 0 && fee.amount < 1) {
@@ -659,4 +706,4 @@ namespace exchange {
    }   
 }
 
-EOSIO_ABI( exchange::exchange, (create)(match)(cancel)(done)(mark))
+EOSIO_ABI( exchange::exchange, (create)(match)(cancel)(done)(mark)(claim))

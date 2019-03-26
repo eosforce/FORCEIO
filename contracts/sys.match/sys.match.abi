@@ -74,7 +74,9 @@
       {"name": "quote_chain","type": "name"},
       {"name": "quote_sym","type": "symbol_type"},
       {"name": "fee_rate","type": "uint32"},
-      {"name": "exc_acc","type": "account_name"}
+      {"name": "exc_acc","type": "account_name"},
+      {"name": "fees_base","type": "asset"},
+      {"name": "fees_quote","type": "asset"}
       ]
     },{
        "name": "order",
@@ -102,6 +104,17 @@
         {"name": "vol","type":"asset"},
         {"name": "reset_block_height","type":"uint32"}
        ]
+     },{
+       "name": "claim",
+       "base": "",
+       "fields": [
+        {"name": "base_chain","type": "name"},
+        {"name": "base_sym","type": "symbol_type"},
+        {"name": "quote_chain","type": "name"},
+        {"name": "quote_sym","type": "symbol_type"},
+        {"name": "exc_acc","type":"account_name"},
+        {"name": "fee_acc","type":"account_name"}
+       ]
      }
   ],
   "actions": [{
@@ -123,6 +136,10 @@
     },{
       "name": "mark",
       "type": "mark",
+      "ricardian_contract": ""
+    },{
+      "name": "claim",
+      "type": "claim",
       "ricardian_contract": ""
     }
   ],

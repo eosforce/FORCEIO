@@ -48,6 +48,8 @@ namespace exchange {
       
       void mark(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym);
       
+      void claim(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc, account_name fee_acc);
+      
       asset calcfee(asset quant, uint64_t fee_rate);
 
       inline symbol_type get_pair_base( uint32_t pair_id ) const;
@@ -71,6 +73,8 @@ namespace exchange {
           
           uint32_t    fee_rate;
           account_name exc_acc;
+          asset       fees_base;
+          asset       fees_quote;
           
           uint32_t primary_key() const { return id; }
           uint128_t by_pair_sym() const { return (uint128_t(base.name()) << 64) | quote.name(); }
