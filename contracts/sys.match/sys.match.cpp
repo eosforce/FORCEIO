@@ -2,6 +2,7 @@
 
 #include "sys.match.hpp"
 #include <cmath>
+#include "eosiolib/transaction.hpp"
 
 namespace exchange {
    using namespace eosio;
@@ -525,6 +526,14 @@ namespace exchange {
             N(sys.match), N(done),
             std::make_tuple(exc_acc, quote_chain, price, base_chain, quantity, bid_or_ask, timestamp)
       ).send();
+      /*transaction trx;
+      
+      trx.actions.emplace_back(action(
+            permission_level{ exc_acc, N(active) },
+            N(sys.match), N(done),
+            std::make_tuple(exc_acc, quote_chain, price, base_chain, quantity, bid_or_ask, timestamp)
+      ));
+      trx.send(current_time(), exc_acc);*/
    }
    
    // now do nothing, only for action capture

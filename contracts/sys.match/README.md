@@ -5,10 +5,10 @@ EOS-based decentralized exchange contract<br>
 一. contract interface overview:
 1. Creating trading pairs:  (located in sys.match contrade)
 void create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym, uint32_t fee_rate, account_name exc_acc);    
-base:       base token sybbol and precision, such as 4,BTC
+base:       base token symbol and precision, such as 4,BTC
 base_chain: from which chain   
 base_sym:   from which token
-quote:	   quote token sybbol and precision，such as 2,USDT
+quote:	   quote token symbol and precision，such as 2,USDT
 quote_chain:from which chain
 quote_sym:  from which token
 fee_rate:   fee rate (for example，fee_rate is 10， fee rate is 10/10000)
