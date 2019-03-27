@@ -66,9 +66,17 @@ namespace exchange {
 
    asset exchange::to_asset( account_name code, name chain, symbol_type sym, const asset& a ) {
       asset b;
-      relay::token t(code);
+      symbol_type expected_symbol;
       
-      symbol_type expected_symbol = t.get_supply(chain, sym.name()).symbol ;
+      if (chain.value == 0) {
+         eosio::token t(code);
+      
+         expected_symbol = t.get_supply(sym.name()).symbol ;
+      } else {
+         relay::token t(code);
+      
+         expected_symbol = t.get_supply(chain, sym.name()).symbol ;
+      }
 
       b = convert(expected_symbol, a);
       return b;
@@ -99,11 +107,19 @@ namespace exchange {
    }
    
    void inline_transfer(account_name from, account_name to, name chain, asset quantity, string memo ) {
-      action(
-              permission_level{ from, N(active) },
-              relay_token_acc, N(transfer),
-              std::make_tuple(from, to, chain, quantity, memo)
-      ).send();
+      if (chain.value == 0) {
+         action(
+                 permission_level{ from, N(active) },
+                 config::token_account_name, N(transfer),
+                 std::make_tuple(from, to, quantity, memo)
+         ).send();
+      } else {
+         action(
+                 permission_level{ from, N(active) },
+                 relay_token_acc, N(transfer),
+                 std::make_tuple(from, to, chain, quantity, memo)
+         ).send();
+      }
    }
    
    void exchange::insert_order(
@@ -652,8 +668,6 @@ namespace exchange {
    void exchange::mark(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym) {
       require_auth(_self);
       
-      //get_pair(base_chain, base_sym, quote_chain, quote_sym);
-      //get_mark(base_chain, base_sym, quote_chain, quote_sym);
       deals   deals_table(_self, _self);
      
       auto pair_id = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);

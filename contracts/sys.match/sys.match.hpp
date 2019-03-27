@@ -14,6 +14,7 @@
 #include <eosiolib/privileged.hpp>
 #include <eosiolib/singleton.hpp>
 #include <eosiolib/eosio.hpp>
+#include <force.token/force.token.hpp>
 #include <relay.token/relay.token.hpp>
 #include <string>
 
@@ -60,7 +61,6 @@ namespace exchange {
       inline uint32_t get_pair_id( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const;
       inline asset get_avg_price( uint32_t block_height, name base_chain, symbol_type base_sym, name quote_chain = {0}, symbol_type quote_sym = CORE_SYMBOL ) const;
       
-      inline void get_mark( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const;
       inline void upd_mark( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, asset sum, asset vol );
 
       struct pair {
@@ -125,8 +125,9 @@ namespace exchange {
          asset       sum;
          asset       vol;
          
-         uint32_t    reset_block_height;
-         uint32_t    block_height_end;
+         // [reset_block_height .. block_height_end]
+         uint32_t    reset_block_height;// include 
+         uint32_t    block_height_end;// include
          
          uint64_t primary_key() const { return id; }
          uint64_t by_pair_and_block_height() const {
@@ -328,6 +329,9 @@ namespace exchange {
       return 0;
    }
    
+   /*
+   block_height: end block height
+   */
    asset exchange::get_avg_price( uint32_t block_height, name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const {
       deals   deals_table(_self, _self);
 
@@ -344,76 +348,7 @@ namespace exchange {
       
       return itr1->sum * precision(itr1->vol.symbol.precision()) / itr1->vol.amount;
    }
-   
-   
-   
-   void exchange::get_mark( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const {
-      deals   deals_table(_self, _self);
-     
-      auto pair_id = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
-      auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower = deals_table.lower_bound( lower_key );
-      auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper = deals_table.upper_bound( upper_key );
-      
-      for ( auto itr = lower; itr != upper; ++itr ) {
-         print("exchange::get_mark -- pair: id=", itr->id, "\n");
-         if (itr->base_chain == base_chain && itr->base_sym.name() == base_sym.name() && 
-            itr->quote_chain == quote_chain && itr->quote_sym.name() == quote_sym.name()) 
-            eosio_assert(false, "pair mark already exist");;
-      }
-      
-      auto pk = deals_table.available_primary_key();
-      deals_table.emplace( _self, [&]( auto& d ) {
-         d.id = (uint32_t)pk;
-         d.pair_id      = pair_id;
-         d.base_chain   = base_chain;
-         d.base_sym     = base_sym;
-         d.quote_chain  = quote_chain;
-         d.quote_sym    = quote_sym;
-         d.sum          = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym));
-         d.vol          = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym));
-         d.reset_block_height = current_block_num();
-      });
-      
-      return ;
-   }
-   
-  /* void exchange::upd_mark( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, asset sum, asset vol ) {
-      deals   deals_table(_self, _self);
-      const uint32_t INTERVAL_BLOCKS = 172800;
-      uint32_t curr_block;
-     
-      auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower = deals_table.lower_bound( lower_key );
-      auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper = deals_table.upper_bound( upper_key );
-      
-      for ( auto itr = lower; itr != upper; ++itr ) {
-         print("\n pair: id=", itr->id);
-         if (itr->base_chain == base_chain && itr->base_sym.name() == base_sym.name() && 
-               itr->quote_chain == quote_chain && itr->quote_sym.name() == quote_sym.name()) {
-            curr_block = current_block_num();
-            if (curr_block - itr->reset_block_height >= INTERVAL_BLOCKS) {
-               deals_table.modify( itr, _self, [&]( auto& d ) {
-                  d.sum = sum;
-                  d.vol = vol;
-                  d.reset_block_height = curr_block;
-               });
-            } else {
-               deals_table.modify( itr, _self, [&]( auto& d ) {
-                  d.sum += sum;
-                  d.vol += vol;
-               });
-            }
-            
-            return;
-         }
-      }
-      
-      return ;
-   }*/
-   
+ 
    void exchange::upd_mark( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, asset sum, asset vol ) {
       deals   deals_table(_self, _self);
       
@@ -422,7 +357,10 @@ namespace exchange {
       auto lower_key = ((uint64_t)pair_id << 32) | 0;
       auto idx_deals = deals_table.template get_index<N(idxkey)>();
       auto itr1 = idx_deals.lower_bound(lower_key);
-      eosio_assert(itr1 != idx_deals.end() && itr1->pair_id == pair_id, "trading pair not marked");
+      if (!( itr1 != idx_deals.end() && itr1->pair_id == pair_id )) {
+         print("exchange::upd_mark trading pair not marked!\n");
+         return;
+      }
       
       uint32_t curr_block = current_block_num();
       lower_key = ((uint64_t)pair_id << 32) | curr_block;
