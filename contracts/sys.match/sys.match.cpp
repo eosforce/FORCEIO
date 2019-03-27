@@ -28,10 +28,24 @@ namespace exchange {
       eosio_assert(base.is_valid(), "invalid base symbol");
       eosio_assert(quote.is_valid(), "invalid quote symbol");
       
-      relay::token t(relay_token_acc);
-      symbol_type expected_symbol = t.get_supply(base_chain, base_sym.name()).symbol;
+      symbol_type expected_symbol;
+      
+      if (base_chain.value == 0) {
+         eosio::token t(config::token_account_name);
+         expected_symbol = t.get_supply(base_sym.name()).symbol;
+      } else {
+         relay::token t(relay_token_acc);
+         expected_symbol = t.get_supply(base_chain, base_sym.name()).symbol;
+      }
       eosio_assert(base.precision() <= expected_symbol.precision(), "invalid base symbol precision");
-      expected_symbol = t.get_supply(quote_chain, quote_sym.name()).symbol;
+      
+      if (quote_chain.value == 0) {
+         eosio::token t(config::token_account_name);
+         expected_symbol = t.get_supply(quote_sym.name()).symbol;
+      } else {
+         relay::token t(relay_token_acc);
+         expected_symbol = t.get_supply(quote_chain, quote_sym.name()).symbol;
+      }
       eosio_assert(quote.precision() <= expected_symbol.precision(), "invalid quote symbol precision");
 
       trading_pairs trading_pairs_table(_self,_self);
@@ -69,11 +83,11 @@ namespace exchange {
       symbol_type expected_symbol;
       
       if (chain.value == 0) {
-         eosio::token t(code);
+         eosio::token t(config::token_account_name);
       
          expected_symbol = t.get_supply(sym.name()).symbol ;
       } else {
-         relay::token t(code);
+         relay::token t(relay_token_acc);
       
          expected_symbol = t.get_supply(chain, sym.name()).symbol ;
       }
