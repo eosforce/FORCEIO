@@ -89,41 +89,38 @@ void token::castcoin( account_name from,
                       account_name to,
                       asset        quantity)
 {
-    //eosio_assert( from != ::config::system_account_name, "only the account force can cast coin to others" );
-    require_auth( from );
-    eosio_assert( is_account( to ), "to account does not exist");
-    //auto sym = quantity.symbol.name();
-    coincasts coincast_table( _self, to );
-    auto current_block = current_block_num();
-    int32_t cast_num = PRE_CAST_NUM - current_block / UPDATE_CYCLE * WEAKEN_CAST_NUM;
-    if (cast_num < STABLE_CAST_NUM) cast_num = STABLE_CAST_NUM;
-    auto finish_block = current_block + 100;
-    const auto cc = coincast_table.find( static_cast<uint64_t>(finish_block) );
+   eosio_assert( from == ::config::system_account_name, "only the account force can cast coin to others" );
+   require_auth( from );
+   eosio_assert( is_account( to ), "to account does not exist");
+   //auto sym = quantity.symbol.name();
+   coincasts coincast_table( _self, to );
+   auto current_block = current_block_num();
+   int32_t cast_num = PRE_CAST_NUM - current_block / UPDATE_CYCLE * WEAKEN_CAST_NUM;
+   if (cast_num < STABLE_CAST_NUM) cast_num = STABLE_CAST_NUM;
+   auto finish_block = current_block + cast_num;
+   const auto cc = coincast_table.find( static_cast<uint64_t>(finish_block) );
 
-    require_recipient( from );
-    require_recipient( to );
+   require_recipient( from );
+   require_recipient( to );
 
-    eosio_assert( quantity.is_valid(), "invalid quantity" );
-    eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
-    if (cc != coincast_table.end()) {
-       eosio_assert( quantity.symbol == cc->balance.symbol, "symbol precision mismatch" );
-    }
-    //eosio_assert( quantity.symbol == cc.balance.symbol, "symbol precision mismatch" );
-    //eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
+   eosio_assert( quantity.is_valid(), "invalid quantity" );
+   eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
+   if (cc != coincast_table.end()) {
+      eosio_assert( quantity.symbol == cc->balance.symbol, "symbol precision mismatch" );
+   }
 
-    sub_balance( from, quantity );
-    if (cc == coincast_table.end()) {
-      coincast_table.emplace( from, [&]( auto& a ){
-        a.balance = quantity;
-        a.start_block = current_block;
-        a.finish_block = finish_block;
-      });
-    }
-    else {
-       coincast_table.modify( cc, 0, [&]( auto& a ) {
-        a.balance += quantity;
-      });
-    }
+   sub_balance( from, quantity );
+   if (cc == coincast_table.end()) {
+   coincast_table.emplace( from, [&]( auto& a ){
+      a.balance = quantity;
+      a.finish_block = finish_block;
+   });
+   }
+   else {
+      coincast_table.modify( cc, 0, [&]( auto& a ) {
+      a.balance += quantity;
+   });
+   }
 }
 //领取铸币  erase
 void token::takecoin(account_name to) {

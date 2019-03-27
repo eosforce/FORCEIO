@@ -414,7 +414,9 @@ void token::addreward(name chain,asset supply) {
 }
 
 void token::rewardmine(asset quantity) {
-   //require_auth(_self);
+   print("rewardmine before require_auth\n");
+   require_auth(::config::system_account_name);
+   print("rewardmine\n");
    //遍历所有可以领取分红的币种  获取总算力  然后根据币种的算力分配分红 现在同意使用0.1作为权重,稍后修改为取前一天的价格作为权重
    rewards rewardtable(_self, _self);
    uint64_t total_power = 0;

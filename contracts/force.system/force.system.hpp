@@ -22,7 +22,7 @@ namespace eosiosystem {
    using std::vector;
 
    static constexpr uint32_t FROZEN_DELAY = CONTRACT_FROZEN_DELAY; // 3 * 24 * 60 * 20; //3*24*60*20*3s;
-   static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
+   static constexpr int NUM_OF_TOP_BPS = 21;//CONTRACT_NUM_OF_TOP_BPS;//23;
    
    static constexpr uint32_t UPDATE_CYCLE = 42;//CONTRACT_UPDATE_CYCLE;//630; //every 100 blocks update
    //分红的币的数量
@@ -133,7 +133,6 @@ namespace eosiosystem {
 
          int64_t      block_age = 0;
          uint32_t     last_block_amount = 0;
-         //int64_t      bp_age = 0;
          int64_t      block_weight = BLOCK_OUT_WEIGHT;   //换届如何清零?
          asset        mortgage = asset(0);
 
@@ -147,7 +146,7 @@ namespace eosiosystem {
          void     deactivate()       {isactive = false;}
          EOSLIB_SERIALIZE(bp_info, ( name )(block_signing_key)(commission_rate)(total_staked)
                (rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(isactive)
-               (block_age)(last_block_amount)/*(bp_age)*/(block_weight)(mortgage))
+               (block_age)(last_block_amount)(block_weight)(mortgage))
       };
 
       struct producer {
@@ -331,7 +330,7 @@ EOSIO_ABI( eosiosystem::system_contract,
       (onblock)
       (setparams)(removebp)
       (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)
-      (onerror)(addmortgage)(claimmortgage)(claimbp)(claimvote)
+      (onerror)(addmortgage)(claimmortgage)(claimbp)(claimvote)(claimdevelop)
       (setconfig)(setcode)(setfee)(setabi)
 #if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
       (delegatebw)(undelegatebw)(refund)

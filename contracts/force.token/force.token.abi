@@ -138,10 +138,6 @@
           "type": "asset"
         },
         {
-          "name":"start_block",
-          "type":"uint32"
-        },
-        {
           "name":"finish_block",
           "type":"uint32"
         }

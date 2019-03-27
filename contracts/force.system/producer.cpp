@@ -1,9 +1,11 @@
 #include "force.system.hpp"
 #include <relay.token/relay.token.hpp>
+#include <sys.match/sys.match.hpp>
 #include <cmath>
 
 namespace eosiosystem {
-
+    const account_name SYS_MATCH = N(sys.match);
+    
     void system_contract::onblock( const block_timestamp, const account_name bpname, const uint16_t, const block_id_type,
                                   const checksum256, const checksum256, const uint32_t schedule_version ) {
       bps_table bps_tbl(_self, _self);
@@ -34,29 +36,13 @@ namespace eosiosystem {
          });
       }
 
-      // double start = 10.78;
-      // double next = 1.06;
-      // uint64_t temp;
-      // uint64_t result = static_cast<uint64_t>(start*830*10000);
-      // uint32_t count = 823;
-      // for(int i=1;i!=30;++i)
-      // {
-      //    start *= next;
-      //    temp = static_cast<uint64_t>(start * 10000);
-      //    result +=temp*823;
-      //    count += 823;
-      //    print(temp,"---",count,"\n");
-      // }
-      // print(result,"---",count,"---","\n");
 
       if( current_block_num() % UPDATE_CYCLE == 0 ) {
-
          int reward_index = current_block_num() / REWARD_MODIFY_COUNT;
          int64_t block_rewards = 0;
          if (reward_index > 30){block_rewards = STABLE_BLOCK_REWARDS;}
-         else {block_rewards = PRE_BLOCK_REWARDS* pow(PRE_GRADIENT,reward_index);}
+         else {block_rewards = PRE_BLOCK_REWARDS * pow(PRE_GRADIENT,reward_index);}
          //int64_t block_rewards = PRE_BLOCK_REWARDS* pow(PRE_GRADIENT,reward_index);
-
          INLINE_ACTION_SENDER(eosio::token, issue)( config::token_account_name, {{::config::system_account_name,N(active)}},
                                              { ::config::system_account_name, 
                                              asset(block_rewards), 
@@ -69,8 +55,11 @@ namespace eosiosystem {
          reward_develop(block_rewards * REWARD_DEVELOP / 10000);
          reward_block(schedule_version,block_rewards * REWARD_BP / 10000);
          //reward miners
-         reward_mines((block_rewards * REWARD_MINE / 10000) * coin_power / total_power);
-         reward_bps((block_rewards * REWARD_MINE / 10000) * vote_power / total_power);
+         if (total_power != 0) {
+            reward_mines((block_rewards * REWARD_MINE / 10000) * coin_power / total_power);
+            reward_bps((block_rewards * REWARD_MINE / 10000) * vote_power / total_power);
+         }
+
          //update schedule
          update_elected_bps();
       }
@@ -141,7 +130,7 @@ namespace eosiosystem {
 
    void system_contract::reward_mines(const uint64_t reward_amount) {
       eosio::action(
-         vector<eosio::permission_level>{{N(relay.token),N(active)}},
+         vector<eosio::permission_level>{{_self,N(active)}},
          N(relay.token),
          N(rewardmine),
          std::make_tuple(
@@ -192,7 +181,6 @@ namespace eosiosystem {
             total_block_out_age += (sch->producers[i].amount > b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
                
             if(sch->producers[i].amount - b.last_block_amount != PER_CYCLE_AMOUNT) {
-              b.block_weight += 1;
                b.block_weight = MORTGAGE;
                b.mortgage -= asset(0.2*10000);
                total_punish += asset(0.2*10000);
@@ -202,17 +190,16 @@ namespace eosiosystem {
             b.last_block_amount = sch->producers[i].amount;
          });
       }
+
       reward_table reward_inf(_self,_self);
       auto reward = reward_inf.find(REWARD_ID);
       if(reward == reward_inf.end()) {
          reward_inf.emplace(_self, [&]( reward_info& s ) {
             s.id = REWARD_ID;
             s.reward_block_out = asset(reward_amount);
-//            s.reward_bp = asset(0);
             s.reward_develop = asset(0);
             s.total_block_out_age = total_block_out_age;
             s.bp_punish = total_punish;
-            // s.total_bp_age = 0;
          });
       }
       else {
@@ -234,7 +221,6 @@ namespace eosiosystem {
          return;
       }
       const auto rewarding_bp_staked_threshold = staked_all_bps / 200;
-//      int64_t total_bp_age = 0;
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
          if( !it->isactive || it->total_staked <= rewarding_bp_staked_threshold || it->commission_rate < 1 ||
              it->commission_rate > 10000 ) {
@@ -244,31 +230,10 @@ namespace eosiosystem {
          //暂时先给所有的BP都增加BP奖励   还需要增加vote池的奖励
          const auto& bp = bps_tbl.get(it->name, "bpname is not registered");
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-//            b.bp_age += 1;
             b.rewards_pool += asset(vote_reward * b.commission_rate / 10000);
             b.rewards_block += asset(vote_reward * (10000 - b.commission_rate) / 10000);
          });
-//         total_bp_age +=1;
       }
-
-//       reward_table reward_inf(_self,_self);
-//       auto reward = reward_inf.find(REWARD_ID);
-//       if(reward == reward_inf.end()) {
-//          reward_inf.emplace(_self, [&]( reward_info& s ) {
-//             s.id = REWARD_ID;
-//             s.reward_block_out = asset(0);
-// //            s.reward_bp = asset(0);
-//             s.reward_develop = asset(0);
-//             s.total_block_out_age = 0;
-//             // s.total_bp_age = total_bp_age;
-//          });
-//       }
-//       else {
-//          reward_inf.modify(reward, 0, [&]( reward_info& s ) {
-//             s.reward_bp += asset(0);
-//             // s.total_bp_age += total_bp_age;
-//          });
-//       }
    }
 
    void system_contract::reset_block_weight(account_name block_producers[]) {
@@ -284,12 +249,15 @@ namespace eosiosystem {
    int64_t system_contract::get_coin_power() {
       int64_t total_power = 0; 
       rewards coin_reward(N(relay.token),N(relay.token));
+      exchange::exchange t(SYS_MATCH);
+      auto interval_block = exchange::INTERVAL_BLOCKS;
+
       for( auto it = coin_reward.cbegin(); it != coin_reward.cend(); ++it ) {
          //根据it->chain  和it->supply 获取算力值     暂订算力值为supply.amount的0.1
          stats statstable(N(relay.token), it->chain);
          auto existing = statstable.find(it->supply.symbol.name());
          eosio_assert(existing != statstable.end(), "token with symbol already exists");
-         total_power += existing->supply.amount * 0.1;
+         total_power += existing->supply.amount * 0.1 * t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount / 10000;
       }
       return total_power ;
    }
