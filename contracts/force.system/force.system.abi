@@ -103,7 +103,6 @@
         {"name":"isactive",             "type":"bool"},
         {"name":"block_age",            "type":"int64"},
         {"name":"last_block_amount",    "type":"uint32"},
-        {"name":"bp_age",               "type":"int64"},
         {"name":"block_weight",    "type":"int64"},
         {"name":"bp_mortgageage",               "type":"asset"}
       ]
@@ -350,10 +349,8 @@
          "fields": [
             {"name":"id", "type":"uint64" },
             {"name":"reward_block_out",      "type":"asset"},
-            {"name":"reward_bp",             "type":"asset"},
             {"name":"reward_develop",        "type":"asset"},
-            {"name":"total_block_out_age",   "type":"int64"},
-            {"name":"total_bp_age",          "type":"int64"}
+            {"name":"total_block_out_age",   "type":"int64"}
          ]
        },{
          "name": "addmortgage",
