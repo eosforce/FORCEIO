@@ -178,6 +178,7 @@ namespace eosiosystem {
       auto sch = schs_tbl.find(uint64_t(schedule_version));
       eosio_assert(sch != schs_tbl.end(),"cannot find schedule");
       int64_t total_block_out_age = 0;
+      asset total_punish = asset(0);
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
          auto bp = bps_tbl.find(sch->producers[i].bpname);
          eosio_assert(bp != bps_tbl.end(),"cannot find bpinfo");
@@ -194,6 +195,7 @@ namespace eosiosystem {
               b.block_weight += 1;
                b.block_weight = MORTGAGE;
                b.mortgage -= asset(0.2*10000);
+               total_punish += asset(0.2*10000);
             } else {
               b.block_weight += 1;
             }
@@ -209,6 +211,7 @@ namespace eosiosystem {
 //            s.reward_bp = asset(0);
             s.reward_develop = asset(0);
             s.total_block_out_age = total_block_out_age;
+            s.bp_punish = total_punish;
             // s.total_bp_age = 0;
          });
       }
@@ -216,6 +219,7 @@ namespace eosiosystem {
          reward_inf.modify(reward, 0, [&]( reward_info& s ) {
             s.reward_block_out += asset(reward_amount);
             s.total_block_out_age += total_block_out_age;
+            s.bp_punish += total_punish;
          });
       }
    }
@@ -331,7 +335,7 @@ namespace eosiosystem {
 
    void system_contract::claimdevelop(const account_name develop) {
       require_auth(develop);
-      eosio_assert (develop == ::config::system_account_name,"invaild develop account");
+      eosio_assert (develop == N(fosdevelop),"invaild develop account");
       reward_table reward_inf(_self,_self);
       auto reward = reward_inf.find(REWARD_ID);
       eosio_assert(reward != reward_inf.end(),"reward info do not find");

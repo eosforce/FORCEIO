@@ -40,6 +40,10 @@ namespace eosio {
    };
 
    const account_name SYS_BRIDGE = N(sys.bridge);
+   static constexpr uint32_t UPDATE_CYCLE = 630;
+   static constexpr uint32_t PRE_CAST_NUM = 5184000;
+   static constexpr uint32_t STABLE_CAST_NUM = 1209600;
+   static constexpr uint32_t WEAKEN_CAST_NUM = 161;
 
    class token : public contract {
       public:

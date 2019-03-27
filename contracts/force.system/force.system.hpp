@@ -171,10 +171,11 @@ namespace eosiosystem {
          //asset reward_bp = asset(0);
          asset reward_develop = asset(0);
          int64_t total_block_out_age = 0;
+         asset bp_punish = asset(0);
          //int64_t total_bp_age = 0;
 
          uint64_t primary_key() const { return id; }
-         EOSLIB_SERIALIZE(reward_info, ( id )(reward_block_out)(reward_develop)(total_block_out_age))
+         EOSLIB_SERIALIZE(reward_info, ( id )(reward_block_out)(reward_develop)(total_block_out_age)(bp_punish))
       };
 
       /** from relay.token begin*/
@@ -259,7 +260,7 @@ namespace eosiosystem {
       void vote4ram( const account_name voter, const account_name bpname, const asset stake );
 
       // @abi action
-      void claim( const account_name voter, const account_name bpname );
+      // void claim( const account_name voter, const account_name bpname );
 
       // @abi action
       void onblock( const block_timestamp, const account_name bpname, const uint16_t,
@@ -326,7 +327,7 @@ EOSIO_ABI( eosiosystem::system_contract,
       (updatebp)
       (freeze)(unfreeze)
       (vote)(vote4ram)(voteproducer)
-      (claim)
+      //(claim)
       (onblock)
       (setparams)(removebp)
       (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)

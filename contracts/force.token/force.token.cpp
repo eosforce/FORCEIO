@@ -95,6 +95,8 @@ void token::castcoin( account_name from,
     //auto sym = quantity.symbol.name();
     coincasts coincast_table( _self, to );
     auto current_block = current_block_num();
+    int32_t cast_num = PRE_CAST_NUM - current_block / UPDATE_CYCLE * WEAKEN_CAST_NUM;
+    if (cast_num < STABLE_CAST_NUM) cast_num = STABLE_CAST_NUM;
     auto finish_block = current_block + 100;
     const auto cc = coincast_table.find( static_cast<uint64_t>(finish_block) );
 

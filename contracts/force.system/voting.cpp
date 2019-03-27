@@ -135,7 +135,7 @@ namespace eosiosystem {
          v.unstake_height = curr_block_num;
       });
    }
-
+#if 0
    void system_contract::claim( const account_name voter, const account_name bpname ) {
       require_auth(voter);
 
@@ -187,4 +187,5 @@ namespace eosiosystem {
          b.voteage_update_height = curr_block_num;
       });
    }
+   #endif
 }
