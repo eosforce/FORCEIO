@@ -63,10 +63,21 @@
         {"name": "quote_sym","type": "symbol_type"}
        ]
      },{
+      "name": "pair",
+      "base": "",
+      "fields": [
+      {"name": "id","type": "uint32"},
+      {"name": "base_chain","type": "name"},
+      {"name": "base_sym","type": "symbol_type"},
+      {"name": "quote_chain","type": "name"},
+      {"name": "quote_sym","type": "symbol_type"}
+      ]
+    },{
       "name": "trading_pair",
       "base": "",
       "fields": [
       {"name": "id","type": "uint32"},
+      {"name": "pair_id","type": "uint32"},
       {"name": "base","type": "symbol_type"},
       {"name": "base_chain","type": "name"},
       {"name": "base_sym","type": "symbol_type"},
@@ -96,13 +107,15 @@
        "base": "",
        "fields": [
         {"name": "id","type": "uint32"},
+        {"name": "pair_id","type": "uint32"},
         {"name": "base_chain","type": "name"},
         {"name": "base_sym","type": "symbol_type"},
         {"name": "quote_chain","type": "name"},
         {"name": "quote_sym","type": "symbol_type"},
         {"name": "sum","type": "asset"},
         {"name": "vol","type":"asset"},
-        {"name": "reset_block_height","type":"uint32"}
+        {"name": "reset_block_height","type":"uint32"},
+        {"name": "block_height_end","type":"uint32"}
        ]
      },{
        "name": "claim",
@@ -144,6 +157,10 @@
     }
   ],
   "tables": [{
+       "name": "rawpairs",
+       "type": "pair",
+       "index_type": "i64",
+     },{
        "name": "pairs",
        "type": "trading_pair",
        "index_type": "i64",

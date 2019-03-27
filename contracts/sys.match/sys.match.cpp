@@ -36,6 +36,7 @@ namespace exchange {
 
       trading_pairs trading_pairs_table(_self,_self);
 
+      uint32_t pair_id = get_pair(base_chain, base_sym, quote_chain, quote_sym);
       uint128_t idxkey = compute_pair_index(base, quote);
       //uint128_t idxkey = (uint128_t(base.name()) << 64) | quote.name();
       //print("idxkey=",idxkey,",base_sym=",base.name(),",price.symbol=",quote.name());
@@ -49,7 +50,7 @@ namespace exchange {
       auto pk = trading_pairs_table.available_primary_key();
       trading_pairs_table.emplace( _self, [&]( auto& p ) {
          p.id = (uint32_t)pk;
-         
+         p.pair_id      = pair_id;
          p.base         = base;
          p.base_chain   = base_chain;
          p.base_sym     = base_sym.value | (base.value & 0xff);
@@ -651,8 +652,30 @@ namespace exchange {
    void exchange::mark(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym) {
       require_auth(_self);
       
-      get_pair(base_chain, base_sym, quote_chain, quote_sym);
-      get_mark(base_chain, base_sym, quote_chain, quote_sym);
+      //get_pair(base_chain, base_sym, quote_chain, quote_sym);
+      //get_mark(base_chain, base_sym, quote_chain, quote_sym);
+      deals   deals_table(_self, _self);
+     
+      auto pair_id = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
+      auto lower_key = ((uint64_t)pair_id << 32) | 0;
+      auto idx_deals = deals_table.template get_index<N(idxkey)>();
+      auto itr1 = idx_deals.lower_bound(lower_key);
+      eosio_assert(!(itr1 != idx_deals.end() && itr1->pair_id == pair_id), "trading pair already marked");
+      
+      auto curr_block = current_block_num();
+      auto pk = deals_table.available_primary_key();
+      deals_table.emplace( _self, [&]( auto& d ) {
+         d.id = (uint32_t)pk;
+         d.pair_id      = pair_id;
+         d.base_chain   = base_chain;
+         d.base_sym     = base_sym;
+         d.quote_chain  = quote_chain;
+         d.quote_sym    = quote_sym;
+         d.sum          = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym));
+         d.vol          = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym));
+         d.reset_block_height = curr_block;
+         d.block_height_end = curr_block + INTERVAL_BLOCKS - 1;
+      });
    }
    
    void exchange::claim(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc, account_name fee_acc) {
