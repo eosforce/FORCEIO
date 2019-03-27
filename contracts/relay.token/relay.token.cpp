@@ -80,11 +80,11 @@ void token::issue( name chain, account_name to, asset quantity, string memo ) {
 
    statstable.modify(st, 0, [&]( auto& s ) {
       if (s.total_mineage_update_height < last_devidend_num) {
-         s.total_mineage += get_current_age(s.supply,s.total_mineage_update_height,last_devidend_num) + s.total_pending_mineage;
-         s.total_pending_mineage = get_current_age(s.supply,last_devidend_num,current_block);
+         s.total_mineage += get_current_age(s.chain,s.supply,s.total_mineage_update_height,last_devidend_num) + s.total_pending_mineage;
+         s.total_pending_mineage = get_current_age(s.chain,s.supply,last_devidend_num,current_block);
       }
       else {
-         s.total_pending_mineage += get_current_age(s.supply,s.total_mineage_update_height,current_block);
+         s.total_pending_mineage += get_current_age(s.chain,s.supply,s.total_mineage_update_height,current_block);
       }
       s.total_mineage_update_height = current_block_num();
       s.supply += quantity;
@@ -121,11 +121,11 @@ void token::destroy( name chain, account_name from, asset quantity, string memo 
    //这个地方矿龄需要修改
    statstable.modify(st, 0, [&]( auto& s ) {
       if (s.total_mineage_update_height < last_devidend_num) {
-         s.total_mineage += get_current_age(s.supply,s.total_mineage_update_height,last_devidend_num) + s.total_pending_mineage;
-         s.total_pending_mineage = get_current_age(s.supply,last_devidend_num,current_block);
+         s.total_mineage += get_current_age(s.chain,s.supply,s.total_mineage_update_height,last_devidend_num) + s.total_pending_mineage;
+         s.total_pending_mineage = get_current_age(s.chain,s.supply,last_devidend_num,current_block);
       }
       else {
-         s.total_pending_mineage += get_current_age(s.supply,s.total_mineage_update_height,current_block);
+         s.total_pending_mineage += get_current_age(s.chain,s.supply,s.total_mineage_update_height,current_block);
       }
       s.total_mineage_update_height = current_block;
       s.supply -= quantity;
@@ -160,9 +160,29 @@ void token::transfer( account_name from,
    add_balance(to, chain, quantity, from);
 }
 
-int64_t token::get_current_age(asset balance,int64_t first,int64_t last) {
-   print("get_current_age --",balance,"---",first,"---",last,"\n");
-   return balance.amount * 0.1 * (last - first);
+int64_t token::get_current_age(name chain,asset balance,int64_t first,int64_t last) {
+   eosio_assert(first < last,"wrong entering");
+
+   exchange::exchange t(SYS_MATCH);
+   auto interval_block = exchange::INTERVAL_BLOCKS;
+   uint32_t first_index = first / interval_block,last_index = last / interval_block;
+   if (first_index == last_index) {
+      asset price = t.get_avg_price(last_index * interval_block, chain,balance.symbol);
+      return balance.amount * 0.1 * (last - first) * price.amount / 10000;
+   }
+   else
+   {
+      auto temp_start = first;
+      int64_t result = 0;
+      for(uint32_t i = first_index +1;i!=last_index + 1;++i) {
+         asset price = t.get_avg_price(last_index * interval_block, chain,balance.symbol);
+         result += balance.amount * 0.1 * (i*interval_block - temp_start) * price.amount / 10000;
+         temp_start = i*interval_block;
+      }
+      return result;
+   }
+   
+   
 }
 
 //当币改变的时候算力的权重同时加以改变
@@ -179,11 +199,11 @@ void token::sub_balance( account_name owner, name chain, asset value ) {
 
    from_acnts.modify(from, owner, [&]( auto& a ) {
       if (a.mineage_update_height < last_devidend_num) {
-         a.mineage += get_current_age(a.balance,a.mineage_update_height,last_devidend_num) + a.pending_mineage;
-         a.pending_mineage = get_current_age(a.balance,last_devidend_num,current_block);
+         a.mineage += get_current_age(a.chain,a.balance,a.mineage_update_height,last_devidend_num) + a.pending_mineage;
+         a.pending_mineage = get_current_age(a.chain,a.balance,last_devidend_num,current_block);
       }
       else {
-         a.pending_mineage += get_current_age(a.balance,a.mineage_update_height,current_block);
+         a.pending_mineage += get_current_age(a.chain,a.balance,a.mineage_update_height,current_block);
       }
       a.mineage_update_height = current_block;
       a.balance -= value;
@@ -227,11 +247,11 @@ void token::add_balance( account_name owner, name chain, asset value, account_na
       //计算相关的   last_devidend  current_block  
       idx.modify(to, 0, [&]( auto& a ) {
          if (a.mineage_update_height < last_devidend_num) {
-            a.mineage += get_current_age(a.balance,a.mineage_update_height,last_devidend_num) + a.pending_mineage;
-            a.pending_mineage = get_current_age(a.balance,last_devidend_num,current_block);
+            a.mineage += get_current_age(a.chain,a.balance,a.mineage_update_height,last_devidend_num) + a.pending_mineage;
+            a.pending_mineage = get_current_age(a.chain,a.balance,last_devidend_num,current_block);
          }
          else {
-            a.pending_mineage += get_current_age(a.balance,a.mineage_update_height,current_block);
+            a.pending_mineage += get_current_age(a.chain,a.balance,a.mineage_update_height,current_block);
          }
          a.mineage_update_height = current_block_num();
          a.balance += value;
@@ -451,7 +471,7 @@ void token::claim(name chain,asset quantity,account_name receiver) {
 
    auto power = to.mineage;
    if (to.mineage_update_height < last_devidend_num) {
-      power = to.mineage + get_current_age(to.balance,to.mineage_update_height,last_devidend_num) + to.pending_mineage ;
+      power = to.mineage + get_current_age(to.chain,to.balance,to.mineage_update_height,last_devidend_num) + to.pending_mineage ;
    }
 
    if (power == 0) {
@@ -460,7 +480,7 @@ void token::claim(name chain,asset quantity,account_name receiver) {
    }
    auto total_power = total_mineage;
    if (total_mineage_update_height < last_devidend_num) {
-      total_power = total_mineage + get_current_age(supply,total_mineage_update_height,last_devidend_num) + total_pending_mineage;
+      total_power = total_mineage + get_current_age(existing->chain,supply,total_mineage_update_height,last_devidend_num) + total_pending_mineage;
    }
 
    auto total_reward = reward_pool * power / total_power;
@@ -482,10 +502,10 @@ void token::claim(name chain,asset quantity,account_name receiver) {
    to_acnts.modify(to, receiver, [&]( auto& a ) {
       a.mineage = 0;
       if (a.mineage_update_height < last_devidend_num) {
-         a.pending_mineage = get_current_age(a.balance,last_devidend_num,current_block);
+         a.pending_mineage = get_current_age(a.chain,a.balance,last_devidend_num,current_block);
       }
       else {
-         a.pending_mineage += get_current_age(a.balance,a.mineage_update_height,current_block);
+         a.pending_mineage += get_current_age(a.chain,a.balance,a.mineage_update_height,current_block);
       }
       a.mineage_update_height = current_block;
    });

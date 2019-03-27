@@ -50,6 +50,7 @@ using std::string;
    };
 
    const account_name SYS_BRIDGE = N(sys.bridge);
+   const account_name SYS_MATCH = N(sys.match);
 
 static constexpr uint32_t UPDATE_CYCLE = 42;
 class token : public eosio::contract {
@@ -165,7 +166,7 @@ private:
    void sub_balance( account_name owner, name chain, asset value );
    void add_balance( account_name owner, name chain, asset value, account_name ram_payer );
 
-   int64_t get_current_age(asset balance,int64_t first,int64_t last);
+   int64_t get_current_age(name chain,asset balance,int64_t first,int64_t last);
 
 public:
    struct transfer_args {
