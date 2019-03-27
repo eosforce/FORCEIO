@@ -690,7 +690,7 @@ namespace exchange {
       auto itr1 = idx_deals.lower_bound(lower_key);
       eosio_assert(!(itr1 != idx_deals.end() && itr1->pair_id == pair_id), "trading pair already marked");
       
-      auto curr_block = current_block_num();
+      auto start_block = (current_block_num() - 1) / INTERVAL_BLOCKS * INTERVAL_BLOCKS + 1;
       auto pk = deals_table.available_primary_key();
       deals_table.emplace( _self, [&]( auto& d ) {
          d.id = (uint32_t)pk;
@@ -701,8 +701,8 @@ namespace exchange {
          d.quote_sym    = quote_sym;
          d.sum          = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym));
          d.vol          = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym));
-         d.reset_block_height = curr_block;
-         d.block_height_end = curr_block + INTERVAL_BLOCKS - 1;
+         d.reset_block_height = start_block;
+         d.block_height_end = start_block + INTERVAL_BLOCKS - 1;
       });
    }
    

@@ -334,6 +334,7 @@ namespace exchange {
    */
    asset exchange::get_avg_price( uint32_t block_height, name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const {
       deals   deals_table(_self, _self);
+      asset   avg_price = asset(0, quote_sym);
 
       auto pair_id = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
       
@@ -341,12 +342,21 @@ namespace exchange {
       auto idx_deals = deals_table.template get_index<N(idxkey)>();
       auto itr1 = idx_deals.lower_bound(lower_key);
       eosio_assert(itr1 != idx_deals.end() && itr1->pair_id == pair_id, "trading pair not marked");
+      if (!(itr1 != idx_deals.end() && itr1->pair_id == pair_id)) {
+         print("exchange::get_avg_price: trading pair not marked!\n");
+         return avg_price;
+      }
       
       lower_key = ((uint64_t)pair_id << 32) | block_height;
       itr1 = idx_deals.lower_bound(lower_key);
       if (itr1 == idx_deals.cend()) itr1--;
       
-      return itr1->sum * precision(itr1->vol.symbol.precision()) / itr1->vol.amount;
+      if (itr1->vol.amount > 0 && block_height >= itr1->reset_block_height) 
+         avg_price = itr1->sum * precision(itr1->vol.symbol.precision()) / itr1->vol.amount;
+      /*print("exchange::get_avg_price pair_id=", itr1->pair_id, ", block_height=", block_height, 
+         ", reset_block_height=", itr1->reset_block_height, ", block_height_end=", itr1->block_height_end, 
+         ", sum=", itr1->sum, ", vol=", itr1->vol, ", avg_price=", avg_price,"\n");*/
+      return avg_price;
    }
  
    void exchange::upd_mark( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, asset sum, asset vol ) {
@@ -372,7 +382,7 @@ namespace exchange {
             d.vol += vol;
          });
       } else {
-         auto start_block =  curr_block / INTERVAL_BLOCKS * INTERVAL_BLOCKS + 1;
+         auto start_block =  itr1->reset_block_height + (curr_block - itr1->reset_block_height) / INTERVAL_BLOCKS * INTERVAL_BLOCKS;
          auto pk = deals_table.available_primary_key();
          deals_table.emplace( _self, [&]( auto& d ) {
             d.id                 = (uint32_t)pk;
@@ -383,6 +393,13 @@ namespace exchange {
             d.block_height_end   = start_block + INTERVAL_BLOCKS - 1;
          });   
       }
+      
+      // test
+      /*{
+         get_avg_price( curr_block, base_chain, base_sym, quote_chain, quote_sym );
+         get_avg_price( curr_block-10, base_chain, base_sym, quote_chain, quote_sym );
+         get_avg_price( curr_block+10, base_chain, base_sym, quote_chain, quote_sym );
+      }*/
       
       return ;
    }
