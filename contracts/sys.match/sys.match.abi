@@ -45,16 +45,39 @@
        "name": "done",
        "base": "",
        "fields": [
+        {"name": "exc_acc","type": "account_name"},
+        {"name": "quote_chain","type": "name"},
         {"name": "price","type": "asset"},
+        {"name": "base_chain","type": "name"},
         {"name": "quantity","type": "asset"},
         {"name": "bid_or_ask","type": "uint32"},
         {"name": "timestamp","type": "time_point_sec"}
        ]
      },{
+       "name": "mark",
+       "base": "",
+       "fields": [
+        {"name": "base_chain","type": "name"},
+        {"name": "base_sym","type": "symbol_type"},
+        {"name": "quote_chain","type": "name"},
+        {"name": "quote_sym","type": "symbol_type"}
+       ]
+     },{
+      "name": "pair",
+      "base": "",
+      "fields": [
+      {"name": "id","type": "uint32"},
+      {"name": "base_chain","type": "name"},
+      {"name": "base_sym","type": "symbol_type"},
+      {"name": "quote_chain","type": "name"},
+      {"name": "quote_sym","type": "symbol_type"}
+      ]
+    },{
       "name": "trading_pair",
       "base": "",
       "fields": [
       {"name": "id","type": "uint32"},
+      {"name": "pair_id","type": "uint32"},
       {"name": "base","type": "symbol_type"},
       {"name": "base_chain","type": "name"},
       {"name": "base_sym","type": "symbol_type"},
@@ -62,7 +85,9 @@
       {"name": "quote_chain","type": "name"},
       {"name": "quote_sym","type": "symbol_type"},
       {"name": "fee_rate","type": "uint32"},
-      {"name": "exc_acc","type": "account_name"}
+      {"name": "exc_acc","type": "account_name"},
+      {"name": "fees_base","type": "asset"},
+      {"name": "fees_quote","type": "asset"}
       ]
     },{
        "name": "order",
@@ -75,7 +100,33 @@
         {"name": "base","type": "asset"},
         {"name": "price","type": "asset"},
         {"name": "bid_or_ask","type": "uint32"},
-        {"name":"timestamp","type":"time_point_sec"}
+        {"name": "timestamp","type":"time_point_sec"}
+       ]
+    },{
+       "name": "deal_info",
+       "base": "",
+       "fields": [
+        {"name": "id","type": "uint32"},
+        {"name": "pair_id","type": "uint32"},
+        {"name": "base_chain","type": "name"},
+        {"name": "base_sym","type": "symbol_type"},
+        {"name": "quote_chain","type": "name"},
+        {"name": "quote_sym","type": "symbol_type"},
+        {"name": "sum","type": "asset"},
+        {"name": "vol","type":"asset"},
+        {"name": "reset_block_height","type":"uint32"},
+        {"name": "block_height_end","type":"uint32"}
+       ]
+     },{
+       "name": "claim",
+       "base": "",
+       "fields": [
+        {"name": "base_chain","type": "name"},
+        {"name": "base_sym","type": "symbol_type"},
+        {"name": "quote_chain","type": "name"},
+        {"name": "quote_sym","type": "symbol_type"},
+        {"name": "exc_acc","type":"account_name"},
+        {"name": "fee_acc","type":"account_name"}
        ]
      }
   ],
@@ -95,9 +146,21 @@
       "name": "done",
       "type": "done",
       "ricardian_contract": ""
+    },{
+      "name": "mark",
+      "type": "mark",
+      "ricardian_contract": ""
+    },{
+      "name": "claim",
+      "type": "claim",
+      "ricardian_contract": ""
     }
   ],
   "tables": [{
+       "name": "rawpairs",
+       "type": "pair",
+       "index_type": "i64",
+     },{
        "name": "pairs",
        "type": "trading_pair",
        "index_type": "i64",
@@ -109,6 +172,10 @@
       "index_type": "i64",
       "key_names" : ["idxkey"],
       "key_types" : ["uint128"]
+    },{
+      "name": "deals",
+      "type": "deal_info",
+      "index_type": "i64"
     }
   ],
   "ricardian_clauses": [],

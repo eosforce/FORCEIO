@@ -2,11 +2,12 @@
 
 #include "sys.match.hpp"
 #include <cmath>
+#include "eosiolib/transaction.hpp"
 
 namespace exchange {
    using namespace eosio;
    const int64_t max_fee_rate = 10000;
-   const account_name relay_token_acc = N(relay.token);
+  
    const account_name escrow = N(sys.match);
 
    uint128_t compute_pair_index(symbol_type base, symbol_type quote)
@@ -35,6 +36,7 @@ namespace exchange {
 
       trading_pairs trading_pairs_table(_self,_self);
 
+      uint32_t pair_id = get_pair(base_chain, base_sym, quote_chain, quote_sym);
       uint128_t idxkey = compute_pair_index(base, quote);
       //uint128_t idxkey = (uint128_t(base.name()) << 64) | quote.name();
       //print("idxkey=",idxkey,",base_sym=",base.name(),",price.symbol=",quote.name());
@@ -48,7 +50,7 @@ namespace exchange {
       auto pk = trading_pairs_table.available_primary_key();
       trading_pairs_table.emplace( _self, [&]( auto& p ) {
          p.id = (uint32_t)pk;
-         
+         p.pair_id      = pair_id;
          p.base         = base;
          p.base_chain   = base_chain;
          p.base_sym     = base_sym.value | (base.value & 0xff);
@@ -57,7 +59,8 @@ namespace exchange {
          p.quote_sym    = quote_sym.value | (quote.value & 0xff);
          p.fee_rate     = fee_rate;
          p.exc_acc      = exc_acc;
-          
+         p.fees_base    = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym));
+         p.fees_quote   = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym));
       });
    }
 
@@ -129,6 +132,7 @@ namespace exchange {
       trading_pairs   trading_pairs_table(_self,_self);
       orderbook       orders(_self,_self);
       asset           quant_after_fee;
+      asset           converted_price;
       asset           fee;
       uint32_t        bid_or_ask = 1;
 
@@ -167,30 +171,25 @@ namespace exchange {
             if (price < itr->price) {
                // insert the order
                insert_order(orders, itr1->id, bid_or_ask, base, price, payer, receiver);
-               /*auto pk = orders.available_primary_key();
-               orders.emplace( _self, [&]( auto& o ) {
-                   o.id            = pk;
-                   o.pair_id       = itr1->id;
-                   o.bid_or_ask    = bid_or_ask;
-                   o.base          = convert(itr1->base, base);
-                   o.price         = convert(itr1->quote, price);
-                   o.maker         = payer;
-                   o.receiver      = receiver;
-                   o.timestamp     = time_point_sec(uint32_t(current_time() / 1000000ll));
-               });*/
                return;
             }
             if( base <= itr->base ) { // full match
                // eat the order
                //quant_after_fee = convert_asset(itr1->base_sym, base);
                quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, base);
-               done_helper(itr1->exc_acc, itr->price, base, bid_or_ask);
+               converted_price = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, itr->price);   
+               done_helper(itr1->exc_acc, itr1->quote_chain, converted_price, itr1->base_chain, quant_after_fee, bid_or_ask);
                fee = calcfee(quant_after_fee, itr1->fee_rate);
                quant_after_fee -= fee;
                inline_transfer(escrow, receiver, itr1->base_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_base += fee;
+                  });
+               }
+                  
                //quant_after_fee = convert(itr1->quote_sym, itr->price) * base.amount / precision(base.symbol.precision());
                if (itr->price.symbol.precision() >= base.symbol.precision())
                   quant_after_fee = itr->price * base.amount / precision(base.symbol.precision());
@@ -201,8 +200,12 @@ namespace exchange {
                quant_after_fee -= fee;
                inline_transfer(escrow, itr->receiver, itr1->quote_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_quote += base;
+                  });
+               }
                // refund the difference to payer
                if ( price > itr->price) {
                   auto diff = price - itr->price;
@@ -226,13 +229,19 @@ namespace exchange {
             } else { // partial match
                //quant_after_fee = convert_asset(itr1->base_sym, itr->base);
                quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, itr->base);
-               done_helper(itr1->exc_acc, itr->price, itr->base, bid_or_ask);
+               converted_price = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, itr->price);
+               done_helper(itr1->exc_acc, itr1->quote_chain, converted_price, itr1->base_chain, quant_after_fee, bid_or_ask);
                fee = calcfee(quant_after_fee, itr1->fee_rate);
                quant_after_fee -= fee;
                inline_transfer(escrow, receiver, itr1->base_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_base += fee;
+                  });
+               }
+                  
                if (itr->price.symbol.precision() >= itr->base.symbol.precision())
                   quant_after_fee = itr->price * itr->base.amount / precision(itr->base.symbol.precision());
                else
@@ -242,8 +251,13 @@ namespace exchange {
                quant_after_fee -= fee;
                inline_transfer(escrow, itr->receiver, itr1->quote_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_quote += fee;
+                  });
+               }
+                  
                base -= itr->base;
                // refund the difference to payer
                if ( price > itr->price) {
@@ -304,6 +318,8 @@ namespace exchange {
       trading_pairs  trading_pairs_table(_self,_self);
       orderbook      orders(_self,_self);
       asset          quant_after_fee;
+      asset          converted_price;
+      asset          converted_base;
       asset          fee;
       uint32_t       bid_or_ask = 0;
 
@@ -364,15 +380,22 @@ namespace exchange {
                else
                   quant_after_fee = base * price.amount / precision(price.symbol.precision()) ;
                quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, quant_after_fee);
-               done_helper(itr1->exc_acc, price, base, bid_or_ask);
+               converted_price = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, price);
+               converted_base = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, base);
+               done_helper(itr1->exc_acc, itr1->quote_chain, converted_price, itr1->base_chain, converted_base, bid_or_ask);
                fee = calcfee(quant_after_fee, itr1->fee_rate);
                quant_after_fee -= fee;
                from.value = escrow; to.value = payer;
                print("\n 1: from=", from.to_string().c_str(), ", to=", to.to_string().c_str(),  ", amount=", quant_after_fee);
                inline_transfer(escrow, receiver, itr1->quote_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_quote += fee;
+                  });
+               }
+                  
                quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, base);
                fee = calcfee(quant_after_fee, itr1->fee_rate);
                quant_after_fee -= fee;
@@ -380,9 +403,13 @@ namespace exchange {
                print("\n 2: from=", from.to_string().c_str(), ", to=", to.to_string().c_str(),  ", amount=", quant_after_fee);
                inline_transfer(escrow, end_itr->receiver, itr1->base_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
-               
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_base += fee;
+                  });
+               }
+                  
                // refund the difference
                if ( end_itr->price > price) {
                   auto diff = end_itr->price - price;
@@ -410,20 +437,32 @@ namespace exchange {
                else
                   quant_after_fee = end_itr->base * price.amount / precision(price.symbol.precision());
                quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, quant_after_fee);
-               done_helper(itr1->exc_acc, price, end_itr->base, bid_or_ask);
+               converted_price = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, price);
+               converted_base = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, end_itr->base);
+               done_helper(itr1->exc_acc, itr1->quote_chain, converted_price, itr1->base_chain, converted_base, bid_or_ask);
                fee = calcfee(quant_after_fee, itr1->fee_rate);
                quant_after_fee -= fee;
                inline_transfer(escrow, receiver, itr1->quote_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_quote += fee;
+                  });
+               }
+                  
                quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, end_itr->base);
                fee = calcfee(quant_after_fee, itr1->fee_rate);
                quant_after_fee -= fee;
                inline_transfer(escrow, end_itr->receiver, itr1->base_chain, quant_after_fee, "");
                // transfer fee to exchange
-               if (escrow != itr1->exc_acc && fee.amount > 0)
-                  inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
+               if (escrow != itr1->exc_acc && fee.amount > 0) {
+                  //inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
+                  idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                     p.fees_base += fee;
+                  });
+               }
+                  
                base -= end_itr->base;
                // refund the difference
                if ( end_itr->price > price ) {
@@ -440,17 +479,6 @@ namespace exchange {
                if (exit_on_done) {
                   idx_orderbook.erase(end_itr);
                   insert_order(orders, itr1->id, bid_or_ask, base, price, payer, receiver);
-                  /*auto pk = orders.available_primary_key();
-                  orders.emplace( _self, [&]( auto& o ) {
-                      o.id            = pk;
-                      o.pair_id       = itr1->id;
-                      o.bid_or_ask    = bid_or_ask;
-                      o.base          = base;
-                      o.price         = price;
-                      o.maker         = payer;
-                      o.receiver      = receiver;
-                      o.timestamp     = time_point_sec(uint32_t(current_time() / 1000000ll));
-                  });*/
                } else
                   idx_orderbook.erase(end_itr--);
             }
@@ -465,17 +493,6 @@ namespace exchange {
       if (lower == idx_orderbook.cend()) {
          print("\n sell: buy orderbook empty, lookup_key=", lookup_key);
          insert_order(orders, itr1->id, bid_or_ask, base, price, payer, receiver);
-         /*auto pk = orders.available_primary_key();
-         orders.emplace( _self, [&]( auto& o ) {
-             o.id            = pk;
-             o.pair_id       = itr1->id;
-             o.bid_or_ask    = bid_or_ask;
-             o.base          = base;
-             o.price         = price;
-             o.maker         = payer;
-             o.receiver      = receiver;
-             o.timestamp     = time_point_sec(uint32_t(current_time() / 1000000ll));
-         });*/
       } else {
          if (upper == idx_orderbook.cend()) {
             print("\n 8888888888888");
@@ -509,18 +526,36 @@ namespace exchange {
       return;
    }
    
-   void exchange::done_helper(account_name exc_acc, asset price, asset quantity, uint32_t bid_or_ask) {
+   void exchange::done_helper(account_name exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t bid_or_ask) {
       auto timestamp = time_point_sec(uint32_t(current_time() / 1000000ll));
       action(
             permission_level{ exc_acc, N(active) },
             N(sys.match), N(done),
-            std::make_tuple(price, quantity, bid_or_ask, timestamp)
+            std::make_tuple(exc_acc, quote_chain, price, base_chain, quantity, bid_or_ask, timestamp)
       ).send();
+      /*transaction trx;
+      
+      trx.actions.emplace_back(action(
+            permission_level{ exc_acc, N(active) },
+            N(sys.match), N(done),
+            std::make_tuple(exc_acc, quote_chain, price, base_chain, quantity, bid_or_ask, timestamp)
+      ));
+      trx.send(current_time(), exc_acc);*/
    }
    
    // now do nothing, only for action capture
-   void exchange::done(asset price, asset quantity, uint32_t bid_or_ask, time_point_sec timestamp) {
+   void exchange::done(account_name exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t bid_or_ask, time_point_sec timestamp) {
+      require_auth(exc_acc);
       
+      asset quant_after_fee;
+      
+      print("exchange::done: exc_acc=", exc_acc, ", price=", price,", quantity=", quantity, ", bid_or_ask=", bid_or_ask, "\n");
+      if (price.symbol.precision() >= quantity.symbol.precision())
+         quant_after_fee = price * quantity.amount / precision(quantity.symbol.precision());
+      else
+         quant_after_fee = quantity * price.amount / precision(price.symbol.precision());
+      quant_after_fee = to_asset(relay_token_acc, quote_chain, price.symbol, quant_after_fee);
+      upd_mark( base_chain, quantity.symbol, quote_chain, price.symbol, quant_after_fee, quantity );
    }
 
    /*
@@ -610,8 +645,77 @@ namespace exchange {
             orders.erase(itr);
          }
       }
-      
 
+      return;
+   }
+   
+   void exchange::mark(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym) {
+      require_auth(_self);
+      
+      //get_pair(base_chain, base_sym, quote_chain, quote_sym);
+      //get_mark(base_chain, base_sym, quote_chain, quote_sym);
+      deals   deals_table(_self, _self);
+     
+      auto pair_id = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
+      auto lower_key = ((uint64_t)pair_id << 32) | 0;
+      auto idx_deals = deals_table.template get_index<N(idxkey)>();
+      auto itr1 = idx_deals.lower_bound(lower_key);
+      eosio_assert(!(itr1 != idx_deals.end() && itr1->pair_id == pair_id), "trading pair already marked");
+      
+      auto curr_block = current_block_num();
+      auto pk = deals_table.available_primary_key();
+      deals_table.emplace( _self, [&]( auto& d ) {
+         d.id = (uint32_t)pk;
+         d.pair_id      = pair_id;
+         d.base_chain   = base_chain;
+         d.base_sym     = base_sym;
+         d.quote_chain  = quote_chain;
+         d.quote_sym    = quote_sym;
+         d.sum          = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym));
+         d.vol          = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym));
+         d.reset_block_height = curr_block;
+         d.block_height_end = curr_block + INTERVAL_BLOCKS - 1;
+      });
+   }
+   
+   void exchange::claim(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc, account_name fee_acc) {
+      require_auth(exc_acc);
+      
+      trading_pairs   trading_pairs_table(_self, _self);
+      bool claimed = false;
+     
+      auto lower_key = std::numeric_limits<uint64_t>::lowest();
+      auto lower = trading_pairs_table.lower_bound( lower_key );
+      auto upper_key = std::numeric_limits<uint64_t>::max();
+      auto upper = trading_pairs_table.upper_bound( upper_key );
+      
+      for ( auto itr = lower; itr != upper; ++itr ) {
+         if (itr->base_chain == base_chain && itr->base_sym == base_sym && 
+               itr->quote_chain == quote_chain && itr->quote_sym == quote_sym && itr->exc_acc == exc_acc) {
+            print("exchange::claim -- pair: id=", itr->id, "\n");
+            if (escrow != fee_acc && itr->fees_base.amount > 0)
+            {
+               inline_transfer(escrow, fee_acc, itr->base_chain, itr->fees_base, "");
+               trading_pairs_table.modify(itr, _self, [&]( auto& p ) {
+                  p.fees_base = to_asset(relay_token_acc, itr->base_chain, itr->base_sym, asset(0, itr->base_sym));
+               });
+               claimed = true;
+            }
+            if (escrow != fee_acc && itr->fees_quote.amount > 0)
+            {
+               inline_transfer(escrow, fee_acc, itr->quote_chain, itr->fees_quote, "");
+               trading_pairs_table.modify(itr, _self, [&]( auto& p ) {
+                  p.fees_quote = to_asset(relay_token_acc, itr->quote_chain, itr->quote_sym, asset(0, itr->quote_sym));
+               });
+               claimed = true;
+            }   
+         }
+         eosio_assert(claimed, "no fees or fee_acc is escrow account");
+
+         return;
+      }
+
+      eosio_assert(false, "trading pair does not exist");
       return;
    }
    
@@ -625,5 +729,4 @@ namespace exchange {
    }   
 }
 
-
-EOSIO_ABI( exchange::exchange, (create)(match)(cancel))
+EOSIO_ABI( exchange::exchange, (create)(match)(cancel)(done)(mark)(claim))
