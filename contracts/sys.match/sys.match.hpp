@@ -121,11 +121,6 @@ namespace exchange {
       struct deal_info {
          uint32_t    id;
          uint32_t    pair_id;
-         name        base_chain;
-         symbol_type base_sym;
-
-         name        quote_chain;
-         symbol_type quote_sym;
 
          asset       sum;
          asset       vol;

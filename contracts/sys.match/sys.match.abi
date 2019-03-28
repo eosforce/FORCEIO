@@ -109,10 +109,6 @@
        "fields": [
         {"name": "id","type": "uint32"},
         {"name": "pair_id","type": "uint32"},
-        {"name": "base_chain","type": "name"},
-        {"name": "base_sym","type": "symbol_type"},
-        {"name": "quote_chain","type": "name"},
-        {"name": "quote_sym","type": "symbol_type"},
         {"name": "sum","type": "asset"},
         {"name": "vol","type":"asset"},
         {"name": "reset_block_height","type":"uint32"},

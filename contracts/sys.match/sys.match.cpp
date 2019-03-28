@@ -696,10 +696,6 @@ namespace exchange {
       deals_table.emplace( _self, [&]( auto& d ) {
          d.id = (uint32_t)pk;
          d.pair_id      = pair_id;
-         d.base_chain   = base_chain;
-         d.base_sym     = base_sym;
-         d.quote_chain  = quote_chain;
-         d.quote_sym    = quote_sym;
          d.sum          = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym));
          d.vol          = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym));
          d.reset_block_height = start_block;
