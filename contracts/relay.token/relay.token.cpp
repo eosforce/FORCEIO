@@ -168,7 +168,7 @@ int64_t token::get_current_age(name chain,asset balance,int64_t first,int64_t la
    uint32_t first_index = first / interval_block,last_index = last / interval_block;
    if (first_index == last_index) {
       asset price = t.get_avg_price(last_index * interval_block, chain,balance.symbol);
-      return balance.amount * 0.1 * (last - first) * price.amount / 10000;
+      return balance.amount * (OTHER_COIN_WEIGHT / 10000) * (last - first) * price.amount / 10000;
    }
    else
    {
@@ -176,7 +176,7 @@ int64_t token::get_current_age(name chain,asset balance,int64_t first,int64_t la
       int64_t result = 0;
       for(uint32_t i = first_index +1;i!=last_index + 1;++i) {
          asset price = t.get_avg_price(last_index * interval_block, chain,balance.symbol);
-         result += balance.amount * 0.1 * (i*interval_block - temp_start) * price.amount / 10000;
+         result += balance.amount * (OTHER_COIN_WEIGHT / 10000) * (i*interval_block - temp_start) * price.amount / 10000;
          temp_start = i*interval_block;
       }
       return result;
@@ -382,9 +382,7 @@ void token::addreward(name chain,asset supply) {
 }
 
 void token::rewardmine(asset quantity) {
-   print("rewardmine before require_auth\n");
    require_auth(::config::system_account_name);
-   print("rewardmine\n");
    //遍历所有可以领取分红的币种  获取总算力  然后根据币种的算力分配分红 现在同意使用0.1作为权重,稍后修改为取前一天的价格作为权重
    rewards rewardtable(_self, _self);
    uint64_t total_power = 0;
@@ -480,7 +478,7 @@ void token::claim(name chain,asset quantity,account_name receiver) {
       a.mineage_update_height = current_block;
    });
 
-   eosio_assert(total_reward > asset(10000),"claim amount must > 1");
+   eosio_assert(total_reward > asset(100000),"claim amount must > 10");
    //转账功能暂时没有实现,因为没有该合约没有force的权限
    eosio::action(
            permission_level{ ::config::system_account_name, N(active) },
