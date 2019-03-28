@@ -337,6 +337,8 @@ namespace eosiosystem {
       bps_table bps_tbl(_self, _self);
       auto bp = bps_tbl.find(bpname);
       eosio_assert(bp != bps_tbl.end(),"can not find the bp");
+      eosio_assert(bp->mortgage < quantity,"the quantity is bigger then bp mortgage");
+      
       bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
             b.mortgage -= quantity;
          });
