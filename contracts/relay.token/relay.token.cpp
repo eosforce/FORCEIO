@@ -285,40 +285,9 @@ asset convert( symbol_type expected_symbol, const asset& a ) {
 }
 
 void token::trade_imp( account_name payer, account_name receiver, uint32_t pair_id, asset quantity, asset price2, uint32_t bid_or_ask ) {
-   //account_name    exc_acc;// = N(sys.match);
-   //account_name    escrow  = N(eosfund1);
-   //const account_name relay_token_acc = N(relay.token);
-   
-   //exchange::exchange::trading_pairs   trading_pairs_table(exc_acc, exc_acc);
    asset           quant_after_fee;
    asset           base;
    asset           price;
-
-   // test. walk through trading_pairs table
-    /*   {
-           print("\n ---------------- begin to trading_pairs table: ----------------");
-           auto walk_table_range = [&]( auto itr, auto end_itr ) {
-               for( ; itr != end_itr; ++itr ) {
-                   print("\n pair: id=", itr->id);
-               }
-           };
-           //auto lower_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::lowest();
-           auto lower_key = std::numeric_limits<uint64_t>::lowest();
-           auto lower = trading_pairs_table.lower_bound( lower_key );
-           //auto upper_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::max();
-           auto upper_key = std::numeric_limits<uint64_t>::max();
-           auto upper = trading_pairs_table.upper_bound( upper_key );
-           walk_table_range(lower, upper);
-           print("\n -------------------- walk through trading_pairs table ends ----------------:");
-       }*/
-
-   //uint128_t idxkey = (uint128_t(base_sym.name()) << 64) | price.symbol.name();
-
-   
-
-   //auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
-   //auto itr1 = trading_pairs_table.find(pair_id);
-   //eosio_assert(itr1 != trading_pairs_table.end(), "trading pair does not exist");
 
    exchange::exchange e(N(sys.match));
    auto base_sym = e.get_pair_base(pair_id);
@@ -553,37 +522,23 @@ void sys_bridge_exchange::parse(const string memo) {
    eosio_assert(this->type == 1 || this->type == 2,"type is not adapted with bridge_addmortgage");
 }
 
-inline std::string ltrim(std::string str) {
-   auto str1 = str;
-   std::string::iterator p = std::find_if(str1.begin(), str1.end(), not1(std::ptr_fun<int, int>(isspace)));
-   str.erase(str1.begin(), p);
-   return str1;
-}
- 
-inline std::string rtrim(std::string str) {
-   auto str1 = str;
-   std::string::reverse_iterator p = std::find_if(str1.rbegin(), str1.rend(), not1(std::ptr_fun<int , int>(isspace)));
-   str.erase(p.base(), str1.end());
-   return str1;
-}
-
 inline std::string trim(const std::string str) {
-   auto str1 = str;
-   ltrim(rtrim(str1));
-   return str1;
+   auto s = str;
+   s.erase(s.find_last_not_of(" ") + 1);
+   s.erase(0, s.find_first_not_of(" "));
+   
+   return s;
 }
 
 asset asset_from_string(const std::string& from) {
-   //std::string s = trim(from);
-   std::string s = from;
+   std::string s = trim(from);
    const char * str1 = s.c_str();
 
    // Find space in order to split amount and symbol
    const char * pos = strchr(str1, ' ');
    eosio_assert((pos != NULL), "Asset's amount and symbol should be separated with space");
    auto space_pos = pos - str1;
-   //auto symbol_str = trim(s.substr(space_pos + 1));
-   auto symbol_str = s.substr(space_pos + 1);
+   auto symbol_str = trim(s.substr(space_pos + 1));
    auto amount_str = s.substr(0, space_pos);
    eosio_assert((amount_str[0] != '-'), "now do not support negetive asset");
 
