@@ -824,6 +824,7 @@ namespace eosio { namespace testing {
    				               uint32_t net_limit,
    				               uint32_t ram_limit,
    				               const private_key_type* signer) {
+  #if RESOURCE_MODEL == RESOURCE_MODEL_FEE
    	//   if(fee_map[action] == account) return ;
       //   fee_map[action] = account;
    	signed_transaction trx;
@@ -851,6 +852,7 @@ namespace eosio { namespace testing {
          trx.sign( get_private_key( auth_acc, "active" ), control->get_chain_id()  );
       }
       push_transaction( trx );
+	  #endif
    }
 
    void base_tester::set_fee( account_name auth, 
@@ -861,6 +863,7 @@ namespace eosio { namespace testing {
    				               uint32_t net_limit,
    				               uint32_t ram_limit,
    				               const private_key_type* signer) {
+   	#if RESOURCE_MODEL == RESOURCE_MODEL_FEE			
    	//   if(fee_map[action] == account) return ;
       //   fee_map[action] = account;
    	signed_transaction trx;
@@ -881,6 +884,7 @@ namespace eosio { namespace testing {
          trx.sign( get_private_key( auth, "active" ), control->get_chain_id()  );
       }
       push_transaction( trx );
+#endif
    }
 
    bool base_tester::chain_has_transaction( const transaction_id_type& txid ) const {
