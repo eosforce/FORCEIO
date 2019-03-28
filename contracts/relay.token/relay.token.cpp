@@ -182,7 +182,6 @@ int64_t token::get_current_age(name chain,asset balance,int64_t first,int64_t la
       return result;
    }
    
-   
 }
 
 //当币改变的时候算力的权重同时加以改变
