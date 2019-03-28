@@ -24,15 +24,15 @@ namespace eosiosystem {
    static constexpr uint32_t FROZEN_DELAY = CONTRACT_FROZEN_DELAY; // 3 * 24 * 60 * 20; //3*24*60*20*3s;
    static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
    
-   static constexpr uint32_t UPDATE_CYCLE = 42;//CONTRACT_UPDATE_CYCLE;//630; //every 100 blocks update
-   static constexpr uint32_t CYCLE_PREDAY = 275;
-   static constexpr uint32_t STABLE_DAY = 60;
+   static constexpr uint32_t UPDATE_CYCLE = 42;//CONTRACT_UPDATE_CYCLE;//630; 
+   static constexpr uint32_t CYCLE_PREDAY = 5;//275;
+   static constexpr uint32_t STABLE_DAY = 2;//60;
    static constexpr uint32_t STABLE_BLOCK_HEIGHT = UPDATE_CYCLE * CYCLE_PREDAY * STABLE_DAY;
    //分红的币的数量
    static constexpr uint64_t PRE_BLOCK_REWARDS = 23*10000;
-   static constexpr double PRE_GRADIENT = 1.03 * 10000;
+   static constexpr uint32_t PRE_GRADIENT = 1.03 * 10000;
    static constexpr uint64_t STABLE_BLOCK_REWARDS = 630*10000;
-   static constexpr double STABLE_GRADIENT = 1.001 * 10000;
+   static constexpr uint32_t STABLE_GRADIENT = 10010;
    //分红修改的块的高度
    static constexpr uint32_t REWARD_MODIFY_COUNT = UPDATE_CYCLE * CYCLE_PREDAY;
 
@@ -47,7 +47,11 @@ namespace eosiosystem {
    static constexpr uint32_t REWARD_DEVELOP = 900;
    static constexpr uint32_t REWARD_BP = 100;
    static constexpr uint32_t REWARD_FUND = 100;
-   static constexpr uint32_t REWARD_MINE = 10000 - REWARD_DEVELOP - REWARD_BP - REWARD_FUND;
+   static constexpr uint32_t REWARD_MINE = 10000 - REWARD_DEVELOP - REWARD_BP;
+
+   static constexpr account_name CREATION_BP[26] = {N(biosbpa),N(biosbpb),N(biosbpc),N(biosbpd),N(biosbpe),N(biosbpf),N(biosbpg),N(biosbph),N(biosbpi),
+   N(biosbpj),N(biosbpk),N(biosbpl),N(biosbpm),N(biosbpn),N(biosbpo),N(biosbpp),N(biosbpq),N(biosbpr),N(biosbps),N(biosbpt),N(biosbpu),N(biosbpv),N(biosbpw),
+   N(biosbpx),N(biosbpy),N(biosbpz)};
    
 
    struct permission_level_weight {
@@ -173,14 +177,13 @@ namespace eosiosystem {
          uint64_t     id;
          asset reward_block_out = asset(0);
          asset reward_develop = asset(0);
-         asset reward_fund = asset(0);
          int64_t total_block_out_age = 0;
          asset bp_punish = asset(0);
          int64_t cycle_reward = 0;
-         int32_t   gradient = 0.0;
+         int32_t   gradient = 0;
 
          uint64_t primary_key() const { return id; }
-         EOSLIB_SERIALIZE(reward_info, ( id )(reward_block_out)(reward_develop)(reward_fund)(total_block_out_age)(bp_punish)(cycle_reward)(gradient))
+         EOSLIB_SERIALIZE(reward_info, ( id )(reward_block_out)(reward_develop)(total_block_out_age)(bp_punish)(cycle_reward)(gradient))
       };
 
       /** from relay.token begin*/
@@ -210,6 +213,13 @@ namespace eosiosystem {
          uint128_t get_index_i128() const { return get_account_idx(chain, supply); }
       };
 
+      struct creation_bp {
+         account_name bpname;
+         uint64_t primary_key() const { return bpname; }
+
+         EOSLIB_SERIALIZE(creation_bp, (bpname))
+      };
+
       typedef eosio::multi_index<N(stat), currency_stats> stats;
       typedef eosio::multi_index<N(reward), reward_currency,
          eosio::indexed_by< N(bychain),
@@ -223,17 +233,19 @@ namespace eosiosystem {
       typedef eosio::multi_index<N(bps),         bp_info>       bps_table;
       typedef eosio::multi_index<N(schedules),   schedule_info> schedules_table;
       typedef eosio::multi_index<N(reward),   reward_info> reward_table;
+      typedef eosio::multi_index<N(creationbp),   creation_bp> creation_producer;
 
       mvotes_table _voters;
+
       //这个是否是可查询的
       //reward_info reward;
-
+      void init_creation_bp();
       void update_elected_bps();
 
       void reward_bps(const uint64_t reward_amount);
       void reward_block(const uint32_t schedule_version,const uint64_t reward_amount);
       void reward_mines(const uint64_t reward_amount);
-      void reward_develop(const uint64_t reward_amount,const uint64_t reward_fund);
+      void reward_develop(const uint64_t reward_amount);
 
       bool is_super_bp( account_name block_producers[], account_name name );
 

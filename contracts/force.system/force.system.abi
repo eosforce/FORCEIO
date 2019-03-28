@@ -350,7 +350,6 @@
             {"name":"id", "type":"uint64" },
             {"name":"reward_block_out",      "type":"asset"},
             {"name":"reward_develop",        "type":"asset"},
-            {"name":"reward_fund",           "type":"asset"},
             {"name":"total_block_out_age",   "type":"int64"},
             {"name":"bp_punish",             "type":"asset"},
             {"name":"cycle_reward",          "type":"int64"},
@@ -391,6 +390,12 @@
          "base": "",
          "fields": [
             {"name":"develop",                "type":"account_name"}
+         ]
+       },{
+         "name": "creation_bp",
+         "base": "",
+         "fields": [
+            {"name":"bpname",                "type":"account_name"}
          ]
        }
   ],
@@ -564,6 +569,12 @@
             "type": "reward_info",
             "index_type": "i64",
             "key_names" : ["id"],
+            "key_types" : ["uint64"]
+       },{
+            "name": "creationbp",
+            "type": "creation_bp",
+            "index_type": "i64",
+            "key_names" : ["bpname"],
             "key_types" : ["uint64"]
        }
   ],

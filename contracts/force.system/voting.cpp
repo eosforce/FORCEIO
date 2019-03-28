@@ -52,6 +52,10 @@ namespace eosiosystem {
       eosio_assert(false, "curr chain is active mutiple vote, no allow vote to simple bp");
 #endif
 
+      creation_producer creation_bp_tbl(_self,_self);
+      auto create_bp = creation_bp_tbl.find(bpname);
+      eosio_assert(create_bp == creation_bp_tbl.end(),"creation bp can not to be voted");
+      
       bps_table bps_tbl(_self, _self);
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
 

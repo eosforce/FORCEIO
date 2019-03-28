@@ -55,7 +55,6 @@ namespace eosiosystem {
                s.cycle_reward = static_cast<int64_t>(s.cycle_reward * s.gradient / 10000);
             });
          }
-
          //int64_t block_rewards = PRE_BLOCK_REWARDS* pow(PRE_GRADIENT,reward_index);
          INLINE_ACTION_SENDER(eosio::token, issue)( config::token_account_name, {{::config::system_account_name,N(active)}},
                                              { ::config::system_account_name, 
@@ -65,7 +64,7 @@ namespace eosiosystem {
          uint64_t  vote_power = get_vote_power();
          uint64_t  coin_power = get_coin_power();
          uint64_t total_power = vote_power + coin_power;
-         reward_develop(block_rewards * REWARD_DEVELOP / 10000,block_rewards * REWARD_FUND / 10000);
+         reward_develop(block_rewards * REWARD_DEVELOP / 10000);
          reward_block(schedule_version,block_rewards * REWARD_BP / 10000);
          //reward miners
          if (total_power != 0) {
@@ -112,20 +111,39 @@ namespace eosiosystem {
       }
    }
 
+   void system_contract::init_creation_bp() {
+      creation_producer creation_bp_tbl(_self,_self);
+      for (int i=0;i!=26;++i) {
+         creation_bp_tbl.emplace(_self, [&]( creation_bp& b ) {
+            b.bpname = CREATION_BP[i];
+         });
+      }
+   }
+
    void system_contract::update_elected_bps() {
       bps_table bps_tbl(_self, _self);
-
+      
       std::vector<eosio::producer_key> vote_schedule;
       std::vector<int64_t> sorts(NUM_OF_TOP_BPS, 0);
 
+      creation_producer creation_bp_tbl(_self,_self);
+      auto create_bp = creation_bp_tbl.find(CREATION_BP[0]);
+      if (create_bp == creation_bp_tbl.end()) {
+         init_creation_bp();
+      }
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
          for( int i = 0; i < NUM_OF_TOP_BPS; ++i ) {
-            if( sorts[size_t(i)] <= it->total_staked && it->isactive) {
+            auto total_shaked = it->total_staked;
+            create_bp = creation_bp_tbl.find(it->name);
+            if (create_bp != creation_bp_tbl.end()) {
+               total_shaked = 4000000;
+            }
+            if( sorts[size_t(i)] <= total_shaked && it->isactive) {
                eosio::producer_key key;
                key.producer_name = it->name;
                key.block_signing_key = it->block_signing_key;
                vote_schedule.insert(vote_schedule.begin() + i, key);
-               sorts.insert(sorts.begin() + i, it->total_staked);
+               sorts.insert(sorts.begin() + i, total_shaked);
                break;
             }
          }
@@ -152,7 +170,7 @@ namespace eosiosystem {
       ).send();
    }
 
-   void system_contract::reward_develop(const uint64_t reward_amount,const uint64_t reward_fund) {
+   void system_contract::reward_develop(const uint64_t reward_amount) {
       reward_table reward_inf(_self,_self);
       auto reward = reward_inf.find(REWARD_ID);
       if(reward == reward_inf.end()) {
@@ -161,8 +179,7 @@ namespace eosiosystem {
       }
 
       reward_inf.modify(reward, 0, [&]( reward_info& s ) {
-         s.reward_develop += asset(reward_amount);
-         s.reward_fund += asset(reward_fund);      
+         s.reward_develop += asset(reward_amount);    
       });
    }
 
@@ -246,7 +263,6 @@ namespace eosiosystem {
             s.id = REWARD_ID;
             s.reward_block_out = asset(0);
             s.reward_develop = asset(0);
-            s.reward_fund = asset(0);
             s.total_block_out_age = 0;
             s.bp_punish = asset(0);
             s.cycle_reward = PRE_BLOCK_REWARDS;
