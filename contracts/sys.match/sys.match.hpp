@@ -25,7 +25,7 @@ namespace exchange {
    using eosio::asset;
    using eosio::symbol_type;
    const account_name relay_token_acc = N(relay.token);
-   const uint32_t INTERVAL_BLOCKS = 172800;
+   const uint32_t INTERVAL_BLOCKS = /*172800*/ 24 * 3600 * 1000 / config::block_interval_ms;
 
    typedef double real_type;
 
