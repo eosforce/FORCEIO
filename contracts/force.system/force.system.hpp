@@ -22,27 +22,32 @@ namespace eosiosystem {
    using std::vector;
 
    static constexpr uint32_t FROZEN_DELAY = CONTRACT_FROZEN_DELAY; // 3 * 24 * 60 * 20; //3*24*60*20*3s;
-   static constexpr int NUM_OF_TOP_BPS = 21;//CONTRACT_NUM_OF_TOP_BPS;//23;
+   static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
    
    static constexpr uint32_t UPDATE_CYCLE = 42;//CONTRACT_UPDATE_CYCLE;//630; //every 100 blocks update
+   static constexpr uint32_t CYCLE_PREDAY = 275;
+   static constexpr uint32_t STABLE_DAY = 60;
+   static constexpr uint32_t STABLE_BLOCK_HEIGHT = UPDATE_CYCLE * CYCLE_PREDAY * STABLE_DAY;
    //分红的币的数量
-   static constexpr uint64_t PRE_BLOCK_REWARDS = 10.78*10000;
-   static constexpr double PRE_GRADIENT = 1.06;
-   static constexpr uint64_t STABLE_BLOCK_REWARDS = 63*10000;
+   static constexpr uint64_t PRE_BLOCK_REWARDS = 23*10000;
+   static constexpr double PRE_GRADIENT = 1.03 * 10000;
+   static constexpr uint64_t STABLE_BLOCK_REWARDS = 630*10000;
+   static constexpr double STABLE_GRADIENT = 1.001 * 10000;
    //分红修改的块的高度
-   static constexpr uint32_t REWARD_MODIFY_COUNT = 518490;
+   static constexpr uint32_t REWARD_MODIFY_COUNT = UPDATE_CYCLE * CYCLE_PREDAY;
 
    static constexpr uint64_t REWARD_ID = 1;
    //BP的权重
    static constexpr uint64_t BLOCK_OUT_WEIGHT = 1000;
    //BP的押金
-   static constexpr uint64_t MORTGAGE = 828.8*10000;
+   static constexpr uint64_t MORTGAGE = 8228;
    //每一轮BP应该出块的个数
    static constexpr uint32_t PER_CYCLE_AMOUNT = UPDATE_CYCLE / NUM_OF_TOP_BPS; 
    //各个部分占总分红的比重   基数10000
-   static constexpr uint32_t REWARD_DEVELOP = 1000;
-   static constexpr uint32_t REWARD_BP = 25;
-   static constexpr uint32_t REWARD_MINE = 10000 - REWARD_DEVELOP - REWARD_BP;
+   static constexpr uint32_t REWARD_DEVELOP = 900;
+   static constexpr uint32_t REWARD_BP = 100;
+   static constexpr uint32_t REWARD_FUND = 100;
+   static constexpr uint32_t REWARD_MINE = 10000 - REWARD_DEVELOP - REWARD_BP - REWARD_FUND;
    
 
    struct permission_level_weight {
@@ -167,14 +172,15 @@ namespace eosiosystem {
       struct reward_info {
          uint64_t     id;
          asset reward_block_out = asset(0);
-         //asset reward_bp = asset(0);
          asset reward_develop = asset(0);
+         asset reward_fund = asset(0);
          int64_t total_block_out_age = 0;
          asset bp_punish = asset(0);
-         //int64_t total_bp_age = 0;
+         int64_t cycle_reward = 0;
+         int32_t   gradient = 0.0;
 
          uint64_t primary_key() const { return id; }
-         EOSLIB_SERIALIZE(reward_info, ( id )(reward_block_out)(reward_develop)(total_block_out_age)(bp_punish))
+         EOSLIB_SERIALIZE(reward_info, ( id )(reward_block_out)(reward_develop)(reward_fund)(total_block_out_age)(bp_punish)(cycle_reward)(gradient))
       };
 
       /** from relay.token begin*/
@@ -227,7 +233,7 @@ namespace eosiosystem {
       void reward_bps(const uint64_t reward_amount);
       void reward_block(const uint32_t schedule_version,const uint64_t reward_amount);
       void reward_mines(const uint64_t reward_amount);
-      void reward_develop(const uint64_t reward_amount);
+      void reward_develop(const uint64_t reward_amount,const uint64_t reward_fund);
 
       bool is_super_bp( account_name block_producers[], account_name name );
 
@@ -240,6 +246,9 @@ namespace eosiosystem {
       void reset_block_weight(account_name block_producers[]);
       int64_t get_coin_power();
       int64_t get_vote_power();
+
+      void init_reward_info();
+      void update_reward_stable();
 
    public:
       // @abi action

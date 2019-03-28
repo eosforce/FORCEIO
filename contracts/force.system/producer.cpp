@@ -36,23 +36,36 @@ namespace eosiosystem {
          });
       }
 
-
       if( current_block_num() % UPDATE_CYCLE == 0 ) {
-         int reward_index = current_block_num() / REWARD_MODIFY_COUNT;
-         int64_t block_rewards = 0;
-         if (reward_index > 30){block_rewards = STABLE_BLOCK_REWARDS;}
-         else {block_rewards = PRE_BLOCK_REWARDS * pow(PRE_GRADIENT,reward_index);}
+
+         reward_table reward_inf(_self,_self);
+         auto reward = reward_inf.find(REWARD_ID);
+         if(reward == reward_inf.end()) {
+            init_reward_info();
+            reward = reward_inf.find(REWARD_ID);
+         }
+
+         int64_t block_rewards = reward->cycle_reward;
+
+         if(current_block_num() % STABLE_BLOCK_HEIGHT == 0) {
+            update_reward_stable();
+         }
+         else if(current_block_num() % REWARD_MODIFY_COUNT == 0) {
+            reward_inf.modify(reward, 0, [&]( reward_info& s ) {
+               s.cycle_reward = static_cast<int64_t>(s.cycle_reward * s.gradient / 10000);
+            });
+         }
+
          //int64_t block_rewards = PRE_BLOCK_REWARDS* pow(PRE_GRADIENT,reward_index);
          INLINE_ACTION_SENDER(eosio::token, issue)( config::token_account_name, {{::config::system_account_name,N(active)}},
                                              { ::config::system_account_name, 
                                              asset(block_rewards), 
                                              "issue tokens for producer pay"} );
-
          
          uint64_t  vote_power = get_vote_power();
          uint64_t  coin_power = get_coin_power();
          uint64_t total_power = vote_power + coin_power;
-         reward_develop(block_rewards * REWARD_DEVELOP / 10000);
+         reward_develop(block_rewards * REWARD_DEVELOP / 10000,block_rewards * REWARD_FUND / 10000);
          reward_block(schedule_version,block_rewards * REWARD_BP / 10000);
          //reward miners
          if (total_power != 0) {
@@ -139,24 +152,18 @@ namespace eosiosystem {
       ).send();
    }
 
-   void system_contract::reward_develop(const uint64_t reward_amount) {
+   void system_contract::reward_develop(const uint64_t reward_amount,const uint64_t reward_fund) {
       reward_table reward_inf(_self,_self);
       auto reward = reward_inf.find(REWARD_ID);
       if(reward == reward_inf.end()) {
-         reward_inf.emplace(_self, [&]( reward_info& s ) {
-            s.id = REWARD_ID;
-            s.reward_block_out = asset(0);
-//            s.reward_bp = asset(0);
-            s.reward_develop = asset(reward_amount);
-            s.total_block_out_age = 0;
-            // s.total_bp_age = 0;
-         });
+         init_reward_info();
+         reward = reward_inf.find(REWARD_ID);
       }
-      else {
-         reward_inf.modify(reward, 0, [&]( reward_info& s ) {
-            s.reward_develop += asset(reward_amount);      
-         });
-      }
+
+      reward_inf.modify(reward, 0, [&]( reward_info& s ) {
+         s.reward_develop += asset(reward_amount);
+         s.reward_fund += asset(reward_fund);      
+      });
    }
 
    // TODO it need change if no bonus to accounts
@@ -168,11 +175,19 @@ namespace eosiosystem {
       eosio_assert(sch != schs_tbl.end(),"cannot find schedule");
       int64_t total_block_out_age = 0;
       asset total_punish = asset(0);
+      reward_table reward_inf(_self,_self);
+      auto reward = reward_inf.find(REWARD_ID);
+      if(reward == reward_inf.end()) {
+         init_reward_info();
+         reward = reward_inf.find(REWARD_ID);
+      }
+      int64_t reward_pre_block = reward->cycle_reward / UPDATE_CYCLE;
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
          auto bp = bps_tbl.find(sch->producers[i].bpname);
          eosio_assert(bp != bps_tbl.end(),"cannot find bpinfo");
-         if(bp->mortgage < asset(MORTGAGE)) {
+         if(bp->mortgage < asset(MORTGAGE * reward_pre_block)) {
             //抵押不足,没有出块奖励
+            print(sch->producers[i].bpname," Insufficient mortgage, please replenish in time \n");
             continue;
          }
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
@@ -181,9 +196,9 @@ namespace eosiosystem {
             total_block_out_age += (sch->producers[i].amount > b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
                
             if(sch->producers[i].amount - b.last_block_amount != PER_CYCLE_AMOUNT) {
-               b.block_weight = MORTGAGE;
-               b.mortgage -= asset(0.2*10000);
-               total_punish += asset(0.2*10000);
+               b.block_weight = BLOCK_OUT_WEIGHT;
+               b.mortgage -= asset(reward_pre_block * 2);
+               total_punish += asset(reward_pre_block * 2);
             } else {
               b.block_weight += 1;
             }
@@ -191,24 +206,11 @@ namespace eosiosystem {
          });
       }
 
-      reward_table reward_inf(_self,_self);
-      auto reward = reward_inf.find(REWARD_ID);
-      if(reward == reward_inf.end()) {
-         reward_inf.emplace(_self, [&]( reward_info& s ) {
-            s.id = REWARD_ID;
-            s.reward_block_out = asset(reward_amount);
-            s.reward_develop = asset(0);
-            s.total_block_out_age = total_block_out_age;
-            s.bp_punish = total_punish;
-         });
-      }
-      else {
-         reward_inf.modify(reward, 0, [&]( reward_info& s ) {
-            s.reward_block_out += asset(reward_amount);
-            s.total_block_out_age += total_block_out_age;
-            s.bp_punish += total_punish;
-         });
-      }
+      reward_inf.modify(reward, 0, [&]( reward_info& s ) {
+         s.reward_block_out += asset(reward_amount);
+         s.total_block_out_age += total_block_out_age;
+         s.bp_punish += total_punish;
+      });
    }
 
    void system_contract::reward_bps(const uint64_t reward_amount) {
@@ -232,6 +234,34 @@ namespace eosiosystem {
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
             b.rewards_pool += asset(vote_reward * b.commission_rate / 10000);
             b.rewards_block += asset(vote_reward * (10000 - b.commission_rate) / 10000);
+         });
+      }
+   }
+
+   void system_contract::init_reward_info() {
+      reward_table reward_inf(_self,_self);
+      auto reward = reward_inf.find(REWARD_ID);
+      if (reward == reward_inf.end()) {
+         reward_inf.emplace(_self, [&]( reward_info& s ) {
+            s.id = REWARD_ID;
+            s.reward_block_out = asset(0);
+            s.reward_develop = asset(0);
+            s.reward_fund = asset(0);
+            s.total_block_out_age = 0;
+            s.bp_punish = asset(0);
+            s.cycle_reward = PRE_BLOCK_REWARDS;
+            s.gradient = PRE_GRADIENT;
+         });
+      }
+   }
+
+   void system_contract::update_reward_stable() {
+      reward_table reward_inf(_self,_self);
+      auto reward = reward_inf.find(REWARD_ID);
+      if (reward != reward_inf.end()) { 
+         reward_inf.modify(reward, 0, [&]( reward_info& s ) {
+            s.cycle_reward = STABLE_BLOCK_REWARDS;
+            s.gradient = STABLE_GRADIENT;
          });
       }
    }
@@ -330,26 +360,18 @@ namespace eosiosystem {
       eosio_assert(reward != reward_inf.end(),"reward info do not find");
 
       asset reward_block_out = reward->reward_block_out;
-//      asset reward_bp = reward->reward_bp;
       int64_t total_block_out_age = reward->total_block_out_age;
-//      int64_t total_bp_age = reward->total_bp_age;
-
       int64_t block_age = bp->block_age;
-//      int64_t bp_age = bp->bp_age;
 
       auto claim_block = reward_block_out * block_age/total_block_out_age;
-//      auto claim_bp = reward_bp * bp_age / total_bp_age;
 
       bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
             b.block_age = 0;
-//            b.bp_age = 0;
          });
 
       reward_inf.modify(reward, 0, [&]( reward_info& s ) {
             s.reward_block_out -= claim_block;
- //           s.reward_bp -= claim_bp;
             s.total_block_out_age -= block_age;
-            // s.total_bp_age -= bp_age;
          });
       eosio_assert(claim_block > asset(10000),"claim amount must > 1");
       INLINE_ACTION_SENDER(eosio::token, castcoin)(
@@ -360,10 +382,6 @@ namespace eosiosystem {
 
    void system_contract::claimvote(const account_name bpname,const account_name receiver) {
       require_auth(receiver);
-
-// #if !IS_ACTIVE_BONUS_TO_VOTE
-//       eosio_assert(false, "curr chain no bonus to account who vote");
-// #endif
 
       bps_table bps_tbl(_self, _self);
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
