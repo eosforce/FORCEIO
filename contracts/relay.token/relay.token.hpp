@@ -51,8 +51,11 @@ using std::string;
 
    const account_name SYS_BRIDGE = N(sys.bridge);
    const account_name SYS_MATCH = N(sys.match);
-
+#ifdef BEFORE_ONLINE_TEST  
 static constexpr uint32_t UPDATE_CYCLE = 630;
+#else
+static constexpr uint32_t UPDATE_CYCLE = 126;
+#endif
 static constexpr uint64_t OTHER_COIN_WEIGHT = 500;
 class token : public eosio::contract {
 public:

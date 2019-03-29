@@ -23,15 +23,22 @@ namespace eosiosystem {
 
    static constexpr uint32_t FROZEN_DELAY = CONTRACT_FROZEN_DELAY; // 3 * 24 * 60 * 20; //3*24*60*20*3s;
    static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
-   
+#ifdef BEFORE_ONLINE_TEST   
+   static constexpr uint32_t UPDATE_CYCLE = 126;//42;//CONTRACT_UPDATE_CYCLE;//630; 
+   static constexpr uint32_t CYCLE_PREDAY = 5;//5;//275;
+   static constexpr uint32_t STABLE_DAY = 5;//2;//60;
+   static constexpr uint64_t PRE_BLOCK_REWARDS = 58.6*10000;
+   static constexpr uint64_t STABLE_BLOCK_REWARDS = 126*10000;
+#else
    static constexpr uint32_t UPDATE_CYCLE = 630;//42;//CONTRACT_UPDATE_CYCLE;//630; 
    static constexpr uint32_t CYCLE_PREDAY = 275;//5;//275;
    static constexpr uint32_t STABLE_DAY = 60;//2;//60;
+   static constexpr uint64_t STABLE_BLOCK_REWARDS = 630*10000;
+   static constexpr uint64_t PRE_BLOCK_REWARDS = 143*10000;
+#endif
    static constexpr uint32_t STABLE_BLOCK_HEIGHT = UPDATE_CYCLE * CYCLE_PREDAY * STABLE_DAY;
    //分红的币的数量
-   static constexpr uint64_t PRE_BLOCK_REWARDS = 143*10000;
    static constexpr uint32_t PRE_GRADIENT = 10250;
-   static constexpr uint64_t STABLE_BLOCK_REWARDS = 630*10000;
    static constexpr uint32_t STABLE_GRADIENT = 10010;
    //分红修改的块的高度
    static constexpr uint32_t REWARD_MODIFY_COUNT = UPDATE_CYCLE * CYCLE_PREDAY;
