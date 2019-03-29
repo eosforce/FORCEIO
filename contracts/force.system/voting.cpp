@@ -52,6 +52,10 @@ namespace eosiosystem {
       eosio_assert(false, "curr chain is active mutiple vote, no allow vote to simple bp");
 #endif
 
+      creation_producer creation_bp_tbl(_self,_self);
+      auto create_bp = creation_bp_tbl.find(bpname);
+      eosio_assert(create_bp == creation_bp_tbl.end(),"creation bp can not to be voted");
+      
       bps_table bps_tbl(_self, _self);
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
 
@@ -135,7 +139,7 @@ namespace eosiosystem {
          v.unstake_height = curr_block_num;
       });
    }
-
+#if 0
    void system_contract::claim( const account_name voter, const account_name bpname ) {
       require_auth(voter);
 
@@ -163,9 +167,9 @@ namespace eosiosystem {
                    "need 0 <= claim reward quantity <= rewards_pool");
 
       auto reward_all = reward;
-      if( voter == bpname ) {
-         reward_all += bp.rewards_block;
-      }
+      // if( voter == bpname ) {
+      //    reward_all += bp.rewards_block;
+      // }
 
       eosio_assert(reward_all > asset{}, "no any reward!");
       INLINE_ACTION_SENDER(eosio::token, transfer)(
@@ -180,11 +184,12 @@ namespace eosiosystem {
 
       bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
          b.rewards_pool -= reward;
-         if( voter == bpname ) {
-            b.rewards_block.set_amount(0);
-         }
+         // if( voter == bpname ) {
+         //    b.rewards_block.set_amount(0);
+         // }
          b.total_voteage = static_cast<int64_t>(newest_total_voteage - newest_voteage);
          b.voteage_update_height = curr_block_num;
       });
    }
+   #endif
 }

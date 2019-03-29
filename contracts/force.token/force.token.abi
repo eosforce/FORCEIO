@@ -128,6 +128,48 @@
           "type": "asset"
         }
       ]
+    },
+    {
+      "name": "coin_cast",
+      "base": "",
+      "fields": [
+        {
+          "name": "balance",
+          "type": "asset"
+        },
+        {
+          "name":"finish_block",
+          "type":"uint32"
+        }
+      ]
+    },
+    {
+      "name": "castcoin",
+      "base": "",
+      "fields": [
+        {
+          "name": "from",
+          "type": "account_name"
+        },
+        {
+          "name": "to",
+          "type": "account_name"
+        },
+        {
+          "name": "quantity",
+          "type": "asset"
+        }
+      ]
+    },
+    {
+      "name": "takecoin",
+      "base": "",
+      "fields": [
+        {
+          "name": "to",
+          "type": "account_name"
+        }
+      ]
     }
   ],
   "actions": [
@@ -155,6 +197,16 @@
       "name":"trade",
       "type":"trade",
       "ricardian_contract":""
+    },
+    {
+      "name":"castcoin",
+      "type":"castcoin",
+      "ricardian_contract":""
+    },
+    {
+      "name":"takecoin",
+      "type":"takecoin",
+      "ricardian_contract":""
     }
   ],
   "tables": [
@@ -170,6 +222,13 @@
       "type": "currency_stats",
       "index_type": "i64",
       "key_names": [ "currency" ],
+      "key_types": [ "uint64" ]
+    },
+    {
+      "name": "coincast",
+      "type": "coin_cast",
+      "index_type": "i64",
+      "key_names": [ "finishblock" ],
       "key_types": [ "uint64" ]
     }
   ],

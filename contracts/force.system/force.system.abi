@@ -95,12 +95,16 @@
         {"name":"commission_rate",      "type":"uint32"},
         {"name":"total_staked",         "type":"int64"},
         {"name":"rewards_pool",         "type":"asset"},
-        {"name":"rewards_block",        "type":"asset"},
+        {"name":"rewards_block",         "type":"asset"},
         {"name":"total_voteage",        "type":"int64"},
         {"name":"voteage_update_height","type":"uint32"},
         {"name":"url",                  "type":"string"},
         {"name":"emergency",            "type":"bool"},
-        {"name":"isactive",             "type":"bool"}
+        {"name":"isactive",             "type":"bool"},
+        {"name":"block_age",            "type":"int64"},
+        {"name":"last_block_amount",    "type":"uint32"},
+        {"name":"block_weight",    "type":"int64"},
+        {"name":"bp_mortgageage",               "type":"asset"}
       ]
     },{
       "name": "setemergency",
@@ -339,6 +343,60 @@
             {"name":"net_amount", "type":"asset"},
             {"name":"cpu_amount", "type":"asset"}
          ]
+       },{
+         "name": "reward_info",
+         "base": "",
+         "fields": [
+            {"name":"id", "type":"uint64" },
+            {"name":"reward_block_out",      "type":"asset"},
+            {"name":"reward_develop",        "type":"asset"},
+            {"name":"total_block_out_age",   "type":"int64"},
+            {"name":"bp_punish",             "type":"asset"},
+            {"name":"cycle_reward",          "type":"int64"},
+            {"name":"gradient",              "type":"int32"}
+         ]
+       },{
+         "name": "addmortgage",
+         "base": "",
+         "fields": [
+            {"name":"bpname",                "type":"account_name"},
+            {"name":"payer",              "type":"account_name"},
+            {"name":"quantity",              "type":"asset"}
+         ]
+       },{
+         "name": "claimmortgage",
+         "base": "",
+         "fields": [
+            {"name":"bpname",                "type":"account_name"},
+            {"name":"receiver",              "type":"account_name"},
+            {"name":"quantity",              "type":"asset"}
+         ]
+       },{
+         "name": "claimbp",
+         "base": "",
+         "fields": [
+            {"name":"bpname",                "type":"account_name"},
+            {"name":"receiver",              "type":"account_name"}
+         ]
+       },{
+         "name": "claimvote",
+         "base": "",
+         "fields": [
+            {"name":"bpname",                "type":"account_name"},
+            {"name":"receiver",              "type":"account_name"}
+         ]
+       },{
+         "name": "claimdevelop",
+         "base": "",
+         "fields": [
+            {"name":"develop",                "type":"account_name"}
+         ]
+       },{
+         "name": "creation_bp",
+         "base": "",
+         "fields": [
+            {"name":"bpname",                "type":"account_name"}
+         ]
        }
   ],
   "actions": [{
@@ -429,6 +487,26 @@
          "name": "refund",
          "type": "refund",
          "ricardian_contract": ""
+      },{
+         "name": "addmortgage",
+         "type": "addmortgage",
+         "ricardian_contract": ""
+      },{
+         "name": "claimmortgage",
+         "type": "claimmortgage",
+         "ricardian_contract": ""
+      },{
+         "name": "claimbp",
+         "type": "claimbp",
+         "ricardian_contract": ""
+      },{
+         "name": "claimvote",
+         "type": "claimvote",
+         "ricardian_contract": ""
+      },{
+         "name": "claimdevelop",
+         "type": "claimdevelop",
+         "ricardian_contract": ""
       }
   ],
   "tables": [
@@ -485,6 +563,18 @@
             "type": "refund_request",
             "index_type": "i64",
             "key_names" : ["owner"],
+            "key_types" : ["uint64"]
+       },{
+            "name": "reward",
+            "type": "reward_info",
+            "index_type": "i64",
+            "key_names" : ["id"],
+            "key_types" : ["uint64"]
+       },{
+            "name": "creationbp",
+            "type": "creation_bp",
+            "index_type": "i64",
+            "key_names" : ["bpname"],
             "key_types" : ["uint64"]
        }
   ],

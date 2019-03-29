@@ -127,6 +127,11 @@ public:
       bool            emergency                = false;
       bool            isactive                 = true;
 
+      int64_t      block_age = 0;
+      uint32_t      last_block_amount = 0;
+      int64_t      block_weight = 0;   //换届如何清零?
+      asset        mortgage = asset(0);
+
       bp_info() : commission_rate(0) {
       }
 
@@ -279,7 +284,8 @@ public:
 } } // namespace eosio::chain
 
 FC_REFLECT(eosio::chain::memory_db::bp_info, (name)(producer_key)
-            (commission_rate)(total_staked)(rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(isactive))
+            (commission_rate)(total_staked)(rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(isactive)
+            (block_age)(last_block_amount)(block_weight)(mortgage))
 FC_REFLECT(eosio::chain::memory_db::token_account, (balance))
 FC_REFLECT(eosio::chain::memory_db::eoslock_account, (owner)(balance))
 FC_REFLECT(eosio::chain::memory_db::chain_status, (name)(emergency))

@@ -85,9 +85,66 @@ void token::transfer( account_name from,
     sub_balance( from, quantity );
     add_balance( to, quantity, from );
 }
+void token::castcoin( account_name from,
+                      account_name to,
+                      asset        quantity)
+{
+   eosio_assert( from == ::config::system_account_name, "only the account force can cast coin to others" );
+   require_auth( from );
+   eosio_assert( is_account( to ), "to account does not exist");
+   coincasts coincast_table( _self, to );
+   auto current_block = current_block_num();
+   int32_t cast_num = PRE_CAST_NUM - static_cast<int32_t>(current_block / WEAKEN_CAST_NUM);
+   if (cast_num < STABLE_CAST_NUM) cast_num = STABLE_CAST_NUM;
+   auto finish_block = current_block + cast_num;
+   const auto cc = coincast_table.find( static_cast<uint64_t>(finish_block) );
+
+   require_recipient( from );
+   require_recipient( to );
+
+   eosio_assert( quantity.is_valid(), "invalid quantity" );
+   eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
+   if (cc != coincast_table.end()) {
+      eosio_assert( quantity.symbol == cc->balance.symbol, "symbol precision mismatch" );
+   }
+
+   sub_balance( from, quantity );
+   if (cc == coincast_table.end()) {
+   coincast_table.emplace( from, [&]( auto& a ){
+      a.balance = quantity;
+      a.finish_block = finish_block;
+   });
+   }
+   else {
+      coincast_table.modify( cc, 0, [&]( auto& a ) {
+      a.balance += quantity;
+   });
+   }
+}
+void token::takecoin(account_name to) {
+   require_auth( to );
+   coincasts coincast_table( _self, to );
+   auto current_block = current_block_num();
+   vector<uint32_t>  finish_block;
+   asset finish_coin = asset(0);
+   finish_block.clear();
+   for( auto it = coincast_table.cbegin(); it != coincast_table.cend(); ++it ) {
+      if(it->finish_block < current_block) {
+         finish_block.push_back(it->finish_block);
+         finish_coin += it->balance;
+      }
+   }
+   add_balance( to, finish_coin, to );
+   for (auto val : finish_block)
+   {
+      const auto cc = coincast_table.find( static_cast<uint64_t>(val) );
+      if (cc != coincast_table.end()) {
+         coincast_table.erase(cc);
+      }
+   }
+}
 
 void token::fee( account_name payer, asset quantity ){
-   // account to get fee, TODO By FanYang : need use conf
    const auto fee_account = N(force.fee);
 
    require_auth( payer );
@@ -338,4 +395,4 @@ void sys_match_match::parse(const string memo) {
 
 } /// namespace eosio
 
-EOSIO_ABI( eosio::token, (create)(issue)(transfer)(fee)(trade) )
+EOSIO_ABI( eosio::token, (create)(issue)(transfer)(fee)(trade)(castcoin)(takecoin) )

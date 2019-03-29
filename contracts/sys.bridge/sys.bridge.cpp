@@ -361,7 +361,7 @@ namespace eosio {
 
       if( con == idx.end() ) {
          trans.emplace(_self, [&]( auto& a ) {
-            a.id = trans.available_primary_key();;
+            a.id = trans.available_primary_key();
             a.quantity = quantity;
             a.contract_name = contract_name;
             a.chain = chain;

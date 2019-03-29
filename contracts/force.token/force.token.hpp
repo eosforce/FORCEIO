@@ -49,6 +49,9 @@ namespace eosio {
    };
 
    const account_name SYS_BRIDGE = N(sys.bridge);
+   static constexpr uint32_t PRE_CAST_NUM = 5184000;
+   static constexpr uint32_t STABLE_CAST_NUM = 1209600;
+   static constexpr double WEAKEN_CAST_NUM = 2.5;
 
    class token : public contract {
       public:
@@ -76,6 +79,8 @@ namespace eosio {
                      asset          quantity,
                      func_type      type,
                      string           memo);
+         void castcoin(account_name from,account_name to,asset quantity);
+         void takecoin(account_name to);
 
       private:
          struct account {
@@ -92,8 +97,16 @@ namespace eosio {
             uint64_t primary_key()const { return supply.symbol.name(); }
          };
 
+         struct coin_cast {
+            asset    balance = asset(0);
+            uint32_t   finish_block = 0;
+
+            uint64_t primary_key()const { return static_cast<uint64_t>(finish_block); }
+         };
+
          typedef eosio::multi_index<N(accounts), account> accounts;
          typedef eosio::multi_index<N(stat), currency_stats> stats;
+         typedef eosio::multi_index<N(coincast), coin_cast> coincasts;
 
          void sub_balance( account_name owner, asset value );
          void add_balance( account_name owner, asset value, account_name ram_payer );
