@@ -75,6 +75,7 @@ namespace exchange {
          p.exc_acc      = exc_acc;
          p.fees_base    = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym));
          p.fees_quote   = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym));
+         p.frozen       = 0;
       });
    }
 
@@ -173,7 +174,7 @@ namespace exchange {
 
       auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
       auto itr1 = idx_pair.find(idxkey);
-      eosio_assert(itr1 != idx_pair.end(), "trading pair does not exist");
+      eosio_assert(itr1 != idx_pair.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");
       require_auth( itr1->exc_acc );
 
       base    = convert(itr1->base, base);
@@ -360,7 +361,7 @@ namespace exchange {
 
       auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
       auto itr1 = idx_pair.find(idxkey);
-      eosio_assert(itr1 != idx_pair.end(), "trading pair does not exist");
+      eosio_assert(itr1 != idx_pair.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");
       require_auth( itr1->exc_acc );
 
       base    = convert(itr1->base, base);
@@ -695,10 +696,6 @@ namespace exchange {
       deals_table.emplace( _self, [&]( auto& d ) {
          d.id = (uint32_t)pk;
          d.pair_id      = pair_id;
-         d.base_chain   = base_chain;
-         d.base_sym     = base_sym;
-         d.quote_chain  = quote_chain;
-         d.quote_sym    = quote_sym;
          d.sum          = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym));
          d.vol          = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym));
          d.reset_block_height = start_block;
@@ -747,6 +744,32 @@ namespace exchange {
       return;
    }
    
+   void exchange::freeze(uint32_t id) {
+      trading_pairs   trading_pairs_table(_self, _self);
+      
+      auto itr = trading_pairs_table.find(id);
+      eosio_assert(itr != trading_pairs_table.cend(), "trading pair not found");
+      
+      require_auth(itr->exc_acc);
+      
+      trading_pairs_table.modify(itr, _self, [&]( auto& p ) {
+        p.frozen = 1;
+      });
+   }
+   
+   void exchange::unfreeze(uint32_t id) {
+      trading_pairs   trading_pairs_table(_self, _self);
+      
+      auto itr = trading_pairs_table.find(id);
+      eosio_assert(itr != trading_pairs_table.cend(), "trading pair not found");
+      
+      require_auth(itr->exc_acc);
+      
+      trading_pairs_table.modify(itr, _self, [&]( auto& p ) {
+        p.frozen = 0;
+      });
+   }
+   
    asset exchange::calcfee(asset quant, uint64_t fee_rate) {
       asset fee = quant * fee_rate / max_fee_rate;
       if(fee_rate > 0 && fee.amount < 1) {
@@ -757,4 +780,4 @@ namespace exchange {
    }   
 }
 
-EOSIO_ABI( exchange::exchange, (create)(match)(cancel)(done)(mark)(claim))
+EOSIO_ABI( exchange::exchange, (create)(match)(cancel)(done)(mark)(claim)(freeze)(unfreeze))

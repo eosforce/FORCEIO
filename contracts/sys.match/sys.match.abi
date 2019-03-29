@@ -87,7 +87,8 @@
       {"name": "fee_rate","type": "uint32"},
       {"name": "exc_acc","type": "account_name"},
       {"name": "fees_base","type": "asset"},
-      {"name": "fees_quote","type": "asset"}
+      {"name": "fees_quote","type": "asset"},
+      {"name": "frozen","type": "uint32"}
       ]
     },{
        "name": "order",
@@ -108,10 +109,6 @@
        "fields": [
         {"name": "id","type": "uint32"},
         {"name": "pair_id","type": "uint32"},
-        {"name": "base_chain","type": "name"},
-        {"name": "base_sym","type": "symbol_type"},
-        {"name": "quote_chain","type": "name"},
-        {"name": "quote_sym","type": "symbol_type"},
         {"name": "sum","type": "asset"},
         {"name": "vol","type":"asset"},
         {"name": "reset_block_height","type":"uint32"},
@@ -127,6 +124,18 @@
         {"name": "quote_sym","type": "symbol_type"},
         {"name": "exc_acc","type":"account_name"},
         {"name": "fee_acc","type":"account_name"}
+       ]
+     },{
+       "name": "freeze",
+       "base": "",
+       "fields": [
+        {"name": "id","type": "uint32"}
+       ]
+     },{
+       "name": "unfreeze",
+       "base": "",
+       "fields": [
+        {"name": "id","type": "uint32"}
        ]
      }
   ],
@@ -153,6 +162,14 @@
     },{
       "name": "claim",
       "type": "claim",
+      "ricardian_contract": ""
+    },{
+      "name": "freeze",
+      "type": "freeze",
+      "ricardian_contract": ""
+    },{
+      "name": "unfreeze",
+      "type": "unfreeze",
       "ricardian_contract": ""
     }
   ],

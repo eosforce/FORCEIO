@@ -25,7 +25,7 @@ namespace exchange {
    using eosio::asset;
    using eosio::symbol_type;
    const account_name relay_token_acc = N(relay.token);
-   const uint32_t INTERVAL_BLOCKS = 172800;
+   const uint32_t INTERVAL_BLOCKS = /*172800*/ 24 * 3600 * 1000 / config::block_interval_ms;
 
    typedef double real_type;
 
@@ -52,6 +52,10 @@ namespace exchange {
       
       void claim(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc, account_name fee_acc);
       
+      void freeze(uint32_t id);
+      
+      void unfreeze(uint32_t id);
+         
       asset calcfee(asset quant, uint64_t fee_rate);
 
       inline symbol_type get_pair_base( uint32_t pair_id ) const;
@@ -92,6 +96,7 @@ namespace exchange {
           account_name exc_acc;
           asset       fees_base;
           asset       fees_quote;
+          uint32_t    frozen;
           
           uint32_t primary_key() const { return id; }
           uint128_t by_pair_sym() const { return (uint128_t(base.name()) << 64) | quote.name(); }
@@ -116,11 +121,6 @@ namespace exchange {
       struct deal_info {
          uint32_t    id;
          uint32_t    pair_id;
-         name        base_chain;
-         symbol_type base_sym;
-
-         name        quote_chain;
-         symbol_type quote_sym;
 
          asset       sum;
          asset       vol;
@@ -336,12 +336,32 @@ namespace exchange {
       deals   deals_table(_self, _self);
       asset   avg_price = asset(0, quote_sym);
 
-      auto pair_id = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
+      uint32_t pair_id = 0xFFFFFFFF;
       
-      auto lower_key = ((uint64_t)pair_id << 32) | 0;
+      raw_pairs   raw_pairs_table(_self, _self);
+
+      auto lower_key = std::numeric_limits<uint64_t>::lowest();
+      auto lower = raw_pairs_table.lower_bound( lower_key );
+      auto upper_key = std::numeric_limits<uint64_t>::max();
+      auto upper = raw_pairs_table.upper_bound( upper_key );
+      auto itr = lower;
+      
+      for ( itr = lower; itr != upper; ++itr ) {
+         if (itr->base_chain == base_chain && itr->base_sym.name() == base_sym.name() && 
+               itr->quote_chain == quote_chain && itr->quote_sym.name() == quote_sym.name()) {
+            print("exchange::get_avg_price -- pair: id=", itr->id, "\n");
+            pair_id = itr->id;
+            break;
+         }
+      }
+      if (itr == upper) {
+         print("exchange::get_avg_price: trading pair not exist! base_chain=", base_chain.to_string().c_str(), ", base_sym=", base_sym, ", quote_chain", quote_chain.to_string().c_str(), ", quote_sym=", quote_sym, "\n");
+         return avg_price;
+      }
+      
+      lower_key = ((uint64_t)pair_id << 32) | 0;
       auto idx_deals = deals_table.template get_index<N(idxkey)>();
       auto itr1 = idx_deals.lower_bound(lower_key);
-      eosio_assert(itr1 != idx_deals.end() && itr1->pair_id == pair_id, "trading pair not marked");
       if (!(itr1 != idx_deals.end() && itr1->pair_id == pair_id)) {
          print("exchange::get_avg_price: trading pair not marked!\n");
          return avg_price;
@@ -350,7 +370,7 @@ namespace exchange {
       lower_key = ((uint64_t)pair_id << 32) | block_height;
       itr1 = idx_deals.lower_bound(lower_key);
       if (itr1 == idx_deals.cend()) itr1--;
-      
+
       if (itr1->vol.amount > 0 && block_height >= itr1->reset_block_height) 
          avg_price = itr1->sum * precision(itr1->vol.symbol.precision()) / itr1->vol.amount;
       /*print("exchange::get_avg_price pair_id=", itr1->pair_id, ", block_height=", block_height, 
@@ -396,6 +416,12 @@ namespace exchange {
       
       // test
       /*{
+         name test_base_chain; test_base_chain.value = N(test1);
+         symbol_type test_base_sym = S(2, TESTA);
+         name test_quote_chain; test_quote_chain.value = N(test2);
+         symbol_type test_quote_sym = S(2, TESTB);
+         
+         get_avg_price( curr_block, test_base_chain, test_base_sym, test_quote_chain, test_quote_sym );
          get_avg_price( curr_block, base_chain, base_sym, quote_chain, quote_sym );
          get_avg_price( curr_block-10, base_chain, base_sym, quote_chain, quote_sym );
          get_avg_price( curr_block+10, base_chain, base_sym, quote_chain, quote_sym );
