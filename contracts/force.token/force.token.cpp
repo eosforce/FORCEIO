@@ -85,7 +85,6 @@ void token::transfer( account_name from,
     sub_balance( from, quantity );
     add_balance( to, quantity, from );
 }
-//进入铸币
 void token::castcoin( account_name from,
                       account_name to,
                       asset        quantity)
@@ -93,7 +92,6 @@ void token::castcoin( account_name from,
    eosio_assert( from == ::config::system_account_name, "only the account force can cast coin to others" );
    require_auth( from );
    eosio_assert( is_account( to ), "to account does not exist");
-   //auto sym = quantity.symbol.name();
    coincasts coincast_table( _self, to );
    auto current_block = current_block_num();
    int32_t cast_num = PRE_CAST_NUM - static_cast<int32_t>(current_block / WEAKEN_CAST_NUM);
@@ -123,7 +121,6 @@ void token::castcoin( account_name from,
    });
    }
 }
-//领取铸币  erase
 void token::takecoin(account_name to) {
    require_auth( to );
    coincasts coincast_table( _self, to );
@@ -131,7 +128,6 @@ void token::takecoin(account_name to) {
    vector<uint32_t>  finish_block;
    asset finish_coin = asset(0);
    finish_block.clear();
-   //遍历所有铸币池,将已经铸好的币打给用户
    for( auto it = coincast_table.cbegin(); it != coincast_table.cend(); ++it ) {
       if(it->finish_block < current_block) {
          finish_block.push_back(it->finish_block);
@@ -149,7 +145,6 @@ void token::takecoin(account_name to) {
 }
 
 void token::fee( account_name payer, asset quantity ){
-   // account to get fee, TODO By FanYang : need use conf
    const auto fee_account = N(force.fee);
 
    require_auth( payer );

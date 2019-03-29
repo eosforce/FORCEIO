@@ -49,7 +49,6 @@ namespace eosio {
    };
 
    const account_name SYS_BRIDGE = N(sys.bridge);
-   //static constexpr uint32_t UPDATE_CYCLE = 42;
    static constexpr uint32_t PRE_CAST_NUM = 5184000;
    static constexpr uint32_t STABLE_CAST_NUM = 1209600;
    static constexpr double WEAKEN_CAST_NUM = 2.5;
@@ -80,9 +79,7 @@ namespace eosio {
                      asset          quantity,
                      func_type      type,
                      string           memo);
-         //进入铸币池
          void castcoin(account_name from,account_name to,asset quantity);
-         //领取铸币池中的币
          void takecoin(account_name to);
 
       private:

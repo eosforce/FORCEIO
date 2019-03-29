@@ -318,15 +318,15 @@ namespace eosiosystem {
       void setfee(account_name account,action_name action,asset fee,uint32_t cpu_limit,uint32_t net_limit,uint32_t ram_limit);
       // @abi action
       void setabi(account_name account,bytes abi);
-      // 增加抵押
+      // @abi action
       void addmortgage(const account_name bpname,const account_name payer,asset quantity);
-      // 领取抵押
+      // @abi action
       void claimmortgage(const account_name bpname,const account_name receiver,asset quantity);
-      //领取投票分红
+      // @abi action
       void claimvote(const account_name bpname,const account_name receiver);
-      //BP领取分红
+      // @abi action
       void claimbp(const account_name bpname,const account_name receiver);
-      //DEVELOP领取分红
+      // @abi action
       void claimdevelop(const account_name develop);
 #if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
       // @abi action

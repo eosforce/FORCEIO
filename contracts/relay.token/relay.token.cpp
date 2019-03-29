@@ -452,10 +452,6 @@ void token::claim(name chain,asset quantity,account_name receiver) {
    }
 
    auto total_reward = reward_pool * power / total_power;
-   // print("claim  to --- ",to.mineage,"---",to.balance,"----",to.mineage_update_height,"---",last_devidend_num,"\n");
-   // print("claim  total --- ",total_mineage,"---",supply,"----",total_mineage_update_height,"---",last_devidend_num,"\n");
-   // print("claim --- ",power,"---",total_power,"----",reward_pool,"---",total_reward,"\n");
-   //接下来的更新 总分红   减去当前分红   总矿龄减去当前矿龄      用户历史矿龄归零  计算待领取分红 高度为当前高度
    statstable.modify( existing,0,[&](auto &st) {
       st.reward_pool -= total_reward;
       st.total_mineage = total_power - power;
@@ -479,7 +475,6 @@ void token::claim(name chain,asset quantity,account_name receiver) {
    });
 
    eosio_assert(total_reward > asset(100000),"claim amount must > 10");
-   //转账功能暂时没有实现,因为没有该合约没有force的权限
    eosio::action(
            permission_level{ ::config::system_account_name, N(active) },
            N(force.token), N(castcoin),

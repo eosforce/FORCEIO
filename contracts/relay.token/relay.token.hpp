@@ -100,11 +100,11 @@ public:
                string memo);
                   
    void trade_imp( account_name payer, account_name receiver, uint32_t pair_id, asset quantity, asset price, uint32_t bid_or_ask );
-   //增加可以挖矿的币种
+   /// @abi action
    void addreward(name chain,asset supply);
-   //奖励挖矿币种
+   /// @abi action
    void rewardmine(asset quantity);
-   //领取分红
+   /// @abi action
    void claim(name chain,asset quantity,account_name receiver);
 
 private:
@@ -145,7 +145,6 @@ private:
 
       uint64_t primary_key() const { return supply.symbol.name(); }
    };
-   //存放可以挖矿的币种
    struct reward_currency {
       uint64_t     id;
       name         chain;
