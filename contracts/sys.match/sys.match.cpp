@@ -54,7 +54,7 @@ namespace exchange {
       uint128_t idxkey = compute_pair_index(base, quote);
       //uint128_t idxkey = (uint128_t(base.name()) << 64) | quote.name();
       //print("idxkey=",idxkey,",base_sym=",base.name(),",price.symbol=",quote.name());
-      print("\n base=",base,",base_chain=",base_chain,",base_sym=",base_sym,"base=",quote,",base_chain=",quote_chain,",base_sym=",quote_sym,"\n");
+      print("\n base=", base, ", base_chain=", base_chain,", base_sym=", base_sym, "quote=", quote, ", quote_chain=", quote_chain, ", quote_sym=", quote_sym, "\n");
 
       auto idx = trading_pairs_table.template get_index<N(idxkey)>();
       auto itr = idx.find(idxkey);

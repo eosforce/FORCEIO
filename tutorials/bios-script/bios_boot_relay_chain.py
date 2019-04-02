@@ -194,6 +194,11 @@ def stepSetFuncs():
     setFee('sys.match', 'create',  15000, 0, 0, 0)
     setFee('sys.match', 'match',   5000,  0, 0, 0)
     setFee('sys.match', 'cancel',  15000, 0, 0, 0)
+    setFee('sys.match', 'done',  15000, 0, 0, 0)
+    setFee('sys.match', 'mark',  15000, 0, 0, 0)
+    setFee('sys.match', 'claim',  15000, 0, 0, 0)
+    setFee('sys.match', 'freeze',  15000, 0, 0, 0)
+    setFee('sys.match', 'unfreeze',  15000, 0, 0, 0)
 
     createMap("eosforce", "force.token")
     #createMap("side", "force.token")

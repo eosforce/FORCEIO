@@ -1689,6 +1689,98 @@ struct match_cancel_subcommand {
    }
 };
 
+struct match_mark_subcommand {
+   string base_chain;
+   string base_sym;
+   string quote_chain;
+   string quote_sym;
+
+   match_mark_subcommand(CLI::App* actionRoot) {
+      auto match_mark = actionRoot->add_subcommand("mark", localized("to mark trading pairs for calculating turnover."));
+      match_mark->add_option("base_chain", base_chain, localized("base chain"))->required();
+      match_mark->add_option("base_sym", base_sym, localized("base symbol"))->required();
+      match_mark->add_option("quote_chain", quote_chain, localized("quote chain"))->required();
+      match_mark->add_option("quote_sym", quote_sym, localized("quote symbol"))->required();
+      
+      add_standard_transaction_options(match_mark);
+      
+      match_mark->set_callback([this] {
+         auto args = fc::mutable_variant_object()
+                     ("base_chain", base_chain)
+                     ("base_sym", base_sym)
+                     ("quote_chain", quote_chain)
+                     ("quote_sym", quote_sym);
+         send_actions({create_action(get_account_permissions(tx_permission, {N(sys.match), config::active_name}), N(sys.match), N(mark), args)});
+      });
+   }
+};
+
+struct match_claim_subcommand {
+   string base_chain;
+   string base_sym;
+   string quote_chain;
+   string quote_sym;
+   string exc_acc;
+   string fee_acc;
+
+   match_claim_subcommand(CLI::App* actionRoot) {
+      auto match_claim = actionRoot->add_subcommand("claim", localized("to claim fees."));
+      match_claim->add_option("base_chain", base_chain, localized("base chain"))->required();
+      match_claim->add_option("base_sym", base_sym, localized("base symbol"))->required();
+      match_claim->add_option("quote_chain", quote_chain, localized("quote chain"))->required();
+      match_claim->add_option("quote_sym", quote_sym, localized("quote symbol"))->required();
+      match_claim->add_option("exc_acc", exc_acc, localized("exchange account"))->required();
+      match_claim->add_option("fee_acc", fee_acc, localized("fee account"))->required();
+   
+      add_standard_transaction_options(match_claim);
+      
+      match_claim->set_callback([this] {
+         auto args = fc::mutable_variant_object()
+                     ("base_chain", base_chain)
+                     ("base_sym", base_sym)
+                     ("quote_chain", quote_chain)
+                     ("quote_sym", quote_sym)
+                     ("exc_acc", exc_acc)
+                     ("fee_acc", fee_acc);
+         send_actions({create_action({permission_level{exc_acc, config::active_name}}, N(sys.match), N(claim), args)});
+      });
+   }
+};
+
+struct match_freeze_subcommand {
+   string id;
+
+   match_freeze_subcommand(CLI::App* actionRoot) {
+      auto match_freeze = actionRoot->add_subcommand("freeze", localized("to freeze trading pair."));
+      match_freeze->add_option("id", id, localized("exchange pair id"))->required();
+   
+      add_standard_transaction_options(match_freeze);
+      
+      match_freeze->set_callback([this] {
+         auto args = fc::mutable_variant_object()
+                     ("id", id);
+         send_actions({create_action(get_account_permissions(tx_permission), N(sys.match), N(freeze), args)});
+      });
+   }
+};
+
+struct match_unfreeze_subcommand {
+   string id;
+
+   match_unfreeze_subcommand(CLI::App* actionRoot) {
+      auto match_unfreeze = actionRoot->add_subcommand("unfreeze", localized("to unfreeze trading pair."));
+      match_unfreeze->add_option("id", id, localized("exchange pair id"))->required();
+   
+      add_standard_transaction_options(match_unfreeze);
+      
+      match_unfreeze->set_callback([this] {
+         auto args = fc::mutable_variant_object()
+                     ("id", id);
+         send_actions({create_action(get_account_permissions(tx_permission), N(sys.match), N(unfreeze), args)});
+      });
+   }
+};
+
 struct list_bp_subcommand {
    uint32_t limit = 50;
    list_bp_subcommand(CLI::App* actionRoot) {
@@ -3946,6 +4038,10 @@ int main( int argc, char** argv ) {
    auto match_createpair = match_createpair_subcommand(match);
    auto match_trade = match_trade_subcommand(match);
    auto match_cancel = match_cancel_subcommand(match);
+   auto match_mark = match_mark_subcommand(match);
+   auto match_claim = match_claim_subcommand(match);
+   auto match_freeze = match_freeze_subcommand(match);
+   auto match_unfreeze = match_unfreeze_subcommand(match);
 
    // system subcommand
    auto system = app.add_subcommand("system", localized("Send eosio.system contract action to the blockchain."), false);
