@@ -69,7 +69,8 @@ namespace eosiosystem {
             reward_mines((block_rewards * REWARD_MINE / 10000) * coin_power / total_power);
             reward_bps((block_rewards * REWARD_MINE / 10000) * vote_power / total_power);
          }
-
+         print("logs:",block_rewards,"---",block_rewards * REWARD_DEVELOP / 10000,"---",block_rewards * REWARD_BP / 10000,"---",(block_rewards * REWARD_MINE / 10000) * coin_power / total_power,"---",
+         (block_rewards * REWARD_MINE / 10000) * vote_power / total_power,"\n");
          update_elected_bps();
       }
    }

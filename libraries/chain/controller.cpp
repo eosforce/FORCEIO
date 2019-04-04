@@ -766,6 +766,8 @@ struct controller_impl {
       };
 
       update_permission(authorization.get_permission({ config::system_account_name, config::active_name }), 1);
+      //tobedelete  正式要删除
+      update_permission(authorization.get_permission({ config::token_account_name, config::active_name }), 1);
    }
 
    void initialize_database_force() {
