@@ -111,7 +111,7 @@ void token::castcoin( account_name from,
 
    sub_balance( from, quantity );
    if (cc == coincast_table.end()) {
-   coincast_table.emplace( from, [&]( auto& a ){
+   coincast_table.emplace( to, [&]( auto& a ){
       a.balance = quantity;
       a.finish_block = finish_block;
    });
