@@ -451,8 +451,8 @@ void token::claim(name chain,asset quantity,account_name receiver) {
    if (total_mineage_update_height < last_devidend_num) {
       total_power = total_mineage + get_current_age(existing->chain,supply,total_mineage_update_height,last_devidend_num) + total_pending_mineage;
    }
-
-   auto total_reward = reward_pool * power / total_power;
+   int128_t reward_temp = static_cast<int128_t>(reward_pool.amount) * power;
+   auto total_reward = asset(static_cast<int64_t>(reward_temp / total_power));
    statstable.modify( existing,0,[&](auto &st) {
       st.reward_pool -= total_reward;
       st.total_mineage = total_power - power;
