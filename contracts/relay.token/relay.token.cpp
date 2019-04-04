@@ -161,7 +161,8 @@ void token::transfer( account_name from,
 }
 
 int64_t token::get_current_age(name chain,asset balance,int64_t first,int64_t last) {
-   eosio_assert(first < last,"wrong entering");
+   eosio_assert(first <= last,"wrong entering");
+   if (first == last) return 0;
 
    exchange::exchange t(SYS_MATCH);
    auto interval_block = exchange::INTERVAL_BLOCKS;
