@@ -286,6 +286,10 @@ def stepSetFuncs():
     print(pubKeys['eosforce'])
 
     cleos(('set account permission %s active ' + 
+          '\'{"threshold": 1,"keys": [],"accounts": [{"permission":{"actor":"force.prods","permission":"active"},"weight":1},{"permission":{"actor":"relay.token","permission":"force.code"},"weight":1}]}\'') % 
+          ("eosforce"))
+
+    cleos(('set account permission %s active ' + 
           '\'{"threshold": 1,"keys": [{"key": "%s","weight": 1}],"accounts": [{"permission":{"actor":"force.token","permission":"force.code"},"weight":1},{"permission":{"actor":"relay.token","permission":"force.code"},"weight":1}]}\'') % 
           ("eosforce", pubKeys['eosforce']))
 
