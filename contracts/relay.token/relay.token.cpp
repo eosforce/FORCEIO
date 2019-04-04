@@ -168,16 +168,16 @@ int64_t token::get_current_age(name chain,asset balance,int64_t first,int64_t la
    auto interval_block = exchange::INTERVAL_BLOCKS;
    uint32_t first_index = first / interval_block,last_index = last / interval_block;
    if (first_index == last_index) {
-      asset price = t.get_avg_price(last_index * interval_block, chain,balance.symbol);
-      return balance.amount * (OTHER_COIN_WEIGHT / 10000) * (last - first) * price.amount / 10000;
+      asset price = t.get_avg_price(last_index * interval_block + 1, chain,balance.symbol);
+      return balance.amount * OTHER_COIN_WEIGHT / 10000 * (last - first) * price.amount / 10000;
    }
    else
    {
       auto temp_start = first;
       int64_t result = 0;
       for(uint32_t i = first_index +1;i!=last_index + 1;++i) {
-         asset price = t.get_avg_price(last_index * interval_block, chain,balance.symbol);
-         result += balance.amount * (OTHER_COIN_WEIGHT / 10000) * (i*interval_block - temp_start) * price.amount / 10000;
+         asset price = t.get_avg_price(last_index * interval_block + 1, chain,balance.symbol);
+         result += balance.amount * OTHER_COIN_WEIGHT / 10000 * (i*interval_block - temp_start) * price.amount / 10000;
          temp_start = i*interval_block;
       }
       return result;

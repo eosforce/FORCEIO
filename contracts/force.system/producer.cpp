@@ -295,7 +295,9 @@ namespace eosiosystem {
          stats statstable(N(relay.token), it->chain);
          auto existing = statstable.find(it->supply.symbol.name());
          eosio_assert(existing != statstable.end(), "token with symbol already exists");
-         total_power += existing->supply.amount * (OTHER_COIN_WEIGHT / 10000) * t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount / 10000;
+         auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
+         auto power = (existing->supply.amount / 10000) * OTHER_COIN_WEIGHT / 10000 * price;
+         total_power += power;
       }
       return total_power ;
    }
