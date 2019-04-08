@@ -56,7 +56,7 @@ namespace eosiosystem {
          }
 
          INLINE_ACTION_SENDER(eosio::token, issue)( config::token_account_name, {{::config::system_account_name,N(active)}},
-                                             { ::config::system_account_name, 
+                                             { ::config::reward_account_name, 
                                              asset(block_rewards), 
                                              "issue tokens for producer pay"} );
          
@@ -324,7 +324,7 @@ namespace eosiosystem {
       INLINE_ACTION_SENDER(eosio::token, transfer)(
                config::token_account_name,
                { payer, N(active) },
-               { payer, ::config::system_account_name, asset(quantity), "add mortgage" });
+               { payer, ::config::reward_account_name, asset(quantity), "add mortgage" });
    }
 
    void system_contract::claimmortgage(const account_name bpname,const account_name receiver,asset quantity) {
@@ -340,8 +340,8 @@ namespace eosiosystem {
       
       INLINE_ACTION_SENDER(eosio::token, transfer)(
          config::token_account_name,
-         { ::config::system_account_name, N(active) },
-         { ::config::system_account_name, receiver, quantity, "claim bp mortgage" });
+         { ::config::reward_account_name, N(active) },
+         { ::config::reward_account_name, receiver, quantity, "claim bp mortgage" });
    }
 
    void system_contract::claimdevelop(const account_name develop) {
@@ -358,8 +358,8 @@ namespace eosiosystem {
       eosio_assert(reward_develop > asset(100000),"claim amount must > 10");
       INLINE_ACTION_SENDER(eosio::token, castcoin)(
          config::token_account_name,
-         { ::config::system_account_name, N(active) },
-         { ::config::system_account_name, develop, reward_develop });
+         { ::config::reward_account_name, N(active) },
+         { ::config::reward_account_name, develop, reward_develop });
    }
 
    void system_contract::claimbp(const account_name bpname,const account_name receiver) {
@@ -389,8 +389,8 @@ namespace eosiosystem {
       eosio_assert(claim_block > asset(100000),"claim amount must > 10");
       INLINE_ACTION_SENDER(eosio::token, castcoin)(
          config::token_account_name,
-         { ::config::system_account_name, N(active) },
-         { ::config::system_account_name, receiver, claim_block });
+         { ::config::reward_account_name, N(active) },
+         { ::config::reward_account_name, receiver, claim_block });
    }
 
    void system_contract::claimvote(const account_name bpname,const account_name receiver) {
@@ -424,8 +424,8 @@ namespace eosiosystem {
       eosio_assert(reward_all> asset(100000),"claim amount must > 10");
       INLINE_ACTION_SENDER(eosio::token, castcoin)(
             config::token_account_name,
-            { ::config::system_account_name, N(active) },
-            { ::config::system_account_name, receiver, reward_all});
+            { ::config::reward_account_name, N(active) },
+            { ::config::reward_account_name, receiver, reward_all});
 
       votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
          v.voteage = 0;

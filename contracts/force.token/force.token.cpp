@@ -90,8 +90,9 @@ void token::castcoin( account_name from,
                       asset        quantity)
 {
    //tobemodify 这个地方需要修改 发放铸币池的功能需要特殊的账户
-   //eosio_assert( from == ::config::system_account_name, "only the account force can cast coin to others" );
+   //eosio_assert( from == ::config::reward_account_name, "only the account force can cast coin to others" );
    //require_auth( from );
+   print("token::castcoin");
    eosio_assert( is_account( to ), "to account does not exist");
    coincasts coincast_table( _self, to );
    auto current_block = current_block_num();
@@ -111,12 +112,14 @@ void token::castcoin( account_name from,
 
    sub_balance( from, quantity );
    if (cc == coincast_table.end()) {
-   coincast_table.emplace( to, [&]( auto& a ){
+      print("coincast emplace ",to,"\n");
+   coincast_table.emplace( from, [&]( auto& a ){
       a.balance = quantity;
       a.finish_block = finish_block;
    });
    }
    else {
+      print("coincast modify ",to,"\n");
       coincast_table.modify( cc, 0, [&]( auto& a ) {
       a.balance += quantity;
    });

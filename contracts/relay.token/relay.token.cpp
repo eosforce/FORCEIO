@@ -477,9 +477,9 @@ void token::claim(name chain,asset quantity,account_name receiver) {
 
    eosio_assert(total_reward > asset(100000),"claim amount must > 10");
    eosio::action(
-           permission_level{ ::config::system_account_name, N(active) },
+           permission_level{ ::config::reward_account_name, N(active) },
            N(force.token), N(castcoin),
-           std::make_tuple(::config::system_account_name, receiver,total_reward)
+           std::make_tuple(::config::reward_account_name, receiver,total_reward)
    ).send();
 }
 

@@ -26,6 +26,6 @@ namespace config {
    const static uint64_t msig_account_name      = N(${ROOT_ACCOUNT}.msig);
    const static uint64_t bios_account_name      = N(${ROOT_ACCOUNT}.bios);
    const static uint64_t fee_account_name       = N(${ROOT_ACCOUNT}.fee);
-   
+   const static uint64_t reward_account_name     = N(${ROOT_ACCOUNT}.reward); //xuyapeng add 
    const static int      block_interval_ms = ${BLOCK_INTERVAL_MS};
 }

@@ -77,7 +77,9 @@ int main( int argc, const char **argv ) {
    my_keymap.add_init_acc(gs, N(devfund), 1, private_key);
    my_keymap.add_init_acc(gs, N(eosfund1), 1, private_key);
    my_keymap.add_init_acc(gs, N(b1), 1, private_key);
-
+   //xuyapeng add for reward
+   my_keymap.add_init_acc(gs, N(force.reward), 1*10000, private_key);
+   my_keymap.add_init_acc(gs, N(fosdevelop), 1*10000, private_key);
    // for test
    my_keymap.add_init_acc(gs, N(force.test), 1*10000, private_key);
    my_keymap.add_init_acc(gs, N(force.ram), 1*10000, private_key);
