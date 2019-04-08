@@ -89,10 +89,9 @@ void token::castcoin( account_name from,
                       account_name to,
                       asset        quantity)
 {
-   //tobemodify 这个地方需要修改 发放铸币池的功能需要特殊的账户
    eosio_assert( from == ::config::reward_account_name, "only the account force can cast coin to others" );
    require_auth( from );
-   print("token::castcoin");
+
    eosio_assert( is_account( to ), "to account does not exist");
    coincasts coincast_table( _self, to );
    auto current_block = current_block_num();

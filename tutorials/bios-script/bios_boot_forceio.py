@@ -294,10 +294,6 @@ def stepSetFuncs():
           ("eosforce", pubKeys['eosforce']))
     
     cleos(('set account permission %s active ' + 
-          '\'{"threshold": 1,"keys": [{"key": "%s","weight": 1}],"accounts": [{"permission":{"actor":"force","permission":"force.code"},"weight":1},{"permission":{"actor":"force.token","permission":"force.code"},"weight":1},{"permission":{"actor":"relay.token","permission":"force.code"},"weight":1}]}\'') % 
-          ("force.reward", pubKeys['force.reward']))
-
-    cleos(('set account permission %s active ' + 
           '\'{"threshold": 1,"keys": [{"key": "%s","weight": 1}],"accounts": [{"permission":{"actor":"force.token","permission":"force.code"},"weight":1},{"permission":{"actor":"relay.token","permission":"force.code"},"weight":1},{"permission":{"actor":"sys.match","permission":"force.code"},"weight":1}]}\'') % 
           ("sys.match", pubKeys['sys.match']))
 
