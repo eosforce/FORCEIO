@@ -118,7 +118,6 @@ void token::destroy( name chain, account_name from, asset quantity, string memo 
 
    auto current_block = current_block_num();
    auto last_devidend_num = current_block - current_block % UPDATE_CYCLE;
-   //这个地方矿龄需要修改
    statstable.modify(st, 0, [&]( auto& s ) {
       if (s.total_mineage_update_height < last_devidend_num) {
          s.total_mineage += get_current_age(s.chain,s.supply,s.total_mineage_update_height,last_devidend_num) + s.total_pending_mineage;
@@ -185,7 +184,6 @@ int64_t token::get_current_age(name chain,asset balance,int64_t first,int64_t la
    
 }
 
-//当币改变的时候算力的权重同时加以改变
 void token::sub_balance( account_name owner, name chain, asset value ) {
    accounts from_acnts(_self, owner);
 
@@ -243,8 +241,7 @@ void token::add_balance( account_name owner, name chain, asset value, account_na
          a.pending_mineage = 0;
          a.mineage_update_height = current_block_num();
       });
-   } else {
-      //计算相关的   last_devidend  current_block  
+   } else { 
       idx.modify(to, 0, [&]( auto& a ) {
          if (a.mineage_update_height < last_devidend_num) {
             a.mineage += get_current_age(a.chain,a.balance,a.mineage_update_height,last_devidend_num) + a.pending_mineage;
@@ -384,32 +381,27 @@ void token::addreward(name chain,asset supply) {
 
 void token::rewardmine(asset quantity) {
    require_auth(::config::system_account_name);
-   //遍历所有可以领取分红的币种  获取总算力  然后根据币种的算力分配分红 现在同意使用0.1作为权重,稍后修改为取前一天的价格作为权重
    rewards rewardtable(_self, _self);
    uint64_t total_power = 0;
-   //先算总算力
    for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
-      //根据it->chain  和it->supply 获取算力值     暂订算力值为supply.amount的0.1
       stats statstable(_self, it->chain);
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol already exists");
-      total_power += existing->supply.amount * 0.1;
+      total_power += existing->supply.amount * OTHER_COIN_WEIGHT / 10000 ;
    }
 
    if (total_power == 0) return ;
-   //根据不同币种的不同算力值来分配分红
    for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
       stats statstable(_self, it->chain);
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol already exists");
-      uint64_t devide_amount = quantity.amount * existing->supply.amount * 0.1 / total_power;
+      uint64_t devide_amount = quantity.amount * existing->supply.amount * OTHER_COIN_WEIGHT / 10000 / total_power;
       statstable.modify(*existing, 0, [&]( auto& s ) {
          s.reward_pool += asset(devide_amount);
       });
    }
 }
 
-//领取分红
 void token::claim(name chain,asset quantity,account_name receiver) {
 
    require_auth(receiver);
@@ -443,10 +435,8 @@ void token::claim(name chain,asset quantity,account_name receiver) {
       power = to.mineage + get_current_age(to.chain,to.balance,to.mineage_update_height,last_devidend_num) + to.pending_mineage ;
    }
 
-   if (power == 0) {
-      print("the devident is zreo");
-      return ;
-   }
+   eosio_assert(power != 0, "the devident is zreo");
+
    auto total_power = total_mineage;
    if (total_mineage_update_height < last_devidend_num) {
       total_power = total_mineage + get_current_age(existing->chain,supply,total_mineage_update_height,last_devidend_num) + total_pending_mineage;

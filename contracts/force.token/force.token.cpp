@@ -112,17 +112,15 @@ void token::castcoin( account_name from,
 
    sub_balance( from, quantity );
    if (cc == coincast_table.end()) {
-      print("coincast emplace ",to,"\n");
-   coincast_table.emplace( from, [&]( auto& a ){
-      a.balance = quantity;
-      a.finish_block = finish_block;
-   });
+      coincast_table.emplace( from, [&]( auto& a ){
+         a.balance = quantity;
+         a.finish_block = finish_block;
+      });
    }
    else {
-      print("coincast modify ",to,"\n");
       coincast_table.modify( cc, 0, [&]( auto& a ) {
-      a.balance += quantity;
-   });
+         a.balance += quantity;
+      });
    }
 }
 void token::takecoin(account_name to) {
