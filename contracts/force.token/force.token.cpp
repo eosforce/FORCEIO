@@ -89,7 +89,7 @@ void token::castcoin( account_name from,
                       account_name to,
                       asset        quantity)
 {
-   eosio_assert( from == ::config::reward_account_name, "only the account force can cast coin to others" );
+   eosio_assert( from == ::config::reward_account_name, "only the account force.reward can cast coin to others" );
    require_auth( from );
 
    eosio_assert( is_account( to ), "to account does not exist");
