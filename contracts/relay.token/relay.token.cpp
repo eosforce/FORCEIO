@@ -19,14 +19,24 @@ void token::on( name chain, const checksum256 block_id, const force::relay::acti
    // TODO create accounts from diff chain
 
    // Just send account
-   print("on ", name{ act.account }, " ", name{ act.name }, "\n");
+   // print("on ", name{ act.account }, " ", name{ act.name }, "\n");
+
+   // TODO this should no err
+
    const auto data = unpack<token::action>(act.data);
 
    print("map ", name{ data.from }, " ", data.quantity, " ", data.memo, "\n");
 
+   //TODO param err processing
+   if( data.memo.empty() || data.memo.size() >= 13 ){
+      return;
+   }
+   
+   const auto to = string_to_name(data.memo.c_str());
+
    SEND_INLINE_ACTION(*this, issue,
          { N(eosforce), N(active) },
-         { chain, data.from, data.quantity, data.memo });
+         { chain, to, data.quantity, "from chain" });
 }
 
 void token::create( account_name issuer,
