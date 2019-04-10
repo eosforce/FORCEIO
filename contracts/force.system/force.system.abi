@@ -397,6 +397,14 @@
          "fields": [
             {"name":"bpname",                "type":"account_name"}
          ]
+       },{
+         "name": "fee",
+         "base": "",
+         "fields": [
+            {"name":"payer",                 "type":"account_name"}
+            {"name":"bpname",                "type":"account_name"}
+            {"name":"voteage",               "type":"int64"}
+         ]
        }
   ],
   "actions": [{
@@ -506,6 +514,10 @@
       },{
          "name": "claimdevelop",
          "type": "claimdevelop",
+         "ricardian_contract": ""
+      },{
+         "name": "fee",
+         "type": "fee",
          "ricardian_contract": ""
       }
   ],
