@@ -339,6 +339,14 @@
             {"name":"net_amount", "type":"asset"},
             {"name":"cpu_amount", "type":"asset"}
          ]
+       },{
+         "name": "fee",
+         "base": "",
+         "fields": [
+            {"name":"payer",                 "type":"account_name"}
+            {"name":"bpname",                "type":"account_name"}
+            {"name":"voteage",               "type":"int64"}
+         ]
        }
   ],
   "actions": [{
@@ -428,6 +436,10 @@
       },{
          "name": "refund",
          "type": "refund",
+         "ricardian_contract": ""
+      },{
+         "name": "fee",
+         "type": "fee",
          "ricardian_contract": ""
       }
   ],

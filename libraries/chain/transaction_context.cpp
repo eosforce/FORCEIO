@@ -396,11 +396,32 @@ namespace bacc = boost::accumulators;
       }
    }
 
+   bool transaction_context::is_fee_voteage(account_name &bp_name) {
+      if (trx.transaction_extensions.size() > 0) {
+         return trx.transaction_extensions.get(N(voteage), bp_name);
+      }
+      return false;
+   }
+
    void transaction_context::dispatch_fee_action( vector<action_trace>& action_traces ) {
       // if fee_payer is nil, it is mean now is not pay fee by action
       if( fee_payer != account_name{} ) {
          action_traces.emplace_back();
-         dispatch_action(action_traces.back(),
+         
+         account_name bp_name;
+         if ( is_fee_voteage(bp_name) ) {
+            
+            int64_t voteage = fee_costed.get_amount();
+            dispatch_action(action_traces.back(),
+                         action{
+                               vector<permission_level>{ { fee_payer, config::active_name } },
+                               config::system_account_name, config::action::fee_name,
+                               fc::raw::pack(trans_fee_voteage{
+                                     fee_payer, bp_name, voteage
+                               }),
+                         });
+         } else {
+            dispatch_action(action_traces.back(),
                          action{
                                vector<permission_level>{ { fee_payer, config::active_name } },
                                config::token_account_name, config::action::fee_name,
@@ -408,6 +429,7 @@ namespace bacc = boost::accumulators;
                                      fee_payer, fee_costed
                                }),
                          });
+         }
       }
    }
 #endif
