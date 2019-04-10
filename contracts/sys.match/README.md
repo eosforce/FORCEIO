@@ -28,6 +28,28 @@ memo:    trade parameters, format is：payer;receiver;trading pair ID;price;buy 
 void cancel(uint64_t order_id);    
 order_id: order ID
 
+4、mark the trading pair for counting trading turnover
+void mark(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym);
+base_chain: from which chain   
+base_sym:   from which token
+quote_chain:from which chain
+quote_sym:  from which token
+
+5、 claim the trading commissions mannually
+void claim(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc, account_name fee_acc);
+base_chain: from which chain   
+base_sym:   from which token
+quote_chain:from which chain
+quote_sym:  from which token
+exc_acc:    exchange account
+fee_acc:    fee account 
+
+6、freeze the trading pair
+void freeze(uint32_t id);
+id: pair id
+
+7、unfreeze the trading pair
+id: pair id
 
 ##
 二. exchange operation steps
@@ -51,6 +73,10 @@ efc set setfee sys.match create "0.0100 SYS" 100000 1000000 1000
 efc set setfee relay.token trade "0.0100 SYS" 100000 1000000 1000
 efc set setfee sys.match cancel "0.0100 SYS" 100000 1000000 1000
 efc set setfee sys.match done "0.0100 SYS" 100000 1000000 1000
+efc set setfee sys.match mark "0.0100 SYS" 100000 1000000 1000
+efc set setfee sys.match claim "0.0100 SYS" 100000 1000000 1000
+efc set setfee sys.match freeze "0.0100 SYS" 100000 1000000 1000
+efc set setfee sys.match unfreeze "0.0100 SYS" 100000 1000000 1000
 
 4、authorization 
 exchange account authorization ( for example, exchange account is biosbpa )
@@ -88,6 +114,17 @@ efc get table sys.match sys.match orderbook
   "more": false
 }
 
+7、mark the trading pair
+efc push action sys.match mark '["eosforce", "4,EOS", "", "2,SYS"]' -p sys.match
+
+8、claim fees
+efc push action sys.match claim '["btc1", "4,CBTC", "usdt1", "2,CUSDT", "biosbpa", "biosbpb"]' -p biosbpa
+
+9、freeze the trading pair
+efc push action sys.match freeze '["0"]' -p biosbpa
+
+10、unfreeze the trading pair
+efc push action sys.match unfreeze '["0"]' -p biosbpa
 
 ##
 三. user exchange steps:  
