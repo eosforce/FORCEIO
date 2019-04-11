@@ -280,7 +280,7 @@ if ("${UPDATE_CYCLE}" STREQUAL "")
   set( UPDATE_CYCLE "100" )
 endif()
 if ("${RESOURCE_MODEL}" STREQUAL "")
-  set( RESOURCE_MODEL "1" )
+  set( RESOURCE_MODEL "2" )
 endif()
 
 # is chain active multiple vote
