@@ -243,8 +243,8 @@ namespace eosiosystem {
          auto vote_reward = static_cast<int64_t>( reward_amount  * double(it->total_staked) / double(staked_all_bps));
          const auto& bp = bps_tbl.get(it->name, "bpname is not registered");
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-            b.rewards_pool += asset(vote_reward * b.commission_rate / 10000);
-            b.rewards_block += asset(vote_reward * (10000 - b.commission_rate) / 10000);
+            b.rewards_pool += asset(vote_reward * (10000 - b.commission_rate) / 10000);
+            b.rewards_block += asset(vote_reward * b.commission_rate / 10000);
          });
       }
    }
