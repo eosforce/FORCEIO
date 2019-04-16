@@ -38,7 +38,7 @@ namespace exchange {
 
       void match( account_name payer, account_name receiver, asset base, asset price, uint32_t bid_or_ask );
       
-      void cancel(account_name maker, uint32_t type, uint64_t order_id, uint32_t pair_id);
+      void cancel(account_name maker, uint32_t type, uint64_t order_or_pair_id);
       
       void done(account_name exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t bid_or_ask, time_point_sec timestamp);
       

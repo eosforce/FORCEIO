@@ -1671,15 +1671,13 @@ struct match_trade_subcommand {
 struct match_cancel_subcommand {
    string maker;
    string type;
-   string order_id;
-   string pair_id;
+   string order_or_pair_id;
 
    match_cancel_subcommand(CLI::App* actionRoot) {
       auto match_cancel = actionRoot->add_subcommand("cancel", localized("to cancel orders."));
       match_cancel->add_option("maker", maker, localized("the account that makes the order"))->required();
       match_cancel->add_option("type", type, localized("cancel type: 0 - designated order_id , 1 - designated pair_id, 2 - all orders"))->required();
-      match_cancel->add_option("order_id", order_id, localized("order id"))->required();
-      match_cancel->add_option("pair_id", pair_id, localized("the trading pair id"))->required();
+      match_cancel->add_option("order_or_pair_id", order_or_pair_id, localized("order id"))->required();
       
       add_standard_transaction_options(match_cancel);
       
@@ -1687,8 +1685,7 @@ struct match_cancel_subcommand {
          auto args = fc::mutable_variant_object()
                      ("maker", maker)
                      ("type", type)
-                     ("order_id", order_id)
-                     ("pair_id", pair_id);
+                     ("order_or_pair_id", order_or_pair_id);
          send_actions({create_action({permission_level{maker, config::active_name}}, N(sys.match), N(cancel), args)});
       });
    }
