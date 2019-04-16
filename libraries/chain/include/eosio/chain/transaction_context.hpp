@@ -71,7 +71,6 @@ namespace eosio { namespace chain {
          void process_fee( const action& act );
          void dispatch_fee_action( vector<action_trace>& trace );
          void add_limit_by_fee( const action &act );
-		 bool is_fee_voteage(account_name &bp_name);
 #endif
 
          void add_ram_usage( account_name account, int64_t ram_delta );

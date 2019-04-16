@@ -396,20 +396,20 @@ namespace bacc = boost::accumulators;
       }
    }
 
-   bool transaction_context::is_fee_voteage(account_name &bp_name) {
-      if (trx.transaction_extensions.size() > 0) {
-         return trx.transaction_extensions.get(N(voteage), bp_name);
-      }
-      return false;
-   }
-
    void transaction_context::dispatch_fee_action( vector<action_trace>& action_traces ) {
       // if fee_payer is nil, it is mean now is not pay fee by action
       if( fee_payer != account_name{} ) {
          action_traces.emplace_back();
          
+         auto is_fee_voteage = [](const signed_transaction &trx, account_name &bp_name) {
+            if (trx.transaction_extensions.size() > 0) {
+               return trx.transaction_extensions.get(transaction::voteage_fee, bp_name);
+            }
+            return false;
+         };
+         
          account_name bp_name;
-         if ( is_fee_voteage(bp_name) ) {
+         if ( is_fee_voteage(trx, bp_name) ) {
             
             int64_t voteage = fee_costed.get_amount();
             dispatch_action(action_traces.back(),

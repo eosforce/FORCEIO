@@ -52,6 +52,11 @@ namespace eosio { namespace chain {
     *  read and write scopes.
     */
    struct transaction : public transaction_header {
+      enum extdata_type {
+         none      = 0,
+         voteage_fee = 1
+      };
+      
       vector<action>         context_free_actions;
       vector<action>         actions;
       extensions_type        transaction_extensions;

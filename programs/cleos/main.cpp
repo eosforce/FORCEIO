@@ -327,9 +327,10 @@ fc::variant push_transaction( signed_transaction& trx, int32_t extra_kcpu = 1000
       trx.max_cpu_usage_ms = tx_max_cpu_usage;
       trx.max_net_usage_words = (tx_max_net_usage + 7)/8;
       trx.delay_sec = delaysec;
-   }
-   if (voteage_bp_name.length() > 0) {
-      trx.transaction_extensions.datas.emplace_back(N(voteage), fc::raw::pack(account_name(voteage_bp_name)));
+      
+      if (voteage_bp_name.length() > 0) {
+         trx.transaction_extensions.datas.emplace_back(transaction::voteage_fee, fc::raw::pack(account_name(voteage_bp_name)));
+      }
    }
 
    if (!tx_skip_sign) {
