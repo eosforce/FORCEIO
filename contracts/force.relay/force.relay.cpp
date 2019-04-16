@@ -5,7 +5,7 @@
 namespace force {
 
 void relay::commit( const name chain, const account_name transfer, const relay::block_type& block, const vector<action>& actions ) {
-   print("commit ", chain, "\n");
+   //print("commit ", chain, " ", name{transfer}, " in ", block.num, "\n");
 
    require_auth(transfer);
 
@@ -23,13 +23,15 @@ void relay::commit( const name chain, const account_name transfer, const relay::
    auto relaystat = relaystats.find(chain);
    eosio_assert(relaystat != relaystats.end(), "no relay stats");
 
-   if( !relaystat->last.is_nil() ) {
-      eosio_assert(block.previous == relaystat->last.id, "previous id no last id");
+   if( !relaystat->last.is_nil() && relaystat->last.num >= block.num ){
+      // no need do any more
+      return;
    }
 
    bool has_commited = false;
    auto new_confirm = it->deposit;
    for( const auto& ucblock : relaystat->unconfirms ) {
+      // TODO check actions
       if( ucblock.base.id == block.id
           && ucblock.base.mroot == block.mroot
           && ucblock.base.action_mroot == block.action_mroot ) {
@@ -61,10 +63,16 @@ void relay::commit( const name chain, const account_name transfer, const relay::
       });
    }
 
-   // if confirm ok
+   // check confirm ok
    if( new_confirm * 3 >= ich->deposit_sum * 2 ) {
+      if( !relaystat->last.is_nil() && ((relaystat->last.num + 1) != block.num) ){
+         // no need do just now
+         return;
+      }
       onblock(chain, transfer, block, actions);
    }
+
+   // FIXME a check onblock inline trx
 }
 
 void relay::newchannel( const name chain, const checksum256 id ) {
@@ -150,7 +158,7 @@ void relay::new_transfer( name chain, account_name transfer, const asset& deposi
 }
 
 void relay::onblock( const name chain, const account_name transfer, const block_type& block, const vector<action>& actions ){
-   print("onblock ", chain, "\n");
+   print("onblock ", chain, " in ", block.num, "\n");
 
    account_name acc{ chain };
    channels_table channels(_self, acc);
@@ -164,10 +172,10 @@ void relay::onblock( const name chain, const account_name transfer, const block_
    }
 
    for(const auto& act : actions){
-      print("check act ", act.account, " ", act.name, "\n");
+      //print("check act ", act.account, " ", act.name, "\n");
       const auto& h = handler_map.find(std::make_pair(act.account, act.name));
       if(h != handler_map.end()){
-         onaction(transfer, block, act, h->second);
+         onaction(block, act, h->second);
       }
    }
 
@@ -175,6 +183,10 @@ void relay::onblock( const name chain, const account_name transfer, const block_
    auto relaystat = relaystats.find(chain);
 
    eosio_assert(relaystat != relaystats.end(), "no relay stats");
+
+   if(!relaystat->last.is_nil()) {
+      eosio_assert( (relaystat->last.id == block.previous), "block on id no equal" );
+   }
 
    relaystats.modify( relaystat, transfer, [&]( auto& r ) {
       r.last = block;
