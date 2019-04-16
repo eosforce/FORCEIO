@@ -1,5 +1,7 @@
 #include "force.relay.hpp"
 
+#include <algorithm>
+
 namespace force {
 
 void relay::commit( const name chain, const account_name transfer, const relay::block_type& block, const vector<action>& actions ) {
@@ -50,9 +52,12 @@ void relay::commit( const name chain, const account_name transfer, const relay::
       });
    } else {
       relaystats.modify(relaystat, transfer, [&]( auto& r ) {
-         r.unconfirms.push_back(unconfirm_block{
-               block, new_confirm
-         });
+         unconfirm_block ub;
+         ub.base = block;
+         ub.actions = actions;
+         ub.confirm = new_confirm;
+         r.unconfirms.push_back(ub);
+         std::sort( r.unconfirms.begin(), r.unconfirms.end() );
       });
    }
 

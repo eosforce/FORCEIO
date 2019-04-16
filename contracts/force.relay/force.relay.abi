@@ -172,6 +172,10 @@
                 {
                     "name":"confirm",
                     "type":"asset"
+                },
+                {
+                    "name": "actions",
+                    "type": "action[]"
                 }
             ]
         },

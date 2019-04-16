@@ -69,8 +69,13 @@ public:
    public:
       block_type     base;
       asset          confirm = asset{0};
+      vector<action> actions;
 
-      EOSLIB_SERIALIZE( unconfirm_block, (base)(confirm) )
+      bool operator < (const unconfirm_block &m) const {
+         return base.num < m.base.num;
+      }
+
+      EOSLIB_SERIALIZE( unconfirm_block, (base)(confirm)(actions) )
    };
 
    // block relay stat
