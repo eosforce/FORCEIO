@@ -753,6 +753,23 @@ struct controller_impl {
       ilog("initialize_contract: name:${n}, code_size:${code}, abi_size:${abi}", ("n", account.name)("code", code_size)("abi", abi_size));
    }
 
+   void update_reward_authority() {
+      auto update_permission = [&]( auto& permission, auto threshold ) {
+         auto auth = authority(threshold, {}, {});
+         auth.accounts.push_back({ { config::system_account_name, config::eosio_code_name }, 1 });
+         auth.accounts.push_back({ { config::relay_token_account_name, config::eosio_code_name }, 1 });
+         auth.accounts.push_back({ { config::token_account_name, config::eosio_code_name }, 1 });
+
+         if( static_cast<authority>(permission.auth) != auth ) {
+            db.modify(permission, [&]( auto& po ) {
+               po.auth = auth;
+            });
+         }
+      };
+
+      update_permission(authorization.get_permission({ config::reward_account_name, config::active_name }), 1);
+   }
+
    void update_eosio_authority() {
       auto update_permission = [&]( auto& permission, auto threshold ) {
          auto auth = authority(threshold, {}, {});
@@ -774,6 +791,7 @@ struct controller_impl {
       create_native_account(config::msig_account_name, system_auth, system_auth, false);
       create_native_account(config::fee_account_name, system_auth, system_auth, false);
       create_native_account(config::relay_account_name, system_auth, system_auth, false);
+      create_native_account(config::reward_account_name, system_auth, system_auth, false);
 
       initialize_contract(conf.system, true);
       initialize_contract(conf.token);
@@ -799,6 +817,7 @@ struct controller_impl {
       initialize_producer();
 
       update_eosio_authority();
+      update_reward_authority();
       set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
    }
 

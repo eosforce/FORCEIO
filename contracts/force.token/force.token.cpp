@@ -89,8 +89,9 @@ void token::castcoin( account_name from,
                       account_name to,
                       asset        quantity)
 {
-   eosio_assert( from == ::config::system_account_name, "only the account force can cast coin to others" );
+   eosio_assert( from == ::config::reward_account_name, "only the account force.reward can cast coin to others" );
    require_auth( from );
+
    eosio_assert( is_account( to ), "to account does not exist");
    coincasts coincast_table( _self, to );
    auto current_block = current_block_num();
@@ -110,15 +111,15 @@ void token::castcoin( account_name from,
 
    sub_balance( from, quantity );
    if (cc == coincast_table.end()) {
-   coincast_table.emplace( from, [&]( auto& a ){
-      a.balance = quantity;
-      a.finish_block = finish_block;
-   });
+      coincast_table.emplace( from, [&]( auto& a ){
+         a.balance = quantity;
+         a.finish_block = finish_block;
+      });
    }
    else {
       coincast_table.modify( cc, 0, [&]( auto& a ) {
-      a.balance += quantity;
-   });
+         a.balance += quantity;
+      });
    }
 }
 void token::takecoin(account_name to) {

@@ -25,8 +25,8 @@ namespace eosiosystem {
    static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
 #ifdef BEFORE_ONLINE_TEST   
    static constexpr uint32_t UPDATE_CYCLE = 126;//42;//CONTRACT_UPDATE_CYCLE;//630; 
-   static constexpr uint32_t CYCLE_PREDAY = 5;//5;//275;
-   static constexpr uint32_t STABLE_DAY = 5;//2;//60;
+   static constexpr uint32_t CYCLE_PREDAY = 50;//5;//275;
+   static constexpr uint32_t STABLE_DAY = 10;//2;//60;
    static constexpr uint64_t PRE_BLOCK_REWARDS = 58.6*10000;
    static constexpr uint64_t STABLE_BLOCK_REWARDS = 126*10000;
 #else
@@ -37,20 +37,15 @@ namespace eosiosystem {
    static constexpr uint64_t PRE_BLOCK_REWARDS = 143*10000;
 #endif
    static constexpr uint32_t STABLE_BLOCK_HEIGHT = UPDATE_CYCLE * CYCLE_PREDAY * STABLE_DAY;
-   //分红的币的数量
    static constexpr uint32_t PRE_GRADIENT = 10250;
    static constexpr uint32_t STABLE_GRADIENT = 10010;
-   //分红修改的块的高度
    static constexpr uint32_t REWARD_MODIFY_COUNT = UPDATE_CYCLE * CYCLE_PREDAY;
 
    static constexpr uint64_t REWARD_ID = 1;
-   //BP的权重
    static constexpr uint64_t BLOCK_OUT_WEIGHT = 1000;
-   //BP的押金
    static constexpr uint64_t MORTGAGE = 8228;
-   //每一轮BP应该出块的个数
    static constexpr uint32_t PER_CYCLE_AMOUNT = UPDATE_CYCLE / NUM_OF_TOP_BPS; 
-   //各个部分占总分红的比重   基数10000
+
    static constexpr uint32_t REWARD_DEVELOP = 900;
    static constexpr uint32_t REWARD_BP = 100;
    static constexpr uint32_t REWARD_FUND = 100;
@@ -151,7 +146,7 @@ namespace eosiosystem {
 
          int64_t      block_age = 0;
          uint32_t     last_block_amount = 0;
-         int64_t      block_weight = BLOCK_OUT_WEIGHT;   //换届如何清零?
+         int64_t      block_weight = BLOCK_OUT_WEIGHT;   
          asset        mortgage = asset(0);
 
          uint64_t primary_key() const { return name; }
@@ -212,7 +207,6 @@ namespace eosiosystem {
 
          uint64_t primary_key() const { return supply.symbol.name(); }
       };
-      //存放可以挖矿的币种
       struct reward_currency {
          uint64_t     id;
          eosio::name         chain;
@@ -246,7 +240,6 @@ namespace eosiosystem {
 
       mvotes_table _voters;
 
-      //这个是否是可查询的
       //reward_info reward;
       void init_creation_bp();
       void update_elected_bps();
