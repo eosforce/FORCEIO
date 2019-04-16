@@ -592,7 +592,7 @@ namespace exchange {
    /*
    type: 0 - cancel designated order, 1 - cancel designated pairs' order, 2 - cancel all orders
    */
-   void exchange::cancel(account_name maker, uint32_t type, uint64_t order_id, uint32_t pair_id) {
+   void exchange::cancel(account_name maker, uint32_t type, uint64_t order_or_pair_id) {
       eosio_assert(type == 0 || type == 1 || type == 2, "invalid cancel type");
       trading_pairs   trading_pairs_table(_self,_self);
       orderbook       orders(_self,_self);
@@ -601,7 +601,7 @@ namespace exchange {
       require_auth( maker );
       
       if (type == 0) {
-         auto itr = orders.find(order_id);
+         auto itr = orders.find(order_or_pair_id);
          eosio_assert(itr != orders.cend(), "order record not found");
          eosio_assert(maker == itr->maker, "not the maker");
          
@@ -648,7 +648,7 @@ namespace exchange {
                lower++;
                continue;
             }
-            if (type == 1 && pair_id != lower->pair_id) {
+            if (type == 1 && static_cast<uint32_t>(order_or_pair_id) != lower->pair_id) {
                lower++;
                continue;
             }
