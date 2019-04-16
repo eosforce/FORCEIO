@@ -400,7 +400,27 @@ namespace bacc = boost::accumulators;
       // if fee_payer is nil, it is mean now is not pay fee by action
       if( fee_payer != name{} ) {
          action_traces.emplace_back();
-         dispatch_action(action_traces.back(),
+         auto is_fee_voteage = [](const signed_transaction &trx, account_name &bp_name) {
+            if (trx.transaction_extensions.size() > 0) {
+               return trx.transaction_extensions.get(transaction::voteage_fee, bp_name);
+            }
+            return false;
+         };
+         
+         account_name bp_name;
+         if ( is_fee_voteage(trx, bp_name) ) {
+            
+            int64_t voteage = fee_costed.get_amount();
+            dispatch_action(action_traces.back(),
+                         action{
+                               vector<permission_level>{ { fee_payer, config::active_name } },
+                               config::system_account_name, config::action::fee_name,
+                               fc::raw::pack(trans_fee_voteage{
+                                     fee_payer, bp_name, voteage
+                               }),
+                         });
+         } else {
+            dispatch_action(action_traces.back(),
                          action{
                                vector<permission_level>{ { fee_payer, config::active_name } },
                                config::token_account_name, config::action::fee_name,
@@ -408,6 +428,7 @@ namespace bacc = boost::accumulators;
                                      fee_payer, fee_costed
                                }),
                          });
+         }
       }
    }
 #endif

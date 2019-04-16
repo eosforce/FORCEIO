@@ -192,4 +192,42 @@ namespace eosiosystem {
       });
    }
    #endif
+   
+   /*
+   charge fee by voteage
+   */
+   void system_contract::fee( const account_name payer, const account_name bpname, int64_t voteage ) {
+      require_auth(payer);
+
+      /*eosio::name payer_n, bpname_n;
+      payer_n.value = payer; bpname_n.value = bpname;
+      print("system_contract::fee: payer=", payer_n.to_string().c_str(), ", bpname=", bpname_n.to_string().c_str(), ", voteage=", voteage, "\n");*/
+
+      bps_table bps_tbl(_self, _self);
+      const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
+      const auto curr_block_num = current_block_num();
+      const auto newest_total_voteage =
+            static_cast<int128_t>(bp.total_voteage + bp.total_staked * (curr_block_num - bp.voteage_update_height));
+
+      //print("system_contract::fee: bp total_voteage=", bp.total_voteage, ", bp total_staked=", bp.total_staked, ", curr_block_num=", curr_block_num, ", bp voteage_update_height=", bp.voteage_update_height, ", bp newest_total_voteage=", newest_total_voteage, "\n");
+
+      votes_table votes_tbl(_self, payer);
+      const auto& vts = votes_tbl.get(bpname, "voter have not add votes to the the producer yet");
+      
+      int64_t newest_voteage = vts.voteage + (vts.vote.amount / 10000) * (curr_block_num - vts.voteage_update_height);
+      
+      //print("system_contract::fee: voter voteage=", vts.voteage, ", voter vote=", vts.vote.amount / 10000, ", voteage_update_height=", vts.voteage_update_height, ", voter newest_voteage=", newest_voteage, "\n");
+      
+      eosio_assert(voteage > 0 && voteage <= newest_voteage, "voteage must be greater than zero and have sufficient voteage!");
+      
+      votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
+         v.voteage = newest_voteage - voteage;
+         v.voteage_update_height = curr_block_num;
+      });
+
+      bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
+         b.total_voteage = static_cast<int64_t>(newest_total_voteage - voteage);
+         b.voteage_update_height = curr_block_num;
+      });
+   }
 }

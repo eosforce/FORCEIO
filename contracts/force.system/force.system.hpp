@@ -342,13 +342,16 @@ namespace eosiosystem {
 
       // @abi action
       void voteproducer( const account_name voter, const std::vector<account_name>& producers );
+      
+      // @abi action
+      void fee( const account_name payer, const account_name bpname, int64_t voteage );
    };
 };
 
 EOSIO_ABI( eosiosystem::system_contract,
       (updatebp)
       (freeze)(unfreeze)
-      (vote)(vote4ram)(voteproducer)
+      (vote)(vote4ram)(voteproducer)(fee)
       //(claim)
       (onblock)
       (setparams)(removebp)
