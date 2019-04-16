@@ -25,8 +25,11 @@ type:    trade type (1 is matching trading)
 memo:    trade parameters, format is：payer;receiver;trading pair ID;price;buy or sell (1 is buying, 0 is selling)，for example, "testa;testa;0;4000.00 CUSDT;0"
 
 3. Cancel the order
-void cancel(uint64_t order_id);    
-order_id: order ID
+void cancel(account_name maker, uint32_t type, uint64_t order_id, uint32_t pair_id);   
+maker:      the account who made the order
+type:       0 - cancel designated order, 1 - cancel designated pairs' order, 2 - cancel all orders
+order_id:   order ID
+pair_id:    designated pairs' ID
 
 4、mark the trading pair for counting trading turnover
 void mark(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym);
@@ -143,3 +146,24 @@ efc push action relay.token trade '["testa", "sys.match", "btc1", "4.0000 CBTC",
 efc push action sys.match cancel '["0"]' -p testa
 
 note：only can cancel orders made by themself
+
+a) cancel the specified order (type is 0, only order_id is valid)
+efc push action sys.match cancel '["testa", "0", "0", "0"]' -p testa
+
+or:
+
+efc match cancel testa 0 0 0 -p testa
+
+b) cancel designated pairs' order (type is 1, only pair_id is valid)
+efc push action sys.match cancel '["testa", "1", "0", "1"]' -p testa
+
+or:
+
+efc match cancel testa 1 0 1 -p testa
+
+c) cancel all orders (type is 2)
+efc push action sys.match cancel '["testb", "2", "0", "0"]' -p testb
+
+or:
+
+efc match cancel testb 2 0 0 -p testb
