@@ -120,7 +120,7 @@ private:
       asset balance;
       name  chain;
 
-      int64_t      mineage               = 0;         // asset.amount * block height
+      int128_t      mineage               = 0;         // asset.amount * block height
       uint32_t     mineage_update_height = 0;
       int64_t      pending_mineage       = 0;
 
@@ -142,7 +142,7 @@ private:
       name         chain;
 
       asset        reward_pool;
-      int64_t      total_mineage               = 0;         // asset.amount * block height
+      int128_t      total_mineage               = 0;         // asset.amount * block height
       uint32_t     total_mineage_update_height = 0;
       int64_t      total_pending_mineage       = 0;
 

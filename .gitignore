@@ -86,3 +86,5 @@ tutorials/bios-script/test*
 tutorials/bios-script/net*
 
 tutorials/bios-script/config\.ini
+
+tutorials/bios-script/relay/
