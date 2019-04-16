@@ -182,7 +182,7 @@ void relay::onblock( const name chain, const account_name transfer, const block_
    });
 }
 
-void relay::onaction( const account_name transfer, const block_type& block, const action& act, const map_handler& handler ){
+void relay::onaction( const block_type& block, const action& act, const map_handler& handler ){
    //print("onaction ", act.account, " ", act.name, "\n");
    eosio::action{
          vector<eosio::permission_level>{},

@@ -143,7 +143,7 @@ public:
 
 private:
    void onblock( const name chain, const account_name transfer, const block_type& block, const vector<action>& actions );
-   void onaction(  const account_name transfer, const block_type& block, const action& act, const map_handler& handler );
+   void onaction( const block_type& block, const action& act, const map_handler& handler );
    void new_transfer( name chain, account_name transfer, const asset& deposit );
 
 public:
