@@ -304,6 +304,24 @@
             ]
         },
         {
+            "name": "onblock",
+            "base": "",
+            "fields": [
+                {
+                    "name": "chain",
+                    "type": "name"
+                },
+                {
+                    "name": "block",
+                    "type": "block_type"
+                },
+                {
+                    "name": "actions",
+                    "type": "action[]"
+                }
+            ]
+        },
+        {
             "name": "newmap",
             "base": "",
             "fields": [
@@ -348,6 +366,11 @@
         {
             "name": "newmap",
             "type": "newmap",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "onblock",
+            "type": "onblock",
             "ricardian_contract": ""
         }
     ],

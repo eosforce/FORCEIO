@@ -142,7 +142,7 @@ public:
    typedef eosio::multi_index<N(handlers),  map_handler>     handlers_table;
 
 private:
-   void onblock( const name chain, const account_name transfer, const block_type& block, const vector<action>& actions );
+   void onblockimp( const name chain, const block_type& block, const vector<action>& actions );
    void onaction( const block_type& block, const action& act, const map_handler& handler );
    void new_transfer( name chain, account_name transfer, const asset& deposit );
 
@@ -156,6 +156,8 @@ public:
                 const account_name transfer,
                 const block_type& block,
                 const vector<action>& actions );
+   /// @abi action
+   void onblock( const name chain, const block_type& block, const vector<action>& actions );
    /// @abi action
    void newchannel( const name chain, const checksum256 id );
    /// @abi action

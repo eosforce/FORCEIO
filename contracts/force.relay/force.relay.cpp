@@ -63,16 +63,37 @@ void relay::commit( const name chain, const account_name transfer, const relay::
       });
    }
 
-   // check confirm ok
-   if( new_confirm * 3 >= ich->deposit_sum * 2 ) {
-      if( !relaystat->last.is_nil() && ((relaystat->last.num + 1) != block.num) ){
-         // no need do just now
-         return;
+   const auto currrelaystat = relaystats.find(chain);
+   for(int i = 0; i < 8 && i < currrelaystat->unconfirms.size(); i++) {
+      const auto& unconfirm = currrelaystat->unconfirms[i];
+      if( unconfirm.confirm * 3 >= ich->deposit_sum * 2 ){
+         print("send inline ", unconfirm.base.num, " ", unconfirm.confirm, " ", ich->deposit_sum, "\n");
+         eosio::action{
+               vector<eosio::permission_level>{
+                  { _self, N(active)  }
+               },
+               _self,
+               N(onblock),
+               std::make_tuple(chain, unconfirm.base, unconfirm.actions)
+         }.send();
+      }else{
+         // just do onblock for first N confirmed block
+         break;
       }
-      onblock(chain, transfer, block, actions);
    }
 
-   // FIXME a check onblock inline trx
+}
+
+void relay::onblock( const name chain, const block_type& block, const vector<action>& actions ) {
+   require_auth(_self);
+
+   relaystat_table relaystats(_self, chain);
+   const auto currrelaystat = relaystats.find(chain);
+   if( currrelaystat->last.num >= block.num ){
+      return;
+   }
+   print("onblock ", chain, " in ", block.num, "\n");
+   onblockimp( chain, block, actions );
 }
 
 void relay::newchannel( const name chain, const checksum256 id ) {
@@ -157,9 +178,7 @@ void relay::new_transfer( name chain, account_name transfer, const asset& deposi
    }
 }
 
-void relay::onblock( const name chain, const account_name transfer, const block_type& block, const vector<action>& actions ){
-   print("onblock ", chain, " in ", block.num, "\n");
-
+void relay::onblockimp( const name chain, const block_type& block, const vector<action>& actions ) {
    account_name acc{ chain };
    channels_table channels(_self, acc);
    eosio_assert(channels.find(chain) != channels.end(), "channel not created");
@@ -188,9 +207,13 @@ void relay::onblock( const name chain, const account_name transfer, const block_
       eosio_assert( (relaystat->last.id == block.previous), "block on id no equal" );
    }
 
-   relaystats.modify( relaystat, transfer, [&]( auto& r ) {
+   relaystats.modify( relaystat, _self, [&]( auto& r ) {
       r.last = block;
-      r.unconfirms.clear();
+      r.unconfirms.erase(
+         std::remove_if( r.unconfirms.begin(), 
+                         r.unconfirms.end(), 
+                         [&](const unconfirm_block& ub){return ub.base.num == r.last.num;}), 
+         r.unconfirms.end());
    });
 }
 
@@ -240,7 +263,7 @@ extern "C" {
       if( code == self || action == N(onerror) ) {
          force::relay thiscontract( self );
          switch( action ) {
-            EOSIO_API(  force::relay, (commit)(newchannel)(newmap) )
+            EOSIO_API(  force::relay, (commit)(newchannel)(newmap)(onblock) )
          }
       }
    }
