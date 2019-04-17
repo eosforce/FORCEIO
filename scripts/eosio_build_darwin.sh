@@ -481,7 +481,7 @@
 		printf "\\tWASM found at /usr/local/wasm/bin/.\\n"
 	fi
 	
-	if [ ! -e "${PROTOC}" ]; then
+	if [ ! -e "${HOME}"/opt/protobuf ]; then
 		printf "\\n\\tstart to install protobuf\\n"
 		if ! cd externals/grpc/third_party/protobuf/ 
 		then
@@ -514,7 +514,7 @@
 			exit 1;
 		fi	
 	fi
-	if [ ! -e "${GRPC_CPP_PLUGIN}" ]; then
+	if [ ! -e "${HOME}"/opt/grpc ]; then
 		printf "\\n\\tstart to install grpc\\n"
 		if ! cd ../..
 		then
