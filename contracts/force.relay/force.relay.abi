@@ -314,10 +314,6 @@
                 {
                     "name": "block",
                     "type": "block_type"
-                },
-                {
-                    "name": "actions",
-                    "type": "action[]"
                 }
             ]
         },

@@ -59,6 +59,14 @@ public:
          return num;
       }
 
+      bool operator == (const block_type &m) const {
+         return id == m.id
+             && num == m.num
+             && transaction_mroot == m.transaction_mroot
+             && action_mroot == m.action_mroot
+             && mroot == m.mroot;
+      }
+
       EOSLIB_SERIALIZE( block_type,
             (producer)(num)(id)(previous)(confirmed)
             (transaction_mroot)(action_mroot)(mroot)
@@ -157,7 +165,7 @@ public:
                 const block_type& block,
                 const vector<action>& actions );
    /// @abi action
-   void onblock( const name chain, const block_type& block, const vector<action>& actions );
+   void onblock( const name chain, const block_type& block );
    /// @abi action
    void newchannel( const name chain, const checksum256 id );
    /// @abi action

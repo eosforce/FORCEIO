@@ -32,9 +32,7 @@ void relay::commit( const name chain, const account_name transfer, const relay::
    auto new_confirm = it->deposit;
    for( const auto& ucblock : relaystat->unconfirms ) {
       // TODO check actions
-      if( ucblock.base.id == block.id
-          && ucblock.base.mroot == block.mroot
-          && ucblock.base.action_mroot == block.action_mroot ) {
+      if( ucblock.base == block) {
          has_commited = true;
          new_confirm += ucblock.confirm;
          break;
@@ -44,9 +42,7 @@ void relay::commit( const name chain, const account_name transfer, const relay::
    if( has_commited ) {
       relaystats.modify(relaystat, transfer, [&]( auto& r ) {
          for( auto& ucblock : r.unconfirms ) {
-            if( ucblock.base.id == block.id
-                && ucblock.base.mroot == block.mroot
-                && ucblock.base.action_mroot == block.action_mroot ) {
+            if( ucblock.base == block ) {
                ucblock.confirm = new_confirm;
                break;
             }
@@ -67,7 +63,7 @@ void relay::commit( const name chain, const account_name transfer, const relay::
    for(int i = 0; i < 8 && i < currrelaystat->unconfirms.size(); i++) {
       const auto& unconfirm = currrelaystat->unconfirms[i];
       if( unconfirm.confirm * 3 >= ich->deposit_sum * 2 ){
-         print("send inline ", unconfirm.base.num, " ", unconfirm.confirm, " ", ich->deposit_sum, "\n");
+         //print("send inline ", unconfirm.base.num, " ", unconfirm.confirm, " ", ich->deposit_sum, "\n");
          eosio::action{
                vector<eosio::permission_level>{
                   { _self, N(active)  }
@@ -84,7 +80,7 @@ void relay::commit( const name chain, const account_name transfer, const relay::
 
 }
 
-void relay::onblock( const name chain, const block_type& block, const vector<action>& actions ) {
+void relay::onblock( const name chain, const block_type& block ) {
    require_auth(_self);
 
    relaystat_table relaystats(_self, chain);
@@ -92,8 +88,20 @@ void relay::onblock( const name chain, const block_type& block, const vector<act
    if( currrelaystat->last.num >= block.num ){
       return;
    }
-   print("onblock ", chain, " in ", block.num, "\n");
-   onblockimp( chain, block, actions );
+
+   channels_table channels(_self, chain);
+   auto ich = channels.find(chain);
+   eosio_assert(ich != channels.end(), "no channel");
+   eosio_assert(ich->deposit_sum > asset{ 0 }, "no deposit");
+
+   for( const auto& uc : currrelaystat->unconfirms ) {
+      if( uc.base == block && (uc.confirm * 3 >= ich->deposit_sum * 2) ) {
+         print("onblock ", chain, " in ", block.num, "\n");
+         onblockimp( chain, block, uc.actions );
+         break;
+      }
+   }
+
 }
 
 void relay::newchannel( const name chain, const checksum256 id ) {
@@ -202,10 +210,6 @@ void relay::onblockimp( const name chain, const block_type& block, const vector<
    auto relaystat = relaystats.find(chain);
 
    eosio_assert(relaystat != relaystats.end(), "no relay stats");
-
-   if(!relaystat->last.is_nil()) {
-      eosio_assert( (relaystat->last.id == block.previous), "block on id no equal" );
-   }
 
    relaystats.modify( relaystat, _self, [&]( auto& r ) {
       r.last = block;
