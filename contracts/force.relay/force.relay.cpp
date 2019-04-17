@@ -96,7 +96,7 @@ void relay::onblock( const name chain, const block_type& block ) {
 
    for( const auto& uc : currrelaystat->unconfirms ) {
       if( uc.base == block && (uc.confirm * 3 >= ich->deposit_sum * 2) ) {
-         print("onblock ", chain, " in ", block.num, "\n");
+         //print("onblock ", chain, " in ", block.num, "\n");
          onblockimp( chain, block, uc.actions );
          break;
       }
