@@ -59,6 +59,14 @@ public:
          return num;
       }
 
+      bool operator == (const block_type &m) const {
+         return id == m.id
+             && num == m.num
+             && transaction_mroot == m.transaction_mroot
+             && action_mroot == m.action_mroot
+             && mroot == m.mroot;
+      }
+
       EOSLIB_SERIALIZE( block_type,
             (producer)(num)(id)(previous)(confirmed)
             (transaction_mroot)(action_mroot)(mroot)
@@ -69,8 +77,13 @@ public:
    public:
       block_type     base;
       asset          confirm = asset{0};
+      vector<action> actions;
 
-      EOSLIB_SERIALIZE( unconfirm_block, (base)(confirm) )
+      bool operator < (const unconfirm_block &m) const {
+         return base.num < m.base.num;
+      }
+
+      EOSLIB_SERIALIZE( unconfirm_block, (base)(confirm)(actions) )
    };
 
    // block relay stat
@@ -137,8 +150,8 @@ public:
    typedef eosio::multi_index<N(handlers),  map_handler>     handlers_table;
 
 private:
-   void onblock( const name chain, const account_name transfer, const block_type& block, const vector<action>& actions );
-   void onaction(  const account_name transfer, const block_type& block, const action& act, const map_handler& handler );
+   void onblockimp( const name chain, const block_type& block, const vector<action>& actions );
+   void onaction( const block_type& block, const action& act, const map_handler& handler );
    void new_transfer( name chain, account_name transfer, const asset& deposit );
 
 public:
@@ -151,6 +164,8 @@ public:
                 const account_name transfer,
                 const block_type& block,
                 const vector<action>& actions );
+   /// @abi action
+   void onblock( const name chain, const block_type& block );
    /// @abi action
    void newchannel( const name chain, const checksum256 id );
    /// @abi action

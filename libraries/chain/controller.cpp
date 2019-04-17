@@ -770,6 +770,22 @@ struct controller_impl {
       update_permission(authorization.get_permission({ config::reward_account_name, config::active_name }), 1);
    }
 
+   void update_relay_authority() {
+      auto update_permission = [&]( auto& permission, auto threshold ) {
+         auto auth = authority(threshold, {}, {});
+         auth.accounts.push_back({ { config::system_account_name, config::eosio_code_name }, 1 });
+         auth.accounts.push_back({ { config::relay_account_name, config::eosio_code_name }, 1 });
+
+         if( static_cast<authority>(permission.auth) != auth ) {
+            db.modify(permission, [&]( auto& po ) {
+               po.auth = auth;
+            });
+         }
+      };
+
+      update_permission(authorization.get_permission({ config::relay_account_name, config::active_name }), 1);
+   }
+
    void update_eosio_authority() {
       auto update_permission = [&]( auto& permission, auto threshold ) {
          auto auth = authority(threshold, {}, {});
@@ -818,6 +834,8 @@ struct controller_impl {
 
       update_eosio_authority();
       update_reward_authority();
+      update_relay_authority();
+
       set_num_config_on_chain(db, config::res_typ::free_ram_per_account, 8 * 1024);
    }
 
