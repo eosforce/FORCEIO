@@ -28,14 +28,9 @@ def createNodeDirs(inits, keys):
 def startNode(nodeIndex, bpaccount, key):
     dir = datas.nodes_dir + ('/%02d-' % nodeIndex) + bpaccount['name'] + '/'
     otherOpts = ''.join(list(map(lambda i: ('    --p2p-peer-address 127.0.0.1:%d1%02d' % (datas.args.use_port, i)), range(nodeIndex - 1))))
-    if not nodeIndex: otherOpts += (
-        '    --plugin eosio::history_plugin'
-        '    --plugin eosio::history_api_plugin'
-    )
 
-
-    print('bpaccount ', bpaccount)
-    print('key ', key, ' ', key[1])
+    if nodeIndex == 1:
+        otherOpts += '    --contracts-console '
 
     cmd = (
         datas.args.nodeos +
@@ -49,7 +44,6 @@ def startNode(nodeIndex, bpaccount, key):
         '    --enable-stale-production'
         '    --producer-name ' + bpaccount['name'] +
         '    --signature-provider=' + bpaccount['bpkey'] + '=KEY:' + key[1] +
-        '    --contracts-console ' +
         '    --plugin eosio::http_plugin' +
         '    --plugin eosio::chain_api_plugin' +
         '    --plugin eosio::producer_plugin' +
@@ -209,6 +203,14 @@ def stepSetFuncs():
     #createMapToken('side','eosforce', "10000000.0000 EOS")
     #createMapToken('side','eosforce', "10000000.0000 SYS")
     #createMapToken('side','eosforce', "10000000.0000 SSS")
+
+    getRAM('testa', 10000 * 10000)
+    getRAM('testb', 10000 * 10000)
+    getRAM('testc', 10000 * 10000)
+    getRAM('testd', 10000 * 10000)
+    getRAM('teste', 10000 * 10000)
+    getRAM('testf', 10000 * 10000)
+    getRAM('testg', 10000 * 10000)
 
 def clearData():
     stepKillAll()
