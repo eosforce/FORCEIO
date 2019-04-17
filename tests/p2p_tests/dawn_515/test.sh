@@ -33,7 +33,7 @@ read -d '' genesis << EOF
     "max_transaction_lifetime": 3600,
     "deferred_trx_expiration_window": 600,
     "max_transaction_delay": 3888000,
-    "max_inline_action_size": 4096,
+    "max_inline_action_size": 262144,
     "max_inline_action_depth": 4,
     "max_authority_depth": 6
 }
