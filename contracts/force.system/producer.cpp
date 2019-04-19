@@ -129,14 +129,26 @@ namespace eosiosystem {
       if (create_bp == creation_bp_tbl.end()) {
          init_creation_bp();
       }
+
+      reward_table reward_inf(_self,_self);
+      auto reward = reward_inf.find(REWARD_ID);
+      if(reward == reward_inf.end()) {
+         init_reward_info();
+         reward = reward_inf.find(REWARD_ID);
+      }
+
+      int64_t reward_pre_block = reward->cycle_reward / UPDATE_CYCLE;
+      auto block_mortgege = reward_pre_block * MORTGAGE;
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
          for( int i = 0; i < NUM_OF_TOP_BPS; ++i ) {
             auto total_shaked = it->total_staked;
+            auto bp_mortgage = it->mortgage;
             create_bp = creation_bp_tbl.find(it->name);
             if (create_bp != creation_bp_tbl.end()) {
                total_shaked = 4000000;
+               bp_mortgage = asset(400000000);
             }
-            if( sorts[size_t(i)] <= total_shaked && it->isactive) {
+            if( sorts[size_t(i)] <= total_shaked && it->isactive && bp_mortgage > asset(block_mortgege)) {
                eosio::producer_key key;
                key.producer_name = it->name;
                key.block_signing_key = it->block_signing_key;
