@@ -126,7 +126,7 @@ void relay::newchannel( const name chain, const checksum256 id ) {
 
 void relay::newmap( const name chain, const name type,
                     const account_name act_account, const action_name act_name,
-                    const account_name account, const bytes data ) {
+                    const account_name account, const account_name relayacc, const bytes data ) {
    require_auth(chain);
 
    channels_table channels(_self, chain);
@@ -142,6 +142,7 @@ void relay::newmap( const name chain, const name type,
          h.actaccount = act_account;
          h.actname = act_name;
          h.account = account;
+         h.relayacc = relayacc;
          h.data = data;
       });
    } else {
@@ -149,6 +150,7 @@ void relay::newmap( const name chain, const name type,
          h.actaccount = act_account;
          h.actname = act_name;
          h.account = account;
+         h.relayacc = relayacc;
          h.data = data;
       });
    }

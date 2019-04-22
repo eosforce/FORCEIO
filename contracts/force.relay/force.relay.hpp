@@ -107,12 +107,14 @@ public:
       account_name actaccount;
       action_name  actname;
 
+      account_name relayacc;
+
       account_name account;
       bytes        data;
 
       uint64_t primary_key() const { return name; }
 
-      EOSLIB_SERIALIZE( map_handler, (chain)(name)(actaccount)(actname)(account)(data) )
+      EOSLIB_SERIALIZE( map_handler, (chain)(name)(actaccount)(actname)(relayacc)(account)(data) )
    };
 
    struct handler_action {
@@ -171,7 +173,7 @@ public:
    /// @abi action
    void newmap( const name chain, const name type,
                 const account_name act_account, const action_name act_name,
-                const account_name account, const bytes data );
+                const account_name account, const account_name relayacc, const bytes data );
 };
 
 

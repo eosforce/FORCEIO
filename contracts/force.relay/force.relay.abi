@@ -240,6 +240,10 @@
                     "type": "action_name"
                 },
                 {
+                    "name": "relayacc",
+                    "type": "account_name"
+                },
+                {
                     "name": "account",
                     "type": "account_name"
                 },
@@ -339,6 +343,10 @@
                 },
                 {
                     "name": "account",
+                    "type": "account_name"
+                },
+                {
+                    "name": "relayacc",
                     "type": "account_name"
                 },
                 {

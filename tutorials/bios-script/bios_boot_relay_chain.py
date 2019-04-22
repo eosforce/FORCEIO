@@ -140,7 +140,7 @@ def createMap(chain, token_account):
     pushAction("force.relay", "newchannel", "eosforce", 
         '{"chain":"%s","checker":"biosbpa","id":"","mroot":""}' % (chain))
     pushAction("force.relay", "newmap", "eosforce", 
-        '{"chain":"%s","type":"token","id":"","act_account":"%s","act_name":"transfer","account":"relay.token","data":""}' % (chain, token_account))
+        '{"chain":"%s","type":"token","id":"","act_account":"%s","act_name":"transfer","account":"relay.token","relayacc":"rs","data":""}' % (chain, token_account))
 
 def createMapToken(chain, issuer, asset):
     pushAction('relay.token', 'create', issuer,
@@ -195,14 +195,11 @@ def stepSetFuncs():
     setFee('sys.match', 'unfreeze',  15000, 0, 0, 0)
 
     createMap("eosforce", "force.token")
-    #createMap("side", "force.token")
-
     createMapToken('eosforce','eosforce', "10000000.0000 EOS")
     createMapToken('eosforce','eosforce', "10000000.0000 SYS")
     createMapToken('eosforce','eosforce', "10000000.0000 SSS")
-    #createMapToken('side','eosforce', "10000000.0000 EOS")
-    #createMapToken('side','eosforce', "10000000.0000 SYS")
-    #createMapToken('side','eosforce', "10000000.0000 SSS")
+
+    getRAM('eosforce', 10000 * 10000)
 
     getRAM('testa', 10000 * 10000)
     getRAM('testb', 10000 * 10000)
