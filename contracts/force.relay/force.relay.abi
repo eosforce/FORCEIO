@@ -176,6 +176,10 @@
                 {
                     "name": "actions",
                     "type": "action[]"
+                },
+                {
+                    "name": "confirmeds",
+                    "type": "account_name[]"
                 }
             ]
         },

@@ -75,15 +75,22 @@ public:
 
    struct unconfirm_block {
    public:
-      block_type     base;
-      asset          confirm = asset{0};
-      vector<action> actions;
+      block_type           base;
+      asset                confirm = asset{0};
+      vector<action>       actions;
+      vector<account_name> confirmeds;
 
       bool operator < (const unconfirm_block &m) const {
          return base.num < m.base.num;
       }
 
-      EOSLIB_SERIALIZE( unconfirm_block, (base)(confirm)(actions) )
+      void confirm_by(const account_name& committer) {
+         const auto itr = std::find(confirmeds.begin(), confirmeds.end(), committer);
+         eosio_assert(itr == confirmeds.end(), "committer has confirmed");
+         confirmeds.push_back(committer);
+      }
+
+      EOSLIB_SERIALIZE( unconfirm_block, (base)(confirm)(actions)(confirmeds) )
    };
 
    // block relay stat

@@ -44,6 +44,7 @@ void relay::commit( const name chain, const account_name transfer, const relay::
          for( auto& ucblock : r.unconfirms ) {
             if( ucblock.base == block ) {
                ucblock.confirm = new_confirm;
+               ucblock.confirm_by( transfer );
                break;
             }
          }
@@ -54,6 +55,7 @@ void relay::commit( const name chain, const account_name transfer, const relay::
          ub.base = block;
          ub.actions = actions;
          ub.confirm = new_confirm;
+         ub.confirm_by( transfer );
          r.unconfirms.push_back(ub);
          std::sort( r.unconfirms.begin(), r.unconfirms.end() );
       });
