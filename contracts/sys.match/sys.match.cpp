@@ -28,26 +28,6 @@ namespace exchange {
       eosio_assert(base.is_valid(), "invalid base symbol");
       eosio_assert(quote.is_valid(), "invalid quote symbol");
       
-      symbol_type expected_symbol;
-      
-      if (base_chain.value == 0) {
-         eosio::token t(config::token_account_name);
-         expected_symbol = t.get_supply(base_sym.name()).symbol;
-      } else {
-         relay::token t(relay_token_acc);
-         expected_symbol = t.get_supply(base_chain, base_sym.name()).symbol;
-      }
-      eosio_assert(base.precision() <= expected_symbol.precision(), "invalid base symbol precision");
-      
-      if (quote_chain.value == 0) {
-         eosio::token t(config::token_account_name);
-         expected_symbol = t.get_supply(quote_sym.name()).symbol;
-      } else {
-         relay::token t(relay_token_acc);
-         expected_symbol = t.get_supply(quote_chain, quote_sym.name()).symbol;
-      }
-      eosio_assert(quote.precision() <= expected_symbol.precision(), "invalid quote symbol precision");
-
       trading_pairs trading_pairs_table(_self,_self);
 
       uint32_t pair_id = get_pair(base_chain, base_sym, quote_chain, quote_sym);
@@ -76,6 +56,178 @@ namespace exchange {
          p.fees_base    = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym));
          p.fees_quote   = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym));
          p.frozen       = 0;
+      });
+   }
+   
+   uint128_t compute_orderbook_lookupkey(uint32_t pair_id, uint32_t bid_or_ask, uint64_t value) {
+      auto lookup_key = (uint128_t(pair_id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | value;
+      return lookup_key;
+   }
+   
+   void inline_transfer(account_name from, account_name to, name chain, asset quantity, string memo ) {
+      if (chain.value == 0) {
+         action(
+                 permission_level{ from, N(active) },
+                 config::token_account_name, N(transfer),
+                 std::make_tuple(from, to, quantity, memo)
+         ).send();
+      } else {
+         action(
+                 permission_level{ from, N(active) },
+                 relay_token_acc, N(transfer),
+                 std::make_tuple(from, to, chain, quantity, memo)
+         ).send();
+      }
+   }
+   
+   /*  alter trade pair
+   */
+   void exchange::alter_pair_precision(symbol_type base, symbol_type quote)
+   {
+      trading_pairs   trading_pairs_table(_self,_self);
+      auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
+      uint128_t idxkey = compute_pair_index(base, quote);
+      auto itr1 = idx_pair.find(idxkey);
+      eosio_assert(itr1 != idx_pair.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");
+      require_auth( itr1->exc_acc );
+      
+      eosio_assert(itr1->base.name() == base.name() && itr1->quote.name() == quote.name(), "can not change pair name!");
+      eosio_assert(itr1->base.precision() != base.precision() || itr1->quote.precision() != quote.precision(), "trade pair precision not changed!");
+
+      auto walk_table_range = [&]() {
+         asset          quant_after_fee;   
+         asset          quant_after_fee2;
+         asset          converted_base;
+         asset          converted_price;
+         asset          diff;
+         
+         orderbook       orders(_self,_self);
+         auto idx_orderbook = orders.template get_index<N(idxkey)>();
+         
+         auto lower_key = compute_orderbook_lookupkey(itr1->id, 1, std::numeric_limits<uint64_t>::lowest());  
+         auto lower = idx_orderbook.lower_bound( lower_key );
+         auto upper_key = compute_orderbook_lookupkey(itr1->id, 0, std::numeric_limits<uint64_t>::max());
+         auto upper = idx_orderbook.upper_bound( upper_key );
+
+         for( auto itr = lower; itr != upper; ) {
+            print("\n bid: order: id=", itr->id, ", pair_id=", itr->pair_id, ", bid_or_ask=", itr->bid_or_ask,", base=", itr->base,", price=", itr->price,", maker=", itr->maker);
+            
+            if (itr->bid_or_ask) { // refund quote
+               if (itr->price.symbol.precision() >= itr->base.symbol.precision())
+                  quant_after_fee = itr->price * itr->base.amount / precision(itr->base.symbol.precision());
+               else
+                  quant_after_fee = itr->base * itr->price.amount / precision(itr->price.symbol.precision());
+               
+               converted_base    = convert(base, itr->base);
+               converted_price   = convert(quote, itr->price);
+               
+               if (converted_price.symbol.precision() >= converted_base.symbol.precision())
+                  quant_after_fee2 = converted_price * converted_base.amount / precision(converted_base.symbol.precision());
+               else
+                  quant_after_fee2 = converted_base * converted_price.amount / precision(converted_price.symbol.precision());
+                  
+               diff = convert(itr->price.symbol, quant_after_fee) - convert(itr->price.symbol, quant_after_fee2);
+               diff = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, diff);
+               if (diff.amount > 0)
+                  inline_transfer(escrow, itr->maker, itr1->quote_chain, diff, "");
+            } else { // refund base
+               if (itr->price.symbol.precision() >= itr->base.symbol.precision())
+                  quant_after_fee = itr->price * itr->base.amount / precision(itr->base.symbol.precision());
+               else
+                  quant_after_fee = itr->base * itr->price.amount / precision(itr->price.symbol.precision());
+               
+               converted_base    = convert(base, itr->base);
+               converted_price   = convert(quote, itr->price);
+               
+               if (converted_price.symbol.precision() >= converted_base.symbol.precision())
+                  quant_after_fee2 = converted_price * converted_base.amount / precision(converted_base.symbol.precision());
+               else
+                  quant_after_fee2 = converted_base * converted_price.amount / precision(converted_price.symbol.precision());
+                  
+               diff = itr->base - convert(itr->base.symbol, quant_after_fee2);
+               diff = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, diff);
+               if (diff.amount > 0)
+                  inline_transfer(escrow, itr->maker, itr1->quote_chain, diff, "");
+            }
+
+            idx_orderbook.modify(itr, _self, [&]( auto& o ) {
+               o.base   = converted_base;
+               o.price  = converted_price;
+            });
+         }
+      };
+
+      if (base.precision() > itr1->base.precision()) {
+         if (quote.precision() > itr1->quote.precision()) { // just modify base precision and quote precision
+            idx_pair.modify(itr1, _self, [&]( auto& p ) {
+               p.base      = p.base.value | (base.value & 0xff);
+               p.base_sym  = p.base_sym.value | (base.value & 0xff);
+               
+               p.quote     = p.quote.value | (quote.value & 0xff);
+               p.quote_sym = p.quote_sym.value | (quote.value & 0xff);
+            });
+         } else if (quote.precision() == itr1->quote.precision()) { // just modify base precision
+            idx_pair.modify(itr1, _self, [&]( auto& p ) {
+               p.base      = p.base.value | (base.value & 0xff);
+               p.base_sym  = p.base_sym.value | (base.value & 0xff);
+            });
+         } else { // before modifying base precision and quote precision, refund the order maker and modify the orderbook
+            
+         }
+      } else if (base.precision() == itr1->base.precision()) {
+         if (quote.precision() > itr1->quote.precision()) {
+            
+         } else if (quote.precision() == itr1->quote.precision()) {
+            
+         } else {
+            
+         }
+      } else {
+         if (quote.precision() > itr1->quote.precision()) {
+            
+         } else if (quote.precision() == itr1->quote.precision()) {
+            
+         } else {
+            
+         }
+      }
+      
+      
+   }
+   
+   /*  alter trade pair
+   */
+   void exchange::alter_pair_fee_rate(symbol_type base, symbol_type quote, uint32_t fee_rate)
+   {
+      trading_pairs   trading_pairs_table(_self,_self);
+      auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
+      uint128_t idxkey = compute_pair_index(base, quote);
+      auto itr1 = idx_pair.find(idxkey);
+      eosio_assert(itr1 != idx_pair.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");
+      require_auth( itr1->exc_acc );
+      
+      eosio_assert(itr1->fee_rate != fee_rate, "trade pair fee rate not changed!");
+      
+      idx_pair.modify(itr1, _self, [&]( auto& p ) {
+         p.fee_rate = fee_rate;
+      });
+   }
+   
+   /*  alter trade pair
+   */
+   void exchange::alter_pair_exc_acc(symbol_type base, symbol_type quote, account_name exc_acc)
+   {
+      trading_pairs   trading_pairs_table(_self,_self);
+      auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
+      uint128_t idxkey = compute_pair_index(base, quote);
+      auto itr1 = idx_pair.find(idxkey);
+      eosio_assert(itr1 != idx_pair.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");
+      require_auth( itr1->exc_acc );
+      
+      eosio_assert(itr1->exc_acc != exc_acc, "trade pair exchange account not changed!");
+      
+      idx_pair.modify(itr1, _self, [&]( auto& p ) {
+         p.exc_acc = exc_acc;
       });
    }
 
@@ -116,26 +268,9 @@ namespace exchange {
       return b;
    }
 
-   uint128_t compute_orderbook_lookupkey(uint32_t pair_id, uint32_t bid_or_ask, uint64_t value) {
-      auto lookup_key = (uint128_t(pair_id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | value;
-      return lookup_key;
-   }
    
-   void inline_transfer(account_name from, account_name to, name chain, asset quantity, string memo ) {
-      if (chain.value == 0) {
-         action(
-                 permission_level{ from, N(active) },
-                 config::token_account_name, N(transfer),
-                 std::make_tuple(from, to, quantity, memo)
-         ).send();
-      } else {
-         action(
-                 permission_level{ from, N(active) },
-                 relay_token_acc, N(transfer),
-                 std::make_tuple(from, to, chain, quantity, memo)
-         ).send();
-      }
-   }
+   
+   
    
    void exchange::insert_order(
                               orderbook &orders, 
@@ -234,7 +369,7 @@ namespace exchange {
                if (escrow != itr1->exc_acc && fee.amount > 0) {
                   //inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
                   idx_pair.modify(itr1, _self, [&]( auto& p ) {
-                     p.fees_quote += base;
+                     p.fees_quote += fee;
                   });
                }
                // refund the difference to payer
