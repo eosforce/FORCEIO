@@ -294,13 +294,14 @@ namespace exchange {
       });
    }
 #if 0
-   void exchange::match_for_bid( account_name payer, account_name receiver, asset base, asset price) {
+   void exchange::match_for_bid( uint32_t pair_id, account_name payer, account_name receiver, asset base, asset price) {
       trading_pairs   trading_pairs_table(_self,_self);
       orderbook       orders(_self,_self);
       asset           quant_after_fee;
       asset           converted_price;
       asset           fee;
       uint32_t        bid_or_ask = 1;
+      
 
       uint128_t idxkey = compute_pair_index(base.symbol, price.symbol);
       //uint128_t idxkey = (uint128_t(base.symbol.name()) << 64) | price.symbol.name();
@@ -480,7 +481,7 @@ namespace exchange {
       }
    }
 
-   void exchange::match_for_ask( account_name payer, account_name receiver, asset base, asset price) {
+   void exchange::match_for_ask( uint32_t pair_id, account_name payer, account_name receiver, asset base, asset price) {
       trading_pairs  trading_pairs_table(_self,_self);
       orderbook      orders(_self,_self);
       asset          quant_after_fee;
@@ -671,26 +672,39 @@ namespace exchange {
    }
 #endif
 
-   void exchange::match_for_bid( account_name payer, account_name receiver, asset base, asset price) {
-      trading_pairs   trading_pairs_table(_self,_self);
-      orderbook       orders(_self,_self);
-      asset           quant_after_fee;
-      asset           converted_price;
-      asset           fee;
-      uint32_t        bid_or_ask = 1;
+   void exchange::match_for_bid( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price) {
+      trading_pairs  trading_pairs_table(_self,_self);
+      orderbook      orders(_self,_self);
+      asset          quant_after_fee;
+      asset          converted_price;
+      asset          cumulated_refund_quote;
+      asset          fee;
+      uint32_t       bid_or_ask = 1;
 
-      uint128_t idxkey = compute_pair_index(base.symbol, price.symbol);
+      auto base = quantity * precision(price.symbol.precision()) / price.amount;
+
+      /*uint128_t idxkey = compute_pair_index(base.symbol, price.symbol);
 
       //print("idxkey=",idxkey,",base_sym=",base.symbol.name(),",price.symbol=",price.symbol.name());
 
       auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
       auto itr1 = idx_pair.find(idxkey);
-      eosio_assert(itr1 != idx_pair.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");
+      eosio_assert(itr1 != idx_pair.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");*/
+      auto itr1 = trading_pairs_table.find(pair_id);
+      eosio_assert(itr1 != trading_pairs_table.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");
       require_auth( itr1->exc_acc );
 
       base    = convert(itr1->base, base);
       price   = convert(itr1->quote, price);
       
+      if (price.symbol.precision() >= base.symbol.precision())
+         quant_after_fee = price * base.amount / precision(base.symbol.precision());
+      else
+         quant_after_fee = base * price.amount / precision(price.symbol.precision());
+      
+      cumulated_refund_quote = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, quantity) -
+                               to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, quant_after_fee);
+      print("\n---exchange::match_for_bid: quantity=", quantity, ", quant_after_fee=", quant_after_fee,", cumulated_refund_quote=", cumulated_refund_quote,"\n");
       //print("after convert: base=",base,",price=",price);
       print("\n---exchange::match_for_bid: base=", itr1->base, ", base_chain=", itr1->base_sym,", base_sym=", itr1->base_sym, ", quote=", itr1->quote,", quote_chain=", itr1->quote_chain,", quote_sym=", itr1->quote_sym,"\n");
       
@@ -702,7 +716,8 @@ namespace exchange {
          bool  full_match;
          asset deal_base;
          asset cumulated_base          = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, asset(0));
-         asset cumulated_refund_quote  = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, asset(0));
+
+         print("\n---exchange::match_for_bid: quantity=", quantity, ", quant_after_fee=", quant_after_fee,", cumulated_refund_quote=", cumulated_refund_quote,"\n");
 
          auto send_cumulated = [&]() {
             if (cumulated_base.amount > 0) {
@@ -751,7 +766,10 @@ namespace exchange {
             // transfer fee to exchange
             if (escrow != itr1->exc_acc && fee.amount > 0) {
                //inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
-               idx_pair.modify(itr1, _self, [&]( auto& p ) {
+               /*idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                  p.fees_base += fee;
+               });*/
+               trading_pairs_table.modify(itr1, _self, [&]( auto& p ) {
                   p.fees_base += fee;
                });
             }
@@ -768,7 +786,10 @@ namespace exchange {
             // transfer fee to exchange
             if (escrow != itr1->exc_acc && fee.amount > 0) {
                //inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
-               idx_pair.modify(itr1, _self, [&]( auto& p ) {
+               /*idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                  p.fees_quote += fee;
+               });*/
+               trading_pairs_table.modify(itr1, _self, [&]( auto& p ) {
                   p.fees_quote += fee;
                });
             }
@@ -785,7 +806,9 @@ namespace exchange {
                cumulated_refund_quote += quant_after_fee;
                if (full_match)
                   inline_transfer(escrow, payer, itr1->quote_chain, cumulated_refund_quote, "");
-            }
+            } else if (cumulated_refund_quote.amount > 0)
+               send_cumulated();
+
             if (full_match) {
                if (base < itr->base) {
                   idx_orderbook.modify(itr, _self, [&]( auto& o ) {
@@ -815,13 +838,16 @@ namespace exchange {
          || lower->pair_id != itr1->id || lower->bid_or_ask != 0 || lower->price > price
          ) {
          prints("\n buy: qualified ask orderbook empty");
+         if (cumulated_refund_quote.amount > 0) {
+            inline_transfer(escrow, payer, itr1->quote_chain, cumulated_refund_quote, "");
+         }
          insert_order(orders, itr1->id, bid_or_ask, base, price, payer, receiver);
       } else {
          walk_table_range(lower, upper);
       }
    }
 
-   void exchange::match_for_ask( account_name payer, account_name receiver, asset base, asset price) {
+   void exchange::match_for_ask( uint32_t pair_id, account_name payer, account_name receiver, asset base, asset price) {
       trading_pairs  trading_pairs_table(_self,_self);
       orderbook      orders(_self,_self);
       asset          quant_after_fee;
@@ -830,13 +856,15 @@ namespace exchange {
       asset          fee;
       uint32_t       bid_or_ask = 0;
 
-      uint128_t idxkey = compute_pair_index(base.symbol, price.symbol);
+      /*uint128_t idxkey = compute_pair_index(base.symbol, price.symbol);
 
       //print("idxkey=",idxkey,",base_sym=",base.symbol.name(),",price.symbol=",price.symbol.name());
 
       auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
       auto itr1 = idx_pair.find(idxkey);
-      eosio_assert(itr1 != idx_pair.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");
+      eosio_assert(itr1 != idx_pair.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");*/
+      auto itr1 = trading_pairs_table.find(pair_id);
+      eosio_assert(itr1 != trading_pairs_table.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");
       require_auth( itr1->exc_acc );
 
       base    = convert(itr1->base, base);
@@ -905,7 +933,10 @@ namespace exchange {
             // transfer fee to exchange
             if (escrow != itr1->exc_acc && fee.amount > 0) {
                //inline_transfer(escrow, itr1->exc_acc, itr1->quote_chain, fee, "");
-               idx_pair.modify(itr1, _self, [&]( auto& p ) {
+               /*idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                  p.fees_quote += fee;
+               });*/
+               trading_pairs_table.modify(itr1, _self, [&]( auto& p ) {
                   p.fees_quote += fee;
                });
             }
@@ -918,7 +949,10 @@ namespace exchange {
             // transfer fee to exchange
             if (escrow != itr1->exc_acc && fee.amount > 0) {
                //inline_transfer(escrow, itr1->exc_acc, itr1->base_chain, fee, "");
-               idx_pair.modify(itr1, _self, [&]( auto& p ) {
+               /*idx_pair.modify(itr1, _self, [&]( auto& p ) {
+                  p.fees_base += fee;
+               });*/
+               trading_pairs_table.modify(itr1, _self, [&]( auto& p ) {
                   p.fees_base += fee;
                });
             }
@@ -986,15 +1020,15 @@ namespace exchange {
     *  fee_account:		fee account,payer==fee_account means no fee
     *  fee_rate:		    fee rate:[0,10000), for example:50 means 50 of ten thousandths ; 0 means no fee
     * */
-   void exchange::match( account_name payer, account_name receiver, asset base, asset price, uint32_t bid_or_ask) {
+   void exchange::match( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, uint32_t bid_or_ask) {
       //require_auth( payer );
       
-   print("\n--------------enter exchange::match: payer=", eosio::name{.value = payer}, ", receiver=", eosio::name{.value = receiver},", base=", base, ", price=", price,", bid_or_ask=", bid_or_ask,"\n");
+      print("\n--------------enter exchange::match: pair_id=", pair_id, ", payer=", eosio::name{.value = payer}, ", receiver=", eosio::name{.value = receiver},", quantity=", quantity, ", price=", price,", bid_or_ask=", bid_or_ask,"\n");
 
       if (bid_or_ask) {
-         match_for_bid(payer, receiver, base, price);
+         match_for_bid(pair_id, payer, receiver, quantity, price);
       } else {
-         match_for_ask(payer, receiver, base, price);
+         match_for_ask(pair_id, payer, receiver, quantity, price);
       }
 
       return;
@@ -1023,7 +1057,7 @@ namespace exchange {
       
       asset quant_after_fee;
       
-      print("exchange::done: exc_acc=", exc_acc, ", price=", price,", quantity=", quantity, ", bid_or_ask=", bid_or_ask, "\n");
+      print("exchange::done: exc_acc=", eosio::name{.value = exc_acc}, ", price=", price,", quantity=", quantity, ", bid_or_ask=", bid_or_ask, "\n");
       if (price.symbol.precision() >= quantity.symbol.precision())
          quant_after_fee = price * quantity.amount / precision(quantity.symbol.precision());
       else

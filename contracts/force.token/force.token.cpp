@@ -232,7 +232,8 @@ void trade_imp( account_name payer, account_name receiver, uint32_t pair_id, ass
    if (bid_or_ask) {
       // to preserve precision
       quant_after_fee = convert(base_sym, quantity);
-      base = quant_after_fee * precision(price2.symbol.precision()) / price2.amount;
+      //base = quant_after_fee * precision(price2.symbol.precision()) / price2.amount;
+      base = quant_after_fee;
       print("after convert: quant_after_fee=", quant_after_fee, ", base=", base, "\n");
    } else {
       base = convert(base_sym, quantity);
@@ -244,7 +245,7 @@ void trade_imp( account_name payer, account_name receiver, uint32_t pair_id, ass
    eosio::action(
            permission_level{ exc_acc, N(active) },
            N(sys.match), N(match),
-           std::make_tuple(payer, receiver, base, price, bid_or_ask)
+           std::make_tuple(pair_id, payer, receiver, base, price, bid_or_ask)
    ).send();
 }
 

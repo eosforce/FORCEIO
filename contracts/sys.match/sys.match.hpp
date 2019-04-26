@@ -42,7 +42,7 @@ namespace exchange {
       
       void alter_pair_exc_acc(symbol_type base, symbol_type quote, account_name exc_acc);
 
-      void match( account_name payer, account_name receiver, asset base, asset price, uint32_t bid_or_ask );
+      void match( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, uint32_t bid_or_ask );
       
       void cancel(account_name maker, uint32_t type, uint64_t order_or_pair_id);
       
@@ -50,9 +50,9 @@ namespace exchange {
       
       void done_helper(account_name exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t bid_or_ask);
       
-      void match_for_bid( account_name payer, account_name receiver, asset base, asset price);
+      void match_for_bid( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price);
       
-      void match_for_ask( account_name payer, account_name receiver, asset base, asset price);
+      void match_for_ask( uint32_t pair_id, account_name payer, account_name receiver, asset base, asset price);
       
       void mark(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym);
       
@@ -264,7 +264,7 @@ namespace exchange {
       //walk_table_range(lower, upper);
       
       for( auto itr = lower; itr != upper; ++itr ) {
-          print("\n pair: id=", itr->id);
+          //print("\n pair: id=", itr->id);
           if (itr->id == pair_id) return itr->base;
       }
           
@@ -295,7 +295,7 @@ namespace exchange {
       //walk_table_range(lower, upper);
       
       for ( auto itr = lower; itr != upper; ++itr ) {
-         print("\n pair: id=", itr->id);
+         //print("\n pair: id=", itr->id);
          if (itr->id == pair_id) return itr->quote;
       }
           
@@ -326,7 +326,7 @@ namespace exchange {
       //walk_table_range(lower, upper);
       
       for ( auto itr = lower; itr != upper; ++itr ) {
-         print("\n pair: id=", itr->id);
+         //print("\n pair: id=", itr->id);
          if (itr->id == pair_id) return itr->exc_acc;
       }
           

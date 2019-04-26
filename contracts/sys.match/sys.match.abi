@@ -26,6 +26,7 @@
        "name": "trade",
        "base": "",
        "fields": [
+        {"name": "pair_id","type": "uint32"},
         {"name": "maker","type": "account_name"},
         {"name": "receiver","type": "account_name"},
         {"name": "base","type": "asset"},
