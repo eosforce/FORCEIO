@@ -117,8 +117,8 @@ def parserArgsAndRun(parser, commands):
     parser.add_argument('--wallet-dir', metavar='', help="Path to wallet directory", default='./wallet/')
     parser.add_argument('--config-dir', metavar='', help="Path to config directory", default='./config')
     parser.add_argument('--data-dir', metavar='', help="Path to datas", default='./testnet')
-    parser.add_argument('--symbol', metavar='', help="The core symbol", default='SYS')
-    parser.add_argument('--pr', metavar='', help="The Public Key Start Symbol", default='FOSC')
+    parser.add_argument('--symbol', metavar='', help="The core symbol", default='CDX')
+    parser.add_argument('--pr', metavar='', help="The Public Key Start Symbol", default='CDX')
     parser.add_argument('-a', '--all', action='store_true', help="Do everything marked with (*)")
     parser.add_argument('--use-port', metavar='', help="port X to listen, http X001-X099, p2p X101-X199 and wallet X666", default='8')
     

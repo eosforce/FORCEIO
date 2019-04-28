@@ -127,7 +127,7 @@ void relay::newchannel( const name chain, const checksum256 id ) {
 
 void relay::newmap( const name chain, const name type,
                     const account_name act_account, const action_name act_name,
-                    const account_name account, const account_name relayacc, const bytes data ) {
+                    const account_name account, const account_name relayacc, const std::string& data ) {
    require_auth(chain);
 
    channels_table channels(_self, chain);
