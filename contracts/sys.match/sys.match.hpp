@@ -36,11 +36,11 @@ namespace exchange {
 
       void create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym, uint32_t fee_rate, account_name exc_acc);
 
-      void alter_pair_precision(symbol_type base, symbol_type quote);
+      void alterpre(symbol_type base, symbol_type quote);
       
-      void alter_pair_fee_rate(symbol_type base, symbol_type quote, uint32_t fee_rate);
+      void alterfee(symbol_type base, symbol_type quote, uint32_t fee_rate);
       
-      void alter_pair_exc_acc(symbol_type base, symbol_type quote, account_name exc_acc);
+      void alteracc(symbol_type base, symbol_type quote, account_name exc_acc);
 
       void match( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, uint32_t bid_or_ask );
       

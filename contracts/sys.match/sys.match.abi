@@ -23,6 +23,29 @@
       {"name": "exc_acc","type": "account_name"}
       ]
     },{
+      "name": "alter_pair_precision",
+      "base": "",
+      "fields": [
+      {"name": "base","type": "symbol_type"},
+      {"name": "quote","type": "symbol_type"},
+      ]
+    },{
+      "name": "alter_pair_fee_rate",
+      "base": "",
+      "fields": [
+      {"name": "base","type": "symbol_type"},
+      {"name": "quote","type": "symbol_type"},
+      {"name": "fee_rate","type": "uint32"}
+      ]
+    },{
+      "name": "alter_pair_exc_acc",
+      "base": "",
+      "fields": [
+      {"name": "base","type": "symbol_type"},
+      {"name": "quote","type": "symbol_type"},
+      {"name": "exc_acc","type": "account_name"}
+      ]
+    },{
        "name": "trade",
        "base": "",
        "fields": [
@@ -142,6 +165,18 @@
   "actions": [{
       "name": "create",
       "type": "create",
+      "ricardian_contract": ""
+    },{
+      "name": "alterpre",
+      "type": "alter_pair_precision",
+      "ricardian_contract": ""
+    },{
+      "name": "alterfee",
+      "type": "alter_pair_fee_rate",
+      "ricardian_contract": ""
+    },{
+      "name": "alteracc",
+      "type": "alter_pair_exc_acc",
       "ricardian_contract": ""
     },{
       "name": "match",

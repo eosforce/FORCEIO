@@ -47,10 +47,10 @@ namespace exchange {
          p.pair_id      = pair_id;
          p.base         = base;
          p.base_chain   = base_chain;
-         p.base_sym     = base_sym.value | (base.value & 0xff);
+         p.base_sym     = (base_sym.name() << 8) | (base.value & 0xff);
          p.quote        = quote;
          p.quote_chain  = quote_chain;
-         p.quote_sym    = quote_sym.value | (quote.value & 0xff);
+         p.quote_sym    = (quote_sym.name() << 8) | (quote.value & 0xff);
          p.fee_rate     = fee_rate;
          p.exc_acc      = exc_acc;
          p.fees_base    = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym));
@@ -82,7 +82,7 @@ namespace exchange {
    
    /*  alter trade pair
    */
-   void exchange::alter_pair_precision(symbol_type base, symbol_type quote)
+   void exchange::alterpre(symbol_type base, symbol_type quote)
    {
       trading_pairs   trading_pairs_table(_self,_self);
       auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
@@ -90,6 +90,8 @@ namespace exchange {
       auto itr1 = idx_pair.find(idxkey);
       eosio_assert(itr1 != idx_pair.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");
       require_auth( itr1->exc_acc );
+      
+      print("\n alter_pair_precision: old_base=", itr1->base, ", new base=", base, ", old_quote=", itr1->quote,", new_quote=", quote, "\n");
       
       eosio_assert(itr1->base.name() == base.name() && itr1->quote.name() == quote.name(), "can not change pair name!");
       eosio_assert(itr1->base.precision() != base.precision() || itr1->quote.precision() != quote.precision(), "trade pair precision not changed!");
@@ -109,9 +111,7 @@ namespace exchange {
          auto upper_key = compute_orderbook_lookupkey(itr1->id, 0, std::numeric_limits<uint64_t>::max());
          auto upper = idx_orderbook.upper_bound( upper_key );
 
-         for( auto itr = lower; itr != upper; ) {
-            print("\n bid: order: id=", itr->id, ", pair_id=", itr->pair_id, ", bid_or_ask=", itr->bid_or_ask,", base=", itr->base,", price=", itr->price,", maker=", itr->maker);
-            
+         for( auto itr = lower; itr != upper; itr++) {
             if (itr->bid_or_ask) { // refund quote
                if (itr->price.symbol.precision() >= itr->base.symbol.precision())
                   quant_after_fee = itr->price * itr->base.amount / precision(itr->base.symbol.precision());
@@ -125,30 +125,28 @@ namespace exchange {
                   quant_after_fee2 = converted_price * converted_base.amount / precision(converted_base.symbol.precision());
                else
                   quant_after_fee2 = converted_base * converted_price.amount / precision(converted_price.symbol.precision());
-                  
-               diff = convert(itr->price.symbol, quant_after_fee) - convert(itr->price.symbol, quant_after_fee2);
+               
+               if (quant_after_fee.symbol.precision() > quant_after_fee2.symbol.precision())
+                  diff = quant_after_fee - convert(quant_after_fee.symbol, quant_after_fee2);
+               else
+                  diff = convert(quant_after_fee2.symbol, quant_after_fee) - quant_after_fee2;
                diff = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, diff);
                if (diff.amount > 0)
                   inline_transfer(escrow, itr->maker, itr1->quote_chain, diff, "");
             } else { // refund base
-               if (itr->price.symbol.precision() >= itr->base.symbol.precision())
-                  quant_after_fee = itr->price * itr->base.amount / precision(itr->base.symbol.precision());
-               else
-                  quant_after_fee = itr->base * itr->price.amount / precision(itr->price.symbol.precision());
-               
                converted_base    = convert(base, itr->base);
                converted_price   = convert(quote, itr->price);
-               
-               if (converted_price.symbol.precision() >= converted_base.symbol.precision())
-                  quant_after_fee2 = converted_price * converted_base.amount / precision(converted_base.symbol.precision());
+
+               if (itr->base.symbol.precision() > quant_after_fee2.symbol.precision())
+                  diff = itr->base - convert(itr->base.symbol, converted_base);
                else
-                  quant_after_fee2 = converted_base * converted_price.amount / precision(converted_price.symbol.precision());
-                  
-               diff = itr->base - convert(itr->base.symbol, quant_after_fee2);
-               diff = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, diff);
+                  diff = convert(converted_base.symbol, itr->base) - converted_base;
+               diff = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, diff);
                if (diff.amount > 0)
-                  inline_transfer(escrow, itr->maker, itr1->quote_chain, diff, "");
+                  inline_transfer(escrow, itr->maker, itr1->base_chain, diff, "");
             }
+
+            print("\n alter_pair_precision: order: id=", itr->id, ", pair_id=", itr->pair_id, ", bid_or_ask=", itr->bid_or_ask,", base=", itr->base,", price=", itr->price, ", converted_base=", converted_base,", converted_price=", converted_price, ", maker=", eosio::name{.value = itr->maker});
 
             idx_orderbook.modify(itr, _self, [&]( auto& o ) {
                o.base   = converted_base;
@@ -157,47 +155,22 @@ namespace exchange {
          }
       };
 
-      if (base.precision() > itr1->base.precision()) {
-         if (quote.precision() > itr1->quote.precision()) { // just modify base precision and quote precision
-            idx_pair.modify(itr1, _self, [&]( auto& p ) {
-               p.base      = p.base.value | (base.value & 0xff);
-               p.base_sym  = p.base_sym.value | (base.value & 0xff);
-               
-               p.quote     = p.quote.value | (quote.value & 0xff);
-               p.quote_sym = p.quote_sym.value | (quote.value & 0xff);
-            });
-         } else if (quote.precision() == itr1->quote.precision()) { // just modify base precision
-            idx_pair.modify(itr1, _self, [&]( auto& p ) {
-               p.base      = p.base.value | (base.value & 0xff);
-               p.base_sym  = p.base_sym.value | (base.value & 0xff);
-            });
-         } else { // before modifying base precision and quote precision, refund the order maker and modify the orderbook
-            
-         }
-      } else if (base.precision() == itr1->base.precision()) {
-         if (quote.precision() > itr1->quote.precision()) {
-            
-         } else if (quote.precision() == itr1->quote.precision()) {
-            
-         } else {
-            
-         }
-      } else {
-         if (quote.precision() > itr1->quote.precision()) {
-            
-         } else if (quote.precision() == itr1->quote.precision()) {
-            
-         } else {
-            
-         }
-      }
+      walk_table_range();
+
+      print("\n -------alter_pair_precision: old_base=", itr1->base, ", new base=", base, ", old_quote=", itr1->quote,", new_quote=", quote, "\n");
       
-      
+      idx_pair.modify(itr1, _self, [&]( auto& p ) {
+         p.base      = (p.base.name() << 8) | (base.value & 0xff);
+         p.base_sym  = (p.base_sym.name() << 8) | (base.value & 0xff);
+         
+         p.quote     = (p.quote.name() << 8) | (quote.value & 0xff);
+         p.quote_sym = (p.quote_sym.name() << 8) | (quote.value & 0xff);
+      });
    }
    
    /*  alter trade pair
    */
-   void exchange::alter_pair_fee_rate(symbol_type base, symbol_type quote, uint32_t fee_rate)
+   void exchange::alterfee(symbol_type base, symbol_type quote, uint32_t fee_rate)
    {
       trading_pairs   trading_pairs_table(_self,_self);
       auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
@@ -215,7 +188,7 @@ namespace exchange {
    
    /*  alter trade pair
    */
-   void exchange::alter_pair_exc_acc(symbol_type base, symbol_type quote, account_name exc_acc)
+   void exchange::alteracc(symbol_type base, symbol_type quote, account_name exc_acc)
    {
       trading_pairs   trading_pairs_table(_self,_self);
       auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
@@ -1257,4 +1230,4 @@ namespace exchange {
    }   
 }
 
-EOSIO_ABI( exchange::exchange, (create)(match)(cancel)(done)(mark)(claim)(freeze)(unfreeze))
+EOSIO_ABI( exchange::exchange, (create)(match)(cancel)(done)(mark)(claim)(freeze)(unfreeze)(alterpre)(alterfee)(alteracc))
