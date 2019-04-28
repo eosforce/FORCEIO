@@ -253,7 +253,7 @@
                 },
                 {
                     "name": "data",
-                    "type": "bytes"
+                    "type": "string"
                 }
             ]
         },
@@ -355,7 +355,7 @@
                 },
                 {
                     "name": "data",
-                    "type": "bytes"
+                    "type": "string"
                 }
             ]
         }

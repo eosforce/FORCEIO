@@ -31,7 +31,6 @@ void relay::commit( const name chain, const account_name transfer, const relay::
    bool has_commited = false;
    auto new_confirm = it->deposit;
    for( const auto& ucblock : relaystat->unconfirms ) {
-      // TODO check actions
       if( ucblock.base == block) {
          has_commited = true;
          new_confirm += ucblock.confirm;
@@ -128,7 +127,7 @@ void relay::newchannel( const name chain, const checksum256 id ) {
 
 void relay::newmap( const name chain, const name type,
                     const account_name act_account, const action_name act_name,
-                    const account_name account, const account_name relayacc, const bytes data ) {
+                    const account_name account, const account_name relayacc, const std::string& data ) {
    require_auth(chain);
 
    channels_table channels(_self, chain);

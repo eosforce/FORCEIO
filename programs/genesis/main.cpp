@@ -74,6 +74,13 @@ int main( int argc, const char **argv ) {
    const auto private_key = fc::crypto::private_key(std::string("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"));
 
    my_keymap.add_init_acc(gs, N(eosforce), 10000*10000, private_key);
+   my_keymap.add_init_acc(gs, N(forceio), 5*10000, private_key);
+   my_keymap.add_init_acc(gs, N(eos), 5*10000, private_key);
+   my_keymap.add_init_acc(gs, N(enu), 5*10000, private_key);
+   my_keymap.add_init_acc(gs, N(bos), 5*10000, private_key);
+   my_keymap.add_init_acc(gs, N(tlos), 5*10000, private_key);
+   my_keymap.add_init_acc(gs, N(meetone), 5*10000, private_key);
+
    my_keymap.add_init_acc(gs, N(devfund), 1, private_key);
    my_keymap.add_init_acc(gs, N(eosfund1), 1, private_key);
    my_keymap.add_init_acc(gs, N(b1), 1, private_key);
