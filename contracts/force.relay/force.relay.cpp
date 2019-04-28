@@ -31,7 +31,6 @@ void relay::commit( const name chain, const account_name transfer, const relay::
    bool has_commited = false;
    auto new_confirm = it->deposit;
    for( const auto& ucblock : relaystat->unconfirms ) {
-      // TODO check actions
       if( ucblock.base == block) {
          has_commited = true;
          new_confirm += ucblock.confirm;
