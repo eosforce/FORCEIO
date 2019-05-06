@@ -14,12 +14,9 @@ namespace relay {
 
 // just a test version by contract
 void token::on( name chain, const checksum256 block_id, const force::relay::action& act ) {
-   // TODO check account
+   require_auth(N(force.relay)); // TODO use config
 
    // TODO create accounts from diff chain
-
-   // Just send account
-   // print("on ", name{ act.account }, " ", name{ act.name }, "\n");
 
    // TODO this should no err
 
