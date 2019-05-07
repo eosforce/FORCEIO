@@ -5,6 +5,7 @@
 
 #include "force.token.hpp"
 #include "sys.match/sys.match.hpp"
+#include <boost/algorithm/string.hpp>
 
 namespace eosio {
 
@@ -219,36 +220,6 @@ asset convert( symbol_type expected_symbol, const asset& a ) {
    return b;
 }
 
-void trade_imp( account_name payer, account_name receiver, uint32_t pair_id, asset quantity, asset price2, uint32_t bid_or_ask ) {
-   asset           quant_after_fee;
-   asset           base;
-   asset           price;
-
-   exchange::exchange e(N(sys.match));
-   auto base_sym = e.get_pair_base(pair_id);
-   auto quote_sym = e.get_pair_quote(pair_id);
-   auto exc_acc = e.get_exchange_account(pair_id);
-   
-   if (bid_or_ask) {
-      // to preserve precision
-      quant_after_fee = convert(base_sym, quantity);
-      //base = quant_after_fee * precision(price2.symbol.precision()) / price2.amount;
-      base = quant_after_fee;
-      print("after convert: quant_after_fee=", quant_after_fee, ", base=", base, "\n");
-   } else {
-      base = convert(base_sym, quantity);
-   }
-   price = convert(quote_sym, price2);
-   
-   print("\n before inline call sys.match --payer=",payer,", receiver=",receiver,", pair_id=",pair_id,", quantity=",quantity,", price=",price,", bid_or_ask=",bid_or_ask, ", base=",base);
-   
-   eosio::action(
-           permission_level{ exc_acc, N(active) },
-           N(sys.match), N(match),
-           std::make_tuple(pair_id, payer, receiver, base, price, bid_or_ask)
-   ).send();
-}
-
 void token::trade(account_name from,
                   account_name to,
                   asset quantity,
@@ -288,13 +259,41 @@ void token::trade(account_name from,
       transfer(from, to, quantity, memo);
       sys_match_match smm;
       smm.parse(memo);
-      trade_imp(smm.payer, smm.receiver, smm.pair_id, quantity, smm.price, smm.bid_or_ask);
+      
+      auto trade_imp = [smm](account_name payer, account_name receiver, uint32_t pair_id, asset quantity, asset price2, uint32_t bid_or_ask, account_name exc_acc, string referer) {
+         asset           quant_after_fee;
+         asset           base;
+         asset           price;
+         
+         exchange::exchange e(N(sys.match));
+         auto base_sym = e.get_pair_base(pair_id);
+         auto quote_sym = e.get_pair_quote(pair_id);
+         //auto exc_acc = e.get_exchange_account(pair_id);
+         
+         if (bid_or_ask) {
+            // to preserve precision
+            quant_after_fee = convert(base_sym, quantity);
+            //base = quant_after_fee * precision(price2.symbol.precision()) / price2.amount;
+            base = quant_after_fee;
+            print("after convert: quant_after_fee=", quant_after_fee, ", base=", base, "\n");
+         } else {
+            base = convert(base_sym, quantity);
+         }
+         price = convert(quote_sym, price2);
+         
+         print("\n before inline call sys.match --payer=",payer,", receiver=",receiver,", pair_id=",pair_id,", quantity=",quantity,", price=",price2,", bid_or_ask=",bid_or_ask, ", base=",quantity);
+         
+         eosio::action(
+                 permission_level{ exc_acc, N(active) },
+                 N(sys.match), N(match),
+                 std::make_tuple(pair_id, payer, receiver, base, price, bid_or_ask, exc_acc, referer)
+         ).send();
+      };
+      trade_imp(from, smm.receiver, smm.pair_id, quantity, smm.price, smm.bid_or_ask, smm.exc_acc, smm.referer);
    }
    else {
       eosio_assert(false,"invalid type");
    }
-   
-   
 }
 
 void splitMemo(std::vector<std::string>& results, const std::string& memo,char separator) {
@@ -383,16 +382,20 @@ asset asset_from_string(const std::string& from) {
 }
 
 void sys_match_match::parse(const string memo) {
+   using namespace boost;
+
    std::vector<std::string> memoParts;
-   splitMemo(memoParts, memo, ';');
-   eosio_assert(memoParts.size() == 5,"memo is not adapted with sys_match_match");
-   payer = ::eosio::string_to_name(memoParts[0].c_str());
-   receiver = ::eosio::string_to_name(memoParts[1].c_str());
-   pair_id = (uint32_t)atoi(memoParts[2].c_str());
-   price = asset_from_string(memoParts[3]);
-   bid_or_ask = (uint32_t)atoi(memoParts[4].c_str());
+   //splitMemo(memoParts, memo, ';');
+   split( memoParts, memo, is_any_of( ";" ) );
+   eosio_assert(memoParts.size() == 6,"memo is not adapted with sys_match_match");
+   receiver = ::eosio::string_to_name(memoParts[0].c_str());
+   pair_id = (uint32_t)atoi(memoParts[1].c_str());
+   price = asset_from_string(memoParts[2]);
+   bid_or_ask = (uint32_t)atoi(memoParts[3].c_str());
+   exc_acc     = ::eosio::string_to_name(memoParts[4].c_str());
+   referer     = memoParts[5];
    eosio_assert(bid_or_ask == 0 || bid_or_ask == 1,"type is not adapted with sys_match_match");
-   print("-------sys_match_match::parse payer=", payer, ", receiver=", receiver, ", pair_id=", pair_id, ", price=", price, " bid_or_ask=", bid_or_ask, "\n");
+print("-------sys_match_match::parse receiver=", eosio::name{.value=receiver}, ", pair_id=", pair_id, ", price=", price, " bid_or_ask=", bid_or_ask, " exc_acc=", exc_acc, " referer=", referer, "\n");
 }
 
 } /// namespace eosio

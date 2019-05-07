@@ -263,6 +263,9 @@ namespace eosiosystem {
 
       void init_reward_info();
       void update_reward_stable();
+   
+   public:
+      inline asset get_freezed( account_name voter )const;
 
    public:
       // @abi action
@@ -346,19 +349,13 @@ namespace eosiosystem {
       // @abi action
       void fee( const account_name payer, const account_name bpname, int64_t voteage );
    };
+   
+   asset system_contract::get_freezed( account_name voter )const
+   {
+      freeze_table freeze_tbl(_self, _self);
+      auto fts = freeze_tbl.find(voter);
+      eosio_assert(fts != freeze_tbl.end(), "voter has not freezed tokens");
+      
+      return fts->staked;
+   }
 };
-
-EOSIO_ABI( eosiosystem::system_contract,
-      (updatebp)
-      (freeze)(unfreeze)
-      (vote)(vote4ram)(voteproducer)(fee)
-      //(claim)
-      (onblock)
-      (setparams)(removebp)
-      (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)
-      (onerror)(addmortgage)(claimmortgage)(claimbp)(claimvote)(claimdevelop)
-      (setconfig)(setcode)(setfee)(setabi)
-#if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
-      (delegatebw)(undelegatebw)(refund)
-#endif
-)

@@ -33,26 +33,22 @@ namespace exchange {
 
    public:
       exchange(account_name self) : contract(self) {}
+         
+      void regex(account_name exc_acc);
 
-      void create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym, uint32_t fee_rate, account_name exc_acc);
+      void create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym, account_name exc_acc);
 
-      void alterpre(symbol_type base, symbol_type quote);
-      
-      void alterfee(symbol_type base, symbol_type quote, uint32_t fee_rate);
-      
-      void alteracc(symbol_type base, symbol_type quote, account_name exc_acc);
-
-      void match( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, uint32_t bid_or_ask );
+      void match( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, uint32_t bid_or_ask, account_name exc_acc, string referer );
       
       void cancel(account_name maker, uint32_t type, uint64_t order_or_pair_id);
       
-      void done(account_name exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t bid_or_ask, time_point_sec timestamp);
+      void done(account_name taker_exc_acc, account_name maker_exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t bid_or_ask, time_point_sec timestamp);
       
-      void done_helper(account_name exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t bid_or_ask);
+      void done_helper(account_name taker_exc_acc, account_name maker_exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t bid_or_ask);
       
-      void match_for_bid( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price);
+      void match_for_bid( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, account_name exc_acc, string referer);
       
-      void match_for_ask( uint32_t pair_id, account_name payer, account_name receiver, asset base, asset price);
+      void match_for_ask( uint32_t pair_id, account_name payer, account_name receiver, asset base, asset price, account_name exc_acc, string referer);
       
       void mark(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym);
       
@@ -61,34 +57,29 @@ namespace exchange {
       void freeze(uint32_t id);
       
       void unfreeze(uint32_t id);
+      
+      void setfee(account_name exc_acc, uint32_t pair_id, uint32_t type, uint32_t rate, name chain, asset fee);
          
       asset calcfee(asset quant, uint64_t fee_rate);
 
+      inline void get_pair(uint32_t pair_id, name &base_chain, symbol_type &base_sym, name &quote_chain, symbol_type &quote_sym) const;
       inline symbol_type get_pair_base( uint32_t pair_id ) const;
       inline symbol_type get_pair_quote( uint32_t pair_id ) const;
-      inline account_name get_exchange_account( uint32_t pair_id ) const;
-      inline uint32_t get_pair( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym );
+      inline void check_pair( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym );
       inline uint32_t get_pair_id( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const;
       inline asset get_avg_price( uint32_t block_height, name base_chain, symbol_type base_sym, name quote_chain = {0}, symbol_type quote_sym = CORE_SYMBOL ) const;
       
       inline void upd_mark( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, asset sum, asset vol );
 
-      struct pair {
-          uint32_t id;
-      
-          name        base_chain;
-          symbol_type base_sym;
-
-          name        quote_chain;
-          symbol_type quote_sym;
-          
-          uint32_t primary_key() const { return id; }
+      struct exc {
+         account_name exc_acc;
+         
+         account_name primary_key() const { return exc_acc; }
       };
 
    //private:
       struct trading_pair{
           uint32_t id;
-          uint32_t pair_id;
           
           symbol_type base;
           name        base_chain;
@@ -98,10 +89,10 @@ namespace exchange {
           name        quote_chain;
           symbol_type quote_sym;
           
-          uint32_t    fee_rate;
+          //uint32_t    fee_rate;
           account_name exc_acc;
-          asset       fees_base;
-          asset       fees_quote;
+          //asset       fees_base;
+          //asset       fees_quote;
           uint32_t    frozen;
           
           uint32_t primary_key() const { return id; }
@@ -111,6 +102,7 @@ namespace exchange {
       struct order {
          uint64_t        id;
          uint32_t        pair_id;
+         account_name    exc_acc;
          account_name    maker;
          account_name    receiver;
          asset           base;
@@ -140,8 +132,27 @@ namespace exchange {
             return (uint64_t(pair_id) << 32) | block_height_end;
          }
       };
+      
+      struct fee_info {
+         uint32_t    id;
+         account_name exc_acc;
+         uint32_t    pair_id;
+         
+         uint32_t    type;
+         uint32_t    rate;
+         name        chain;
+         asset       fee;
+         
+         asset       fees_base;
+         asset       fees_quote;
+         
+         uint64_t primary_key() const { return id; }
+         uint128_t by_exc_and_pair() const {
+            return (uint128_t(exc_acc) << 64) | pair_id;
+         }
+      };
 
-      typedef eosio::multi_index<N(rawpairs), pair> raw_pairs;
+      typedef eosio::multi_index<N(exchanges), exc> exchanges;
       typedef eosio::multi_index<N(pairs), trading_pair,
          indexed_by< N(idxkey), const_mem_fun<trading_pair, uint128_t, &trading_pair::by_pair_sym>>
       > trading_pairs;    
@@ -150,11 +161,15 @@ namespace exchange {
       > orderbook;    
       typedef eosio::multi_index<N(deals), deal_info,
          indexed_by< N(idxkey), const_mem_fun<deal_info, uint64_t, &deal_info::by_pair_and_block_height>>
-      > deals;    
+      > deals;
+      typedef eosio::multi_index<N(fees), fee_info,
+         indexed_by< N(idxkey), const_mem_fun<fee_info, uint128_t, &fee_info::by_exc_and_pair>>
+      > fees;    
 
       void insert_order(
                        orderbook &orders, 
                        uint32_t pair_id, 
+                       account_name exc_acc,
                        uint32_t bid_or_ask, 
                        asset base, 
                        asset price, 
@@ -174,72 +189,57 @@ namespace exchange {
       }
    };
    
-   uint32_t exchange::get_pair( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) {
-      raw_pairs   raw_pairs_table(_self, _self);
+   void exchange::check_pair( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) {
+      trading_pairs   pairs_table(_self, _self);
 
       auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower = raw_pairs_table.lower_bound( lower_key );
+      auto lower = pairs_table.lower_bound( lower_key );
       auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper = raw_pairs_table.upper_bound( upper_key );
+      auto upper = pairs_table.upper_bound( upper_key );
       
       for ( auto itr = lower; itr != upper; ++itr ) {
          if (itr->base_chain == base_chain && itr->base_sym.name() == base_sym.name() && 
                itr->quote_chain == quote_chain && itr->quote_sym.name() == quote_sym.name()) {
-            return itr->id;
+            eosio_assert(false, "trading pair already exist");
+            return;
          }
       }
-      
-      auto pk = raw_pairs_table.available_primary_key();
-      raw_pairs_table.emplace( _self, [&]( auto& p ) {
-         p.id = (uint32_t)pk;
-         p.base_chain   = base_chain;
-         p.base_sym     = base_sym;
-         p.quote_chain  = quote_chain;
-         p.quote_sym    = quote_sym;
-      });
 
-      return (uint32_t)pk;
+      return;
    }
    
-   /*void exchange::get_pair( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const {
-      trading_pairs   trading_pairs_table(_self, _self);
-     
-      auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower = trading_pairs_table.lower_bound( lower_key );
-      auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper = trading_pairs_table.upper_bound( upper_key );
-      
-      for ( auto itr = lower; itr != upper; ++itr ) {
-         if (itr->base_chain == base_chain && itr->base_sym == base_sym && 
-            itr->quote_chain == quote_chain && itr->quote_sym == quote_sym) 
-             print("exchange::get_pair -- pair: id=", itr->id, "\n");
-            return;
-      }
-          
-      eosio_assert(false, "trading pair does not exist");
-      
-      return;
-   }*/
-   
    uint32_t exchange::get_pair_id( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const {
-      raw_pairs   raw_pairs_table(_self, _self);
+      trading_pairs   pairs_table(_self, _self);
 
       auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower = raw_pairs_table.lower_bound( lower_key );
+      auto lower = pairs_table.lower_bound( lower_key );
       auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper = raw_pairs_table.upper_bound( upper_key );
+      auto upper = pairs_table.upper_bound( upper_key );
       
       for ( auto itr = lower; itr != upper; ++itr ) {
          if (itr->base_chain == base_chain && itr->base_sym.name() == base_sym.name() && 
                itr->quote_chain == quote_chain && itr->quote_sym.name() == quote_sym.name()) {
-            print("exchange::get_pair_id -- pair: id=", itr->id, "\n");
             return itr->id;   
          }
       }
           
-      eosio_assert(false, "raw pair does not exist");
+      eosio_assert(false, "pair does not exist");
 
       return 0;
+   }
+   
+   void exchange::get_pair(uint32_t pair_id, name &base_chain, symbol_type &base_sym, name &quote_chain, symbol_type &quote_sym) const {
+      trading_pairs   pairs_table(_self, _self);
+
+      auto itr = pairs_table.find(pair_id);
+      eosio_assert(itr != pairs_table.cend(), "pair does not exist");
+      
+      base_chain  = itr->base_chain;
+      base_sym    = itr->base_sym;
+      quote_chain = itr->quote_chain;
+      quote_sym   = itr->quote_sym;
+
+      return;
    }
    
    symbol_type exchange::get_pair_base( uint32_t pair_id ) const {
@@ -304,37 +304,6 @@ namespace exchange {
       return 0;
    }
    
-   account_name exchange::get_exchange_account( uint32_t pair_id ) const {
-      trading_pairs   trading_pairs_table(_self, _self);
-     
-      //auto itr1 = trading_pairs_table.find(pair_id);
-      // eosio_assert(itr1 != trading_pairs_table.end(), "trading pair does not exist");
-      
-      auto walk_table_range = [&]( auto itr, auto end_itr ) {
-         print("\n ---------------- begin to trading_pairs table: ----------------");
-         for( ; itr != end_itr; ++itr ) {
-             print("\n pair: id=", itr->id);
-         }
-         print("\n -------------------- walk through trading_pairs table ends ----------------:");
-      };
-      //auto lower_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::lowest();
-      auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower = trading_pairs_table.lower_bound( lower_key );
-      //auto upper_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::max();
-      auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper = trading_pairs_table.upper_bound( upper_key );
-      //walk_table_range(lower, upper);
-      
-      for ( auto itr = lower; itr != upper; ++itr ) {
-         //print("\n pair: id=", itr->id);
-         if (itr->id == pair_id) return itr->exc_acc;
-      }
-          
-      eosio_assert(false, "trading pair does not exist");
-      
-      return 0;
-   }
-   
    /*
    block_height: end block height
    */
@@ -344,12 +313,12 @@ namespace exchange {
 
       uint32_t pair_id = 0xFFFFFFFF;
       
-      raw_pairs   raw_pairs_table(_self, _self);
+      trading_pairs   pairs_table(_self, _self);
 
       auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower = raw_pairs_table.lower_bound( lower_key );
+      auto lower = pairs_table.lower_bound( lower_key );
       auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper = raw_pairs_table.upper_bound( upper_key );
+      auto upper = pairs_table.upper_bound( upper_key );
       auto itr = lower;
       
       for ( itr = lower; itr != upper; ++itr ) {

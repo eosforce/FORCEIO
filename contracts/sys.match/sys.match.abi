@@ -10,6 +10,12 @@
    }
   ],
   "structs": [{
+      "name": "regex",
+      "base": "",
+      "fields": [
+      {"name": "exc_acc","type": "account_name"}
+      ]
+    },{
       "name": "create",
       "base": "",
       "fields": [
@@ -19,30 +25,6 @@
       {"name": "quote","type": "symbol_type"},
       {"name": "quote_chain","type": "name"},
       {"name": "quote_sym","type": "symbol_type"},
-      {"name": "fee_rate","type": "uint32"},
-      {"name": "exc_acc","type": "account_name"}
-      ]
-    },{
-      "name": "alter_pair_precision",
-      "base": "",
-      "fields": [
-      {"name": "base","type": "symbol_type"},
-      {"name": "quote","type": "symbol_type"},
-      ]
-    },{
-      "name": "alter_pair_fee_rate",
-      "base": "",
-      "fields": [
-      {"name": "base","type": "symbol_type"},
-      {"name": "quote","type": "symbol_type"},
-      {"name": "fee_rate","type": "uint32"}
-      ]
-    },{
-      "name": "alter_pair_exc_acc",
-      "base": "",
-      "fields": [
-      {"name": "base","type": "symbol_type"},
-      {"name": "quote","type": "symbol_type"},
       {"name": "exc_acc","type": "account_name"}
       ]
     },{
@@ -54,7 +36,9 @@
         {"name": "receiver","type": "account_name"},
         {"name": "base","type": "asset"},
         {"name": "price","type": "asset"},
-        {"name": "bid_or_ask","type": "uint32"}
+        {"name": "bid_or_ask","type": "uint32"},
+        {"name": "exc_acc","type": "account_name"},
+        {"name": "referer","type": "string"}
        ]
      },{
        "name": "cancel",
@@ -68,7 +52,8 @@
        "name": "done",
        "base": "",
        "fields": [
-        {"name": "exc_acc","type": "account_name"},
+        {"name": "taker_exc_acc","type": "account_name"},
+        {"name": "maker_exc_acc","type": "account_name"},
         {"name": "quote_chain","type": "name"},
         {"name": "price","type": "asset"},
         {"name": "base_chain","type": "name"},
@@ -86,31 +71,17 @@
         {"name": "quote_sym","type": "symbol_type"}
        ]
      },{
-      "name": "pair",
-      "base": "",
-      "fields": [
-      {"name": "id","type": "uint32"},
-      {"name": "base_chain","type": "name"},
-      {"name": "base_sym","type": "symbol_type"},
-      {"name": "quote_chain","type": "name"},
-      {"name": "quote_sym","type": "symbol_type"}
-      ]
-    },{
       "name": "trading_pair",
       "base": "",
       "fields": [
       {"name": "id","type": "uint32"},
-      {"name": "pair_id","type": "uint32"},
       {"name": "base","type": "symbol_type"},
       {"name": "base_chain","type": "name"},
       {"name": "base_sym","type": "symbol_type"},
       {"name": "quote","type": "symbol_type"},
       {"name": "quote_chain","type": "name"},
       {"name": "quote_sym","type": "symbol_type"},
-      {"name": "fee_rate","type": "uint32"},
       {"name": "exc_acc","type": "account_name"},
-      {"name": "fees_base","type": "asset"},
-      {"name": "fees_quote","type": "asset"},
       {"name": "frozen","type": "uint32"}
       ]
     },{
@@ -119,6 +90,7 @@
        "fields": [
         {"name": "id","type": "uint64"},
         {"name": "pair_id","type": "uint32"},
+        {"name": "exc_acc","type": "account_name"},
         {"name": "maker","type": "account_name"},
         {"name": "receiver","type": "account_name"},
         {"name": "base","type": "asset"},
@@ -160,23 +132,46 @@
        "fields": [
         {"name": "id","type": "uint32"}
        ]
+     },{
+       "name": "exc",
+       "base": "",
+       "fields": [
+        {"name": "exc","type": "account_name"}
+       ]
+     },{
+       "name": "setfee",
+       "base": "",
+       "fields": [
+        {"name": "exc_acc","type": "account_name"},
+        {"name": "pair_id","type": "uint32"},
+        {"name": "type","type": "uint32"},
+        {"name": "rate","type": "uint32"},
+        {"name": "chain","type": "name"},
+        {"name": "fee","type": "asset"}
+       ]
+     },{
+       "name": "fee_info",
+       "base": "",
+       "fields": [
+        {"name": "id","type": "uint32"},
+        {"name": "exc_acc","type": "account_name"},
+        {"name": "pair_id","type": "uint32"},
+        {"name": "type","type": "uint32"},
+        {"name": "rate","type": "uint32"},
+        {"name": "chain","type": "name"},
+        {"name": "fee","type": "asset"},
+        {"name": "fees_base","type": "asset"},
+        {"name": "fees_quote","type": "asset"}
+       ]
      }
   ],
   "actions": [{
+      "name": "regex",
+      "type": "regex",
+      "ricardian_contract": ""
+    },{
       "name": "create",
       "type": "create",
-      "ricardian_contract": ""
-    },{
-      "name": "alterpre",
-      "type": "alter_pair_precision",
-      "ricardian_contract": ""
-    },{
-      "name": "alterfee",
-      "type": "alter_pair_fee_rate",
-      "ricardian_contract": ""
-    },{
-      "name": "alteracc",
-      "type": "alter_pair_exc_acc",
       "ricardian_contract": ""
     },{
       "name": "match",
@@ -206,11 +201,15 @@
       "name": "unfreeze",
       "type": "unfreeze",
       "ricardian_contract": ""
+    },{
+      "name": "setfee",
+      "type": "setfee",
+      "ricardian_contract": ""
     }
   ],
   "tables": [{
-       "name": "rawpairs",
-       "type": "pair",
+       "name": "exchanges",
+       "type": "exc",
        "index_type": "i64",
      },{
        "name": "pairs",
@@ -227,6 +226,10 @@
     },{
       "name": "deals",
       "type": "deal_info",
+      "index_type": "i64"
+    },{
+      "name": "fees",
+      "type": "fee_info",
       "index_type": "i64"
     }
   ],
