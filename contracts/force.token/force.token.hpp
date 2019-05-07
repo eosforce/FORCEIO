@@ -33,11 +33,12 @@ namespace eosio {
    };
 
    struct sys_match_match {
-      account_name payer; 
       account_name receiver;
       uint32_t pair_id;
       asset price;
       uint32_t bid_or_ask;
+      account_name exc_acc;
+      std::string referer;
       void parse(const string memo);
    };
 

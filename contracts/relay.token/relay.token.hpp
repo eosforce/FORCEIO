@@ -34,11 +34,13 @@ using std::string;
    };
    
    struct sys_match_match {
-      account_name payer; 
       account_name receiver;
       uint32_t pair_id;
+      
       asset price;
       uint32_t bid_or_ask;
+      account_name exc_acc;
+      std::string referer;
       void parse(const string memo);
    };
 
@@ -102,7 +104,6 @@ public:
                trade_type type,
                string memo);
                   
-   void trade_imp( account_name payer, account_name receiver, uint32_t pair_id, asset quantity, asset price, uint32_t bid_or_ask );
    /// @abi action
    void addreward(name chain,asset supply);
    /// @abi action
