@@ -1594,6 +1594,24 @@ struct bridge_setweight_subcommand {
    }
 };
 
+
+struct match_regex_subcommand {
+   string exc_acc;
+
+   match_regex_subcommand(CLI::App* actionRoot) {
+      auto match_regex = actionRoot->add_subcommand("create", localized("to create a trading pair."));
+      match_regex->add_option("exc_acc", exc_acc, localized("exchange account"))->required();
+      
+      add_standard_transaction_options(match_regex);
+      
+      match_regex->set_callback([this] {
+         auto args = fc::mutable_variant_object()
+                     ("exc_acc", exc_acc);
+         send_actions({create_action({permission_level{exc_acc, config::active_name}}, N(sys.match), N(regex), args)});
+      });
+   }
+};
+
 struct match_createpair_subcommand {
    string base;
    string base_chain;
