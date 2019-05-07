@@ -1612,7 +1612,6 @@ struct match_createpair_subcommand {
       match_createpair->add_option("quote", quote, localized("The display name of quote token of the trading pair"))->required();
       match_createpair->add_option("quote_chain", quote_chain, localized("from which chain"))->required();
       match_createpair->add_option("quote_sym", quote_sym, localized("from which token"))->required();
-      match_createpair->add_option("fee_rate", fee_rate, localized("fee rate"))->required();
       match_createpair->add_option("exc_acc", exc_acc, localized("exchange account"))->required();
       
       add_standard_transaction_options(match_createpair);
@@ -1625,7 +1624,6 @@ struct match_createpair_subcommand {
                      ("quote", quote)
                      ("quote_chain", quote_chain)
                      ("quote_sym", quote_sym)
-                     ("fee_rate", fee_rate)
                      ("exc_acc", exc_acc);
          send_actions({create_action({permission_level{exc_acc, config::active_name}}, N(sys.match), N(create), args)});
       });
@@ -1640,6 +1638,8 @@ struct match_trade_subcommand {
    string chain;
    string quantity;
    string price;
+   string exc_acc;
+   string referer;
 
    match_trade_subcommand(CLI::App* actionRoot) {
       auto match_trade = actionRoot->add_subcommand("trade", localized("to exchange a token for another token."));
@@ -1650,11 +1650,13 @@ struct match_trade_subcommand {
       match_trade->add_option("chain", chain, localized("from which chain"))->required();
       match_trade->add_option("quantity", quantity, localized("the amount to pay"))->required();
       match_trade->add_option("price", price, localized("price"))->required();
+      match_trade->add_option("exchange", exc_acc, localized("price"))->required();
+      match_trade->add_option("referer", referer, localized("price"))->required();
       
       add_standard_transaction_options(match_trade);
       
       match_trade->set_callback([this] {
-         string memo = payer + ";" + receiver + ";" + pair_id + ";" + price + ";" + bid_or_ask;
+         string memo = receiver + ";" + pair_id + ";" + price + ";" + bid_or_ask + ";" + exc_acc + ";" + referer;
         
          auto args = fc::mutable_variant_object()
                      ("from", payer)
@@ -1779,6 +1781,38 @@ struct match_unfreeze_subcommand {
          auto args = fc::mutable_variant_object()
                      ("id", id);
          send_actions({create_action(get_account_permissions(tx_permission), N(sys.match), N(unfreeze), args)});
+      });
+   }
+};
+
+struct match_setfee_subcommand {
+   string exx_acc;
+   string pair_id;
+   string type;
+   string rate;
+   string chain;
+   string asset;
+   
+   match_setfee_subcommand(CLI::App* actionRoot) {
+      auto match_setfee = actionRoot->add_subcommand("setfee", localized("to set trading pair fee rate for exchange."));
+      match_setfee->add_option("exx_acc", exx_acc, localized("exx_acc"))->required();
+      match_setfee->add_option("pair_id", pair_id, localized("pair id"))->required();
+      match_setfee->add_option("type", type, localized("type"))->required();
+      match_setfee->add_option("rate", rate, localized("rate"))->required();
+      match_setfee->add_option("chain", chain, localized("chain"))->required();
+      match_setfee->add_option("asset", chain, localized("asset"))->required();
+   
+      add_standard_transaction_options(match_setfee);
+      
+      match_setfee->set_callback([this] {
+         auto args = fc::mutable_variant_object()
+                     ("pair_id", pair_id)
+                     ("exx_acc", exx_acc)
+                     ("type", type)
+                     ("rate", rate)
+                     ("chain", chain)
+                     ("asset", asset);
+         send_actions({create_action(get_account_permissions(tx_permission), N(sys.match), N(setfee), args)});
       });
    }
 };
@@ -4039,13 +4073,15 @@ int main( int argc, char** argv ) {
    auto match = app.add_subcommand("match", localized("Send sys.match contract action to the blockchain."), false);
    match->require_subcommand();
    
-   auto match_createpair = match_createpair_subcommand(match);
-   auto match_trade = match_trade_subcommand(match);
-   auto match_cancel = match_cancel_subcommand(match);
-   auto match_mark = match_mark_subcommand(match);
-   auto match_claim = match_claim_subcommand(match);
-   auto match_freeze = match_freeze_subcommand(match);
-   auto match_unfreeze = match_unfreeze_subcommand(match);
+   auto match_regex        = match_regex_subcommand(match);
+   auto match_createpair   = match_createpair_subcommand(match);
+   auto match_trade        = match_trade_subcommand(match);
+   auto match_cancel       = match_cancel_subcommand(match);
+   auto match_mark         = match_mark_subcommand(match);
+   auto match_claim        = match_claim_subcommand(match);
+   auto match_freeze       = match_freeze_subcommand(match);
+   auto match_unfreeze     = match_unfreeze_subcommand(match);
+   auto match_setfee       = match_setfee_subcommand(match);
 
    // system subcommand
    auto system = app.add_subcommand("system", localized("Send eosio.system contract action to the blockchain."), false);
