@@ -3,15 +3,14 @@ EOS-based decentralized exchange contract<br>
 
 ##
 一. contract interface overview:
-1. Creating trading pairs:  (located in sys.match contrade)
-void create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym, uint32_t fee_rate, account_name exc_acc);    
+1. Creating trading pairs:  (located in sys.match contract)
+void create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym, account_name exc_acc);    
 base:       base token symbol and precision, such as 4,BTC
 base_chain: from which chain   
 base_sym:   from which token
 quote:	   quote token symbol and precision，such as 2,USDT
 quote_chain:from which chain
 quote_sym:  from which token
-fee_rate:   fee rate (for example，fee_rate is 10， fee rate is 10/10000)
 exc_acc:    exchange account
 note：for example, BTC/USDT pair，BTC is base token，USDT is quote token   
 
@@ -22,7 +21,7 @@ to:      escrow account
 chain: 	from which chain  
 quantity: transfer token amount
 type:    trade type (1 is matching trading)
-memo:    trade parameters, format is：payer;receiver;trading pair ID;price;buy or sell (1 is buying, 0 is selling)，for example, "testa;testa;0;4000.00 CUSDT;0"
+memo:    trade parameters, format receiver;trading pair ID;price;buy or sell (1 is buying, 0 is selling);exchange account;referer，for example, "testa;0;4000.00 CUSDT;0;biosbpa;testa"
 
 3. Cancel the order
 void cancel(account_name maker, uint32_t type, uint64_t order_or_pair_id);   
@@ -52,6 +51,11 @@ id: pair id
 
 7、unfreeze the trading pair
 id: pair id
+
+8、void setfee(account_name exc_acc, uint32_t pair_id, uint32_t type, uint32_t rate, name chain, asset fee);
+exc_acc:    exchange account
+pair_id:    pair id
+type:       fee type (now only support type=1:  according to deal ratio)
 
 ##
 二. exchange operation steps
@@ -91,9 +95,12 @@ revoke authorization:
 #efc set account permission eosfund1 active '{"threshold": 1,"keys": [{"key": "FOSC7PpbGuYrXKxDVLrUUxRETjYZLb6bfe2MXKUBhZhVwM3P9JSgV5","weight": 1}],"accounts": []}' owner -p eosfund1     
 
 5、create trading pairs
-efc push action sys.match create '["4,BTC", "btc1", "4,CBTC", "2,USDT", "usdt1", "2,CUSDT", "10", "biosbpa"]' -p biosbpa
+efc push action sys.match create '["4,BTC", "btc1", "4,CBTC", "2,USDT", "usdt1", "2,CUSDT", "biosbpa"]' -p biosbpa
 
-6. view orderbook:     
+6、set exchange trading fees
+efc push action sys.match setfee '["biosbpa", "1", "1", "10", "", "0 CDX"]' -p biosbpa
+
+7、view orderbook:     
 efc get table sys.match sys.match orderbook       
 
 {
@@ -116,16 +123,16 @@ efc get table sys.match sys.match orderbook
   "more": false
 }
 
-7、mark the trading pair
+8、mark the trading pair
 efc push action sys.match mark '["eosforce", "4,EOS", "", "2,SYS"]' -p sys.match
 
-8、claim fees
+9、claim fees
 efc push action sys.match claim '["btc1", "4,CBTC", "usdt1", "2,CUSDT", "biosbpa", "biosbpb"]' -p biosbpa
 
-9、freeze the trading pair
+10、freeze the trading pair
 efc push action sys.match freeze '["0"]' -p biosbpa
 
-10、unfreeze the trading pair
+11、unfreeze the trading pair
 efc push action sys.match unfreeze '["0"]' -p biosbpa
 
 ##
@@ -134,11 +141,11 @@ user 1:testb, user 2:testa,
 
 1. buy tokens           
 
-efc push action relay.token trade '["testb", "sys.match", "usdt1", "39500.0000 CUSDT", "1", "testb;testb;0;3950.00 CUSDT;1"]' -p testb
+efc push action relay.token trade '["testb", "sys.match", "usdt1", "39500.0000 CUSDT", "1", "testb;0;3950.00 CUSDT;1;biosbpa"]' -p testb
 
 2. sell tokens   
 
-efc push action relay.token trade '["testa", "sys.match", "btc1", "4.0000 CBTC", "1", "testa;testa;0;4000.00 CUSDT;0"]' -p testa
+efc push action relay.token trade '["testa", "sys.match", "btc1", "4.0000 CBTC", "1", "testa;0;4000.00 CUSDT;0;biosbpa"]' -p testa
 
 3. cancel the order     
 
