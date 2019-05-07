@@ -143,12 +143,15 @@ def createMap(chain, pubKeys):
     pushAction("force.relay", "newchannel", chain, 
         '{"chain":"%s","checker":"biosbpa","id":"","mroot":""}' % (chain))
 
-def createMapToken(chain, side_contract, token_account, asset, symbol):
-    pushAction("force.relay", "newmap", chain, 
-        '{"chain":"%s","type":"token","id":"","act_account":"%s","act_name":"transfer","account":"relay.token","relayacc":"%s","data":"%s"}' % (chain, token_account, side_contract, symbol))
-    pushAction('relay.token', 'create', 'eosforce',
-        '{"issuer":"eosforce","chain":"%s","maximum_supply":"%s"}' % (chain, asset))
+def createMapTokenHandler(chain, typ_name, side_contract, token_account):
+    pushAction( "force.relay",
+                "newmap",
+                chain,
+                '{"chain":"%s","type":"%s","id":"","act_account":"%s","act_name":"transfer","account":"relay.token","relayacc":"%s","data":""}' % (chain, typ_name, token_account, side_contract))
 
+def createMapToken(chain, side_acc, asset):
+    pushAction('relay.token', 'create', chain,
+        '{"issuer":"%s","chain":"%s","side_account":"%s","side_action":"%s","maximum_supply":"%s"}' % (chain, chain, side_acc, 'transfer', asset))
 
 def stepSetFuncs():
     # we need set some func start block num
@@ -175,25 +178,28 @@ def stepSetFuncs():
     getRAM('testg', 10000 * 10000)
 
     createMap("forceio", pubKeys)
-    createMapToken('forceio','rs','force.token', "10000000.0000 EOS", "EOS")
-    createMapToken('forceio','rs','force.token', "10000000.0000 SYS", "SYS")
-    createMapToken('forceio','rs','force.token', "10000000.0000 SSS", "SSS")
+    createMapTokenHandler('forceio','force.token','rs','force.token')
+    createMapToken('forceio','force.token', "10000000.0000 EOS")
+    createMapToken('forceio','force.token', "10000000.0000 SYS")
+    createMapToken('forceio','force.token', "10000000.0000 SSS")
 
     createMap("eosforce", pubKeys)
-    createMapToken('eosforce','eosforce.rs','eosio', "10000000.0000 EOS", "EOS")
-    createMapToken('eosforce','eosforce.rs','eosio.token', "10000000.0000 SYS", "SYS")
-    createMapToken('eosforce','eosforce.rs','eosio.token', "10000000.0000 CLT", "CLT")
-    createMapToken('eosforce','eosforce.rs','eosio.token', "10000000.0000 EAT", "EAT")
-    createMapToken('eosforce','eosforce.rs','eosio.token', "10000000.0000 MONEY", "MONEY")
-    createMapToken('eosforce','eosforce.rs','eosio.token', "10000000.0000 F", "F")
-    createMapToken('eosforce','eosforce.rs','eosio.token', "10000000.0000 ADD", "ADD")
+    createMapTokenHandler('eosforce','eosforce.t','rs','eosio.token')
+    createMapTokenHandler('eosforce','eosforce.ct','rs','eosio')
+    createMapToken('eosforce','eosio',"10000000.0000 EOS")
+    createMapToken('eosforce','eosio.token',"10000000.0000 SYS")
+    createMapToken('eosforce','eosio.token',"10000000.0000 EAT")
+    createMapToken('eosforce','eosio.token',"10000000.0000 MONEY")
+    createMapToken('eosforce','eosio.token',"10000000.0000 F")
+    createMapToken('eosforce','eosio.token',"10000000.0000 ADD")
 
     createMap("eos", pubKeys)
-    createMapToken('eos','codexrelayct','eosio.token', "10000000.0000 EOS", "EOS")
-    createMapToken('eos','codexrelayct','rstesttokenc', "10000000.0000 SYS", "SYS")
-    createMapToken('eos','codexrelayct','rstesttokenc', "10000000.0000 SSS", "SSS")
-    createMapToken('eos','codexrelayct','rstesttokenc', "10000000.0000 IQ", "IQ")
-    createMapToken('eos','codexrelayct','rstesttokenc', "10000000.0000 CLT", "CLT")
+    createMapTokenHandler('eos','eos.t','relaytacceos','eosio.token')
+    createMapTokenHandler('eos','eos.tuser','relaytacceos','userdeftoken')
+    createMapToken('eos','eosio.token', "10000000.0000 EOS")
+    createMapToken('eos','userdeftoken', "10000000.0000 SYS")
+    createMapToken('eos','userdeftoken', "10000000.0000 SSS")
+    createMapToken('eos','userdeftoken', "10000000.0000 IQ")
 
 def clearData():
     stepKillAll()

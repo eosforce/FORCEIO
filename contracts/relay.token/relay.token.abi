@@ -210,6 +210,14 @@
                "type":"name"
             },
             {
+               "name":"side_account",
+               "type":"account_name"
+            },
+            {
+               "name":"side_action",
+               "type":"action_name"
+            }
+            {
                "name":"maximum_supply",
                "type":"asset"
             }
@@ -313,6 +321,14 @@
             {
                "name":"chain",
                "type":"name"
+            },
+            {
+               "name":"side_account",
+               "type":"account_name"
+            },
+            {
+               "name":"side_action",
+               "type":"action_name"
             },
             {"name":"rewards_pool",         "type":"asset"},
             {"name":"total_mineage",        "type":"int128"},

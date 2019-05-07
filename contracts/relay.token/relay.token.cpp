@@ -15,35 +15,56 @@ namespace relay {
 
 // just a test version by contract
 void token::on( name chain, const checksum256 block_id, const force::relay::action& act ) {
-   // TODO check account
+   require_auth(N(force.relay)); // TODO use config
 
-   // TODO create accounts from diff chain
-
-   // Just send account
-   // print("on ", name{ act.account }, " ", name{ act.name }, "\n");
-
-   // TODO this should no err
+   // TODO this ACTION should no err
 
    const auto data = unpack<token::action>(act.data);
-
    print("map ", name{ data.from }, " ", data.quantity, " ", data.memo, "\n");
 
-   //TODO param err processing
-   if( data.memo.empty() || data.memo.size() >= 13 ){
+   auto sym = data.quantity.symbol;
+   stats statstable(_self, chain);
+   auto st = statstable.find(sym.name());
+   if( st == statstable.end() ){
+      // TODO param err processing
+      print("no token err");
       return;
    }
-   
+
+   if(    ( !sym.is_valid() )
+       || ( data.memo.size() > 256 )
+       || ( !data.quantity.is_valid() )
+       || ( data.quantity.amount <= 0 )
+       || ( data.quantity.symbol != st->supply.symbol )
+       || ( data.quantity.amount > st->max_supply.amount - st->supply.amount )
+       ) {
+      // TODO param err processing
+      print("token err");
+      return;
+   }
+
+   if( data.memo.empty() || data.memo.size() >= 13 ){
+      // TODO param err processing
+      print("data.memo err");
+      return;
+   }
    const auto to = string_to_name(data.memo.c_str());
+   if( !is_account(to) ) {
+      // TODO param err processing
+      print("to is no account");
+      return;
+   }
 
    SEND_INLINE_ACTION(*this, issue,
-         { N(eosforce), N(active) },
-         { chain, to, data.quantity, "from chain" });
+         { chain, N(active) }, { chain, to, data.quantity, "from chain" });
 }
 
 void token::create( account_name issuer,
                     name chain,
+                    account_name side_account,
+                    action_name side_action,
                     asset maximum_supply ) {
-   require_auth(N(eosforce));
+   require_auth(chain); // TODO if need
 
    auto sym = maximum_supply.symbol;
    eosio_assert(sym.is_valid(), "invalid symbol name");
@@ -59,6 +80,8 @@ void token::create( account_name issuer,
       s.max_supply = maximum_supply;
       s.issuer = issuer;
       s.chain = chain;
+      s.side_account = side_account;
+      s.side_action = side_action;
       s.reward_pool = asset(0);
       s.total_mineage = 0;
       s.total_mineage_update_height = current_block_num();
