@@ -78,6 +78,8 @@ public:
    /// @abi action
    void create( account_name issuer,
                 name chain,
+                account_name side_account,
+                action_name side_action,
                 asset maximum_supply );
 
    /// @abi action
@@ -120,7 +122,7 @@ private:
       asset balance;
       name  chain;
 
-      int128_t      mineage               = 0;         // asset.amount * block height
+      int128_t     mineage               = 0;         // asset.amount * block height
       uint32_t     mineage_update_height = 0;
       int64_t      pending_mineage       = 0;
 
@@ -141,8 +143,11 @@ private:
       account_name issuer;
       name         chain;
 
+      account_name side_account;
+      action_name  side_action;
+
       asset        reward_pool;
-      int128_t      total_mineage               = 0;         // asset.amount * block height
+      int128_t     total_mineage               = 0; // asset.amount * block height
       uint32_t     total_mineage_update_height = 0;
       int64_t      total_pending_mineage       = 0;
 

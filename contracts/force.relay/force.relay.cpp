@@ -128,12 +128,16 @@ void relay::newchannel( const name chain, const checksum256 id ) {
 void relay::newmap( const name chain, const name type,
                     const account_name act_account, const action_name act_name,
                     const account_name account, const account_name relayacc, const std::string& data ) {
-   require_auth(chain);
+   require_auth(chain); // if everyone can create map?
 
    channels_table channels(_self, chain);
-   handlers_table handlers(_self, chain);
-
    eosio_assert(channels.find(chain) != channels.end(), "channel not created");
+
+   handlers_table handlers(_self, chain);
+   for(const auto& h : handlers){
+      // handler num will <= 10, so just search by for
+      eosio_assert( ((h.actaccount != act_account) || (h.actname != act_name)), "one action can only one handler" );
+   }
 
    auto hh = handlers.find(type);
    if( hh == handlers.end() ) {
@@ -190,22 +194,18 @@ void relay::new_transfer( name chain, account_name transfer, const asset& deposi
 }
 
 void relay::onblockimp( const name chain, const block_type& block, const vector<action>& actions ) {
-   account_name acc{ chain };
-   channels_table channels(_self, acc);
+   channels_table channels(_self, chain);
    eosio_assert(channels.find(chain) != channels.end(), "channel not created");
 
-   handlers_table handlers(_self, acc);
-
-   std::map<std::pair<account_name, action_name>, map_handler> handler_map;
-   for(const auto& h : handlers){
-      handler_map[std::make_pair(h.actaccount, h.actname)] = h;
-   }
+   handlers_table handlers(_self, chain);
 
    for(const auto& act : actions){
       //print("check act ", act.account, " ", act.name, "\n");
-      const auto& h = handler_map.find(std::make_pair(act.account, act.name));
-      if(h != handler_map.end()){
-         onaction(block, act, h->second);
+      for(const auto& h : handlers){
+         // handler num will <= 10, so just search by for
+         if( (h.actaccount == act.account) && (h.actname == act.name) ) {
+            onaction(block, act, h);
+         }
       }
    }
 
@@ -227,7 +227,7 @@ void relay::onblockimp( const name chain, const block_type& block, const vector<
 void relay::onaction( const block_type& block, const action& act, const map_handler& handler ){
    //print("onaction ", act.account, " ", act.name, "\n");
    eosio::action{
-         vector<eosio::permission_level>{},
+         {{ _self, N(active) }},
          handler.account,
          N(on),
          handler_action{
