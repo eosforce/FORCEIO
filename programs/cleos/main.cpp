@@ -1599,7 +1599,7 @@ struct match_regex_subcommand {
    string exc_acc;
 
    match_regex_subcommand(CLI::App* actionRoot) {
-      auto match_regex = actionRoot->add_subcommand("create", localized("to create a trading pair."));
+      auto match_regex = actionRoot->add_subcommand("regex", localized("to register an exchange account."));
       match_regex->add_option("exc_acc", exc_acc, localized("exchange account"))->required();
       
       add_standard_transaction_options(match_regex);
