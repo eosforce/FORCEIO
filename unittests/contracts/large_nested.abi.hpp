@@ -1887,6 +1887,6 @@ const char* const large_nested_abi = R"=====(
   "tables": [],
   "ricardian_clauses": [],
   "error_messages": [],
-  "abi_extensions": { "datas":[] }
+  "abi_extensions": []
 }
 )=====";
