@@ -2113,7 +2113,7 @@ BOOST_FIXTURE_TEST_CASE(eosio_assert_code_tests, TESTER) { try {
       {"error_code": 1, "error_msg": "standard error message" },
       {"error_code": 42, "error_msg": "The answer to life, the universe, and everything."}
    ]
-   "abi_extensions": { "datas":[] }
+   "abi_extensions": []
 }
 )=====";
 
