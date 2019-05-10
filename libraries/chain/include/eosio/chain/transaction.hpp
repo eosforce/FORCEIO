@@ -52,8 +52,8 @@ namespace eosio { namespace chain {
     *  read and write scopes.
     */
    struct transaction : public transaction_header {
-      enum extdata_type {
-         none      = 0,
+      enum extdata_type : uint16_t {
+         none        = 0,
          voteage_fee = 1
       };
 

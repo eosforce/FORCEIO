@@ -330,7 +330,7 @@ fc::variant push_transaction( signed_transaction& trx, int32_t extra_kcpu = 1000
       trx.delay_sec = delaysec;
       
       if (voteage_bp_name.length() > 0) {
-         trx.transaction_extensions.datas.emplace_back(transaction::voteage_fee, fc::raw::pack(account_name(voteage_bp_name)));
+         trx.transaction_extensions.emplace_back(transaction::voteage_fee, fc::raw::pack(account_name(voteage_bp_name)));
       }
    }
 

@@ -401,8 +401,11 @@ namespace bacc = boost::accumulators;
       if( fee_payer != name{} ) {
          action_traces.emplace_back();
          auto is_fee_voteage = [](const signed_transaction &trx, account_name &bp_name) {
-            if (trx.transaction_extensions.size() > 0) {
-               return trx.transaction_extensions.get(transaction::voteage_fee, bp_name);
+            for ( const auto& ext : trx.transaction_extensions ) {
+               if (    ext.first == transaction::voteage_fee 
+                    && bp_name == fc::unpack<account_name>( ext.second ) ) {
+                  return true;
+               }
             }
             return false;
          };
