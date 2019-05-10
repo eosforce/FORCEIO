@@ -12,10 +12,6 @@ ENV PATH $PATH:$GOPATH/bin:$GOROOT/bin
 
 RUN cd FORCEIO && git submodule update --init --recursive
 
-RUN cd FORCEIO/externals/grpc/third_party/protobuf/ && ./autogen.sh && ./configure --prefix=/opt/protobuf && make -j12 && make install 
-
-RUN cd FORCEIO/externals/grpc && make -j12 && make install prefix=/opt/grpc && cp -r /opt/grpc/lib/* /usr/local/lib/
-
 RUN cd FORCEIO && cmake -H. -B"/tmp/build" -GNinja -DCMAKE_BUILD_TYPE=Release -DWASM_ROOT=/opt/wasm -DCMAKE_CXX_COMPILER=clang++ \
     -DCMAKE_C_COMPILER=clang -DCMAKE_INSTALL_PREFIX=/tmp/build -DBUILD_MONGO_DB_PLUGIN=true \
     -DCORE_SYMBOL_NAME="SYS" \
