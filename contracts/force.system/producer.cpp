@@ -252,7 +252,6 @@ namespace eosiosystem {
       bps_table bps_tbl(_self, _self);
       auto sch = schs_tbl.find(uint64_t(schedule_version));
       eosio_assert(sch != schs_tbl.end(),"cannot find schedule");
-      //print("-----------find schedule--------------\n");
       int64_t total_block_out_age = 0;
       asset total_punish = asset(0);
       reward_table reward_inf(_self,_self);
@@ -285,8 +284,8 @@ namespace eosiosystem {
          auto drain_block_num = CYCLE_PREBP_BLOCK + bp->last_block_amount - sch->producers[i].amount;
          if (force_change) drain_block_num = 0;
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-            b.block_age +=  (sch->producers[i].amount > b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
-            total_block_out_age += (sch->producers[i].amount > b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
+            b.block_age +=  (sch->producers[i].amount >= b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
+            total_block_out_age += (sch->producers[i].amount >= b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
                
             if(drain_block_num != 0) {
                b.block_weight = BLOCK_OUT_WEIGHT;
