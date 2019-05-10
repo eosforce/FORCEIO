@@ -496,9 +496,5 @@
    "error_messages":[
 
    ],
-   "abi_extensions":{
-      "datas":[
-
-      ]
-   }
+   "abi_extensions":[]
 }
