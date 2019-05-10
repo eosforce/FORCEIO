@@ -242,8 +242,6 @@
             CXX_COMPILER=clang++-4.0
             C_COMPILER=clang-4.0
             MONGOD_CONF=${HOME}/opt/mongodb/mongod.conf
-	    PROTOC=${HOME}/opt/protobuf/bin/protoc
-	    GRPC_CPP_PLUGIN=${HOME}/opt/grpc/bin/grpc_cpp_plugin
             export PATH=${HOME}/opt/mongodb/bin:$PATH
          ;;
          "Debian GNU/Linux")
