@@ -91,7 +91,7 @@ namespace eosiosystem {
             });
          }
 
-         eosio_assert(bp->isactive || (!bp->isactive && change < asset{ 0 }), "bp is not active");
+         eosio_assert(bp->isactive() || (!bp->isactive() && change < asset{ 0 }), "bp is not active");
 
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
             b.total_voteage += b.total_staked * (curr_block_num - b.voteage_update_height);

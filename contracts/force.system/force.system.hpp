@@ -23,39 +23,77 @@ namespace eosiosystem {
 
    static constexpr uint32_t FROZEN_DELAY = CONTRACT_FROZEN_DELAY; // 3 * 24 * 60 * 20; //3*24*60*20*3s;
    static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
-#ifdef BEFORE_ONLINE_TEST   
-   static constexpr uint32_t UPDATE_CYCLE = 126;//42;//CONTRACT_UPDATE_CYCLE;//630; 
+#ifdef BEFORE_ONLINE_TEST 
+   static constexpr uint32_t CYCLE_PREHOUR = 10;
+   static constexpr uint32_t CYCLE_PREBP_BLOCK = 6;
    static constexpr uint32_t CYCLE_PREDAY = 50;//5;//275;
    static constexpr uint32_t STABLE_DAY = 10;//2;//60;
    static constexpr uint64_t PRE_BLOCK_REWARDS = 58.6*10000;
    static constexpr uint64_t STABLE_BLOCK_REWARDS = 126*10000;
 #else
-   static constexpr uint32_t UPDATE_CYCLE = 630;//42;//CONTRACT_UPDATE_CYCLE;//630; 
+   static constexpr uint32_t CYCLE_PREHOUR = 12;
+   static constexpr uint32_t CYCLE_PREBP_BLOCK = 15;
+   
    static constexpr uint32_t CYCLE_PREDAY = 275;//5;//275;
    static constexpr uint32_t STABLE_DAY = 60;//2;//60;
    static constexpr uint64_t STABLE_BLOCK_REWARDS = 630*10000;
    static constexpr uint64_t PRE_BLOCK_REWARDS = 143*10000;
 #endif
-   static constexpr uint32_t STABLE_BLOCK_HEIGHT = UPDATE_CYCLE * CYCLE_PREDAY * STABLE_DAY;
+   //static constexpr uint32_t STABLE_BLOCK_HEIGHT = UPDATE_CYCLE * CYCLE_PREDAY * STABLE_DAY;
    static constexpr uint32_t PRE_GRADIENT = 10250;
    static constexpr uint32_t STABLE_GRADIENT = 10010;
-   static constexpr uint32_t REWARD_MODIFY_COUNT = UPDATE_CYCLE * CYCLE_PREDAY;
+   //static constexpr uint32_t REWARD_MODIFY_COUNT = UPDATE_CYCLE * CYCLE_PREDAY;
+   static constexpr uint32_t UPDATE_CYCLE =CYCLE_PREBP_BLOCK * NUM_OF_TOP_BPS;
 
    static constexpr uint64_t REWARD_ID = 1;
    static constexpr uint64_t BLOCK_OUT_WEIGHT = 1000;
    static constexpr uint64_t MORTGAGE = 8228;
-   static constexpr uint32_t PER_CYCLE_AMOUNT = UPDATE_CYCLE / NUM_OF_TOP_BPS; 
 
    static constexpr uint32_t REWARD_DEVELOP = 900;
-   static constexpr uint32_t REWARD_BP = 100;
+   static constexpr uint32_t REWARD_BP = 300;
    static constexpr uint32_t REWARD_FUND = 100;
    static constexpr uint32_t REWARD_MINE = 10000 - REWARD_DEVELOP - REWARD_BP;
 
    static constexpr uint64_t OTHER_COIN_WEIGHT = 500;
 
-   static constexpr account_name CREATION_BP[26] = {N(biosbpa),N(biosbpb),N(biosbpc),N(biosbpd),N(biosbpe),N(biosbpf),N(biosbpg),N(biosbph),N(biosbpi),
-   N(biosbpj),N(biosbpk),N(biosbpl),N(biosbpm),N(biosbpn),N(biosbpo),N(biosbpp),N(biosbpq),N(biosbpr),N(biosbps),N(biosbpt),N(biosbpu),N(biosbpv),N(biosbpw),
-   N(biosbpx),N(biosbpy),N(biosbpz)};
+   #define LACKMORTGAGE_FREEZE UPDATE_CYCLE * CYCLE_PREHOUR
+   #define PUNISH_BP_FEE   asset(100*10000)
+   #define BAIL_PUNISH_FEE   asset(10*10000)
+
+   struct creation_producer {
+      account_name bp_name;
+      int64_t      total_staked    = 0;
+      int64_t      mortgage = 0;
+   };
+
+   static constexpr creation_producer CREATION_BP[26] = {
+      {N(biosbpa),400000,40000*10000},
+      {N(biosbpb),400000,40000*10000},
+      {N(biosbpc),400000,40000*10000},
+      {N(biosbpd),400000,40000*10000},
+      {N(biosbpe),600000,40000*10000},
+      {N(biosbpf),600000,40000*10000},
+      {N(biosbpg),600000,40000*10000},
+      {N(biosbph),600000,40000*10000},
+      {N(biosbpi),1300000,40000*10000},
+      {N(biosbpj),1300000,40000*10000},
+      {N(biosbpk),1300000,40000*10000},
+      {N(biosbpl),2100000,40000*10000},
+      {N(biosbpm),2100000,40000*10000},
+      {N(biosbpn),10000000,40000*10000},
+      {N(biosbpo),10000000,40000*10000},
+      {N(biosbpp),10000000,40000*10000},
+      {N(biosbpq),10000000,40000*10000},
+      {N(biosbpr),10000000,40000*10000},
+      {N(biosbps),10000000,40000*10000},
+      {N(biosbpt),10000000,40000*10000},
+      {N(biosbpu),10000000,40000*10000},
+      {N(biosbpv),100000,40000*10000},
+      {N(biosbpw),100000,40000*10000},
+      {N(biosbpx),100000,40000*10000},
+      {N(biosbpy),100000,40000*10000},
+      {N(biosbpz),100000,40000*10000}
+   };
    
 
    struct permission_level_weight {
@@ -73,13 +111,18 @@ namespace eosiosystem {
       weight_type  weight;
    };
 
-
-
    struct authority {
       uint32_t                          threshold = 0;
       vector<key_weight>                keys;
       vector<permission_level_weight>   accounts;
       vector<wait_weight>               waits;
+   };
+
+   enum  class active_type:int32_t {
+      Normal=0,
+      Punish,
+      LackMortgage,
+      Removed
    };
 
    class system_contract : private eosio::contract {
@@ -142,12 +185,16 @@ namespace eosiosystem {
          uint32_t     voteage_update_height = current_block_num();
          std::string  url;
          bool emergency = false;
-         bool isactive = true;
+         int32_t active_type = 0;
 
          int64_t      block_age = 0;
          uint32_t     last_block_amount = 0;
          int64_t      block_weight = BLOCK_OUT_WEIGHT;   
          asset        mortgage = asset(0);
+
+         int32_t     total_drain_block = 0;
+         asset       remain_punish = asset(0);
+         int32_t     active_change_block_num = 0;
 
          uint64_t primary_key() const { return name; }
 
@@ -156,10 +203,14 @@ namespace eosiosystem {
             commission_rate = rate;
             url = u;
          }
-         void     deactivate()       {isactive = false;}
+         void     deactivate()       {active_type = static_cast<int32_t>(active_type::Removed);}
+         bool     isactive() const {
+            if (active_type == static_cast<int32_t>(active_type::Removed)) return false;
+            return true;
+         }
          EOSLIB_SERIALIZE(bp_info, ( name )(block_signing_key)(commission_rate)(total_staked)
-               (rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(isactive)
-               (block_age)(last_block_amount)(block_weight)(mortgage))
+               (rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(active_type)
+               (block_age)(last_block_amount)(block_weight)(mortgage)(total_drain_block)(remain_punish)(active_change_block_num))
       };
 
       struct producer {
@@ -181,13 +232,17 @@ namespace eosiosystem {
          uint64_t     id;
          asset reward_block_out = asset(0);
          asset reward_develop = asset(0);
+         asset reward_budget = asset(0);
          int64_t total_block_out_age = 0;
-         asset bp_punish = asset(0);
          int64_t cycle_reward = 0;
          int32_t   gradient = 0;
+         int32_t   total_reward_time = 0;
+         int32_t   last_reward_block_num = 0;
+         account_name  last_producer_name;
 
          uint64_t primary_key() const { return id; }
-         EOSLIB_SERIALIZE(reward_info, ( id )(reward_block_out)(reward_develop)(total_block_out_age)(bp_punish)(cycle_reward)(gradient))
+         EOSLIB_SERIALIZE(reward_info, ( id )(reward_block_out)(reward_develop)(reward_budget)(total_block_out_age)(cycle_reward)(gradient)
+         (total_reward_time)(last_reward_block_num)(last_producer_name))
       };
 
       /** from relay.token begin*/
@@ -218,9 +273,37 @@ namespace eosiosystem {
 
       struct creation_bp {
          account_name bpname;
+         int64_t      total_staked    = 0;
+         int64_t      mortgage = 0;
          uint64_t primary_key() const { return bpname; }
 
-         EOSLIB_SERIALIZE(creation_bp, (bpname))
+         EOSLIB_SERIALIZE(creation_bp, (bpname)(total_staked)(mortgage))
+      };
+
+      struct punish_bp_info {
+         account_name initiator;
+         account_name bpname;
+         int32_t  drain_num = 0;
+         int32_t  update_block_num = 0;
+         uint64_t primary_key() const { return bpname; }
+
+         EOSLIB_SERIALIZE(punish_bp_info, (initiator)(bpname)(drain_num)(update_block_num))
+      };
+
+      struct last_drain_block {
+         account_name bpname;
+         int32_t  drain_num = 0;
+         int32_t  update_block_num = 0;
+         uint64_t primary_key() const { return bpname; }
+
+         EOSLIB_SERIALIZE(last_drain_block, (bpname)(drain_num)(update_block_num))
+      };
+
+      struct approve_punish_bp {
+         account_name bpname;
+         vector<account_name> approve_producer;
+         uint64_t primary_key() const { return bpname; }
+         EOSLIB_SERIALIZE(approve_punish_bp, (bpname)(approve_producer))
       };
 
       typedef eosio::multi_index<N(stat), currency_stats> stats;
@@ -237,6 +320,9 @@ namespace eosiosystem {
       typedef eosio::multi_index<N(schedules),   schedule_info> schedules_table;
       typedef eosio::multi_index<N(reward),   reward_info> reward_table;
       typedef eosio::multi_index<N(creationbp),   creation_bp> creation_producer;
+      typedef eosio::multi_index<N(lastdrainbp),   last_drain_block> last_drain_bp;
+      typedef eosio::multi_index<N(punishbps),   punish_bp_info> punish_bps;
+      typedef eosio::multi_index<N(apppunishbps),   approve_punish_bp> approve_punish_bps;
 
       mvotes_table _voters;
 
@@ -245,11 +331,15 @@ namespace eosiosystem {
       void update_elected_bps();
 
       void reward_bps(const uint64_t reward_amount);
-      void reward_block(const uint32_t schedule_version,const uint64_t reward_amount);
+      void reward_block(const uint32_t schedule_version,const uint64_t reward_amount,bool force_change);
       void reward_mines(const uint64_t reward_amount);
       void reward_develop(const uint64_t reward_amount);
 
       bool is_super_bp( account_name block_producers[], account_name name );
+
+      bool is_super_bp( account_name bpname);
+      int32_t effective_approve_num(account_name punishbpname); 
+      void exec_punish_bp(account_name punishbpname);
 
       //defind in delegate_bandwidth.cpp
       void changebw( account_name from, account_name receiver,
@@ -342,12 +432,21 @@ namespace eosiosystem {
       void refund( account_name owner );
 #endif
 
-
       // @abi action
       void voteproducer( const account_name voter, const std::vector<account_name>& producers );
       
       // @abi action
       void fee( const account_name payer, const account_name bpname, int64_t voteage );
+      // @abi action
+      void punishbp(const account_name initiator,const account_name bpname);
+      // @abi action
+      void canclepunish(const account_name initiator,const account_name bpname);
+      // @abi action
+      void apppunish(const account_name bpname,const account_name punishbpname);
+      // @abi action
+      void unapppunish(const account_name bpname,const account_name punishbpname);
+      // @abi action
+      void bailpunish(const account_name bpname);
    };
    
    asset system_contract::get_freezed( account_name voter )const

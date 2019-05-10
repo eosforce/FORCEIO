@@ -262,7 +262,7 @@ message( STATUS "Using '${ROOT_ACCOUNT}' as root account" )
 
 #add contract_config
 if ("${FROZEN_DELAY}" STREQUAL "")
-  set( FROZEN_DELAY "3 * 24 * 60 * 20" )
+  set( FROZEN_DELAY "3 * 24 * 60 * 60" )
 endif()
 if ("${MAX_PRODUCERS}" STREQUAL "")
   set( MAX_PRODUCERS "23" )

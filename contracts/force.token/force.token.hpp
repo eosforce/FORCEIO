@@ -89,6 +89,9 @@ namespace eosio {
          void castcoin(account_name from,account_name to,asset quantity);
          void takecoin(account_name to);
 
+         void opencast(account_name to);
+         void closecast(account_name to,int32_t finish_block);
+
       private:
          struct account {
             asset    balance;

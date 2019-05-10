@@ -101,7 +101,7 @@ namespace eosiosystem {
          });
       }
 
-      eosio_assert(bp.isactive || (!bp.isactive && change < asset{0}), "bp is not active");
+      eosio_assert(bp.isactive() || (!bp.isactive() && change < asset{0}), "bp is not active");
 
       if( change > asset{} ) {
          auto fts = freeze_tbl.find(voter);

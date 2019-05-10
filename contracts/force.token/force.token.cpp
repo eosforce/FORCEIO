@@ -106,22 +106,15 @@ void token::castcoin( account_name from,
 
    eosio_assert( quantity.is_valid(), "invalid quantity" );
    eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
-   if (cc != coincast_table.end()) {
-      eosio_assert( quantity.symbol == cc->balance.symbol, "symbol precision mismatch" );
-   }
+      
+   eosio_assert( cc != coincast_table.end(), "the cast is not opened" );
+   eosio_assert( quantity.symbol == cc->balance.symbol, "symbol precision mismatch" );
 
    sub_balance( from, quantity );
-   if (cc == coincast_table.end()) {
-      coincast_table.emplace( from, [&]( auto& a ){
-         a.balance = quantity;
-         a.finish_block = finish_block;
-      });
-   }
-   else {
-      coincast_table.modify( cc, 0, [&]( auto& a ) {
-         a.balance += quantity;
-      });
-   }
+
+   coincast_table.modify( cc, to, [&]( auto& a ) {
+      a.balance += quantity;
+   });
 }
 void token::takecoin(account_name to) {
    require_auth( to );
@@ -144,6 +137,36 @@ void token::takecoin(account_name to) {
          coincast_table.erase(cc);
       }
    }
+}
+
+void token::opencast(account_name to) {
+   require_auth( to );
+
+   eosio_assert( is_account( to ), "to account does not exist");
+   coincasts coincast_table( _self, to );
+   auto current_block = current_block_num();
+   int32_t cast_num = PRE_CAST_NUM - static_cast<int32_t>(current_block / WEAKEN_CAST_NUM);
+   if (cast_num < static_cast<int32_t>(STABLE_CAST_NUM)) cast_num = STABLE_CAST_NUM;
+   auto finish_block = current_block + cast_num;
+   const auto cc = coincast_table.find( static_cast<uint64_t>(finish_block) );
+
+   eosio_assert(cc == coincast_table.end(),"the cast is been opened");
+   coincast_table.emplace( to, [&]( auto& a ){
+         a.balance = asset(0);
+         a.finish_block = finish_block;
+      });
+}
+
+void token::closecast(account_name to,int32_t finish_block) {
+   require_auth( to );
+
+   eosio_assert( is_account( to ), "to account does not exist");
+   coincasts coincast_table( _self, to );
+   const auto cc = coincast_table.find( static_cast<uint64_t>(finish_block) );
+   eosio_assert(cc != coincast_table.end(),"the cast is not exist");
+   eosio_assert(cc->balance == asset(0),"the cast can not be closed");
+
+   coincast_table.erase(cc);
 }
 
 void token::fee( account_name payer, asset quantity ){
@@ -400,4 +423,4 @@ print("-------sys_match_match::parse receiver=", eosio::name{.value=receiver}, "
 
 } /// namespace eosio
 
-EOSIO_ABI( eosio::token, (create)(issue)(transfer)(fee)(trade)(castcoin)(takecoin) )
+EOSIO_ABI( eosio::token, (create)(issue)(transfer)(fee)(trade)(castcoin)(takecoin)(opencast)(closecast) )

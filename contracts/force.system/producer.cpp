@@ -14,6 +14,78 @@ namespace eosiosystem {
       account_name block_producers[NUM_OF_TOP_BPS] = {};
       get_active_producers(block_producers, sizeof(account_name) * NUM_OF_TOP_BPS);
       auto sch = schs_tbl.find(uint64_t(schedule_version));
+      uint32_t pre_bp_block_out = 0;
+      bool force_change = false;
+      auto reward_block_version = schedule_version;
+      if( sch == schs_tbl.end()) {
+         force_change = true;
+         reward_block_version -=1;
+      } else {
+         for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
+            if( sch->producers[i].bpname == bpname ) {
+               pre_bp_block_out = sch->producers[i].amount;
+               break;
+            }
+         }
+
+         auto bp = bps_tbl.find(bpname);
+         if (bp == bps_tbl.end()) {
+            eosio_assert(false,"bpname is not registered");
+         }
+         else {
+            pre_bp_block_out = pre_bp_block_out - bp->last_block_amount;
+         }
+      }
+
+      if( pre_bp_block_out == CYCLE_PREBP_BLOCK || (force_change && schedule_version != 0)) {
+         reward_table reward_inf(_self,_self);
+         auto reward = reward_inf.find(REWARD_ID);
+         if(reward == reward_inf.end()) {
+            init_reward_info();
+            reward = reward_inf.find(REWARD_ID);
+         }
+
+         auto cycle_block_out = current_block_num() - reward->last_reward_block_num;
+         int64_t block_rewards = reward->cycle_reward * cycle_block_out / UPDATE_CYCLE;
+
+         auto reward_times = reward->total_reward_time + 1;
+
+         if(reward_times % (reward_times * STABLE_DAY) == 0) {
+            update_reward_stable();
+         }
+         else if(reward_times % CYCLE_PREDAY == 0) {
+            reward_inf.modify(reward, 0, [&]( reward_info& s ) {
+               s.cycle_reward = static_cast<int64_t>(s.cycle_reward * s.gradient / 10000);
+            });
+         }
+
+         INLINE_ACTION_SENDER(eosio::token, issue)( config::token_account_name, {{::config::system_account_name,N(active)}},
+                                             { ::config::reward_account_name, 
+                                             asset(block_rewards), 
+                                             "issue tokens for producer pay"} );
+         reward_inf.modify(reward, 0, [&]( reward_info& s ) {
+            s.total_reward_time +=1;
+            s.last_reward_block_num = current_block_num();
+            s.last_producer_name = bpname;
+         });
+         
+         uint64_t  vote_power = get_vote_power();
+         uint64_t  coin_power = get_coin_power();
+         uint64_t total_power = vote_power + coin_power;
+         reward_develop(block_rewards * REWARD_DEVELOP / 10000);
+         reward_block(reward_block_version,block_rewards * REWARD_BP / 10000,force_change);
+         
+         if (total_power != 0) {
+            reward_mines((block_rewards * REWARD_MINE / 10000) * coin_power / total_power);
+            reward_bps((block_rewards * REWARD_MINE / 10000) * vote_power / total_power);
+         }
+         print("logs:",block_rewards,"---",block_rewards * REWARD_DEVELOP / 10000,"---",block_rewards * REWARD_BP / 10000,"---",(block_rewards * REWARD_MINE / 10000) * coin_power / total_power,"---",
+         (block_rewards * REWARD_MINE / 10000) * vote_power / total_power,"\n");
+         if (!force_change)   update_elected_bps();
+
+
+      }
+
       if( sch == schs_tbl.end()) {
          schs_tbl.emplace(bpname, [&]( schedule_info& s ) {
             s.version = schedule_version;
@@ -24,7 +96,8 @@ namespace eosiosystem {
             }
          });
          reset_block_weight(block_producers);
-      } else {
+      }
+      else {
          schs_tbl.modify(sch, 0, [&]( schedule_info& s ) {
             for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
                if( s.producers[i].bpname == bpname ) {
@@ -34,45 +107,7 @@ namespace eosiosystem {
             }
          });
       }
-
-      if( current_block_num() % UPDATE_CYCLE == 0 ) {
-
-         reward_table reward_inf(_self,_self);
-         auto reward = reward_inf.find(REWARD_ID);
-         if(reward == reward_inf.end()) {
-            init_reward_info();
-            reward = reward_inf.find(REWARD_ID);
-         }
-
-         int64_t block_rewards = reward->cycle_reward;
-
-         if(current_block_num() % STABLE_BLOCK_HEIGHT == 0) {
-            update_reward_stable();
-         }
-         else if(current_block_num() % REWARD_MODIFY_COUNT == 0) {
-            reward_inf.modify(reward, 0, [&]( reward_info& s ) {
-               s.cycle_reward = static_cast<int64_t>(s.cycle_reward * s.gradient / 10000);
-            });
-         }
-
-         INLINE_ACTION_SENDER(eosio::token, issue)( config::token_account_name, {{::config::system_account_name,N(active)}},
-                                             { ::config::reward_account_name, 
-                                             asset(block_rewards), 
-                                             "issue tokens for producer pay"} );
-         
-         uint64_t  vote_power = get_vote_power();
-         uint64_t  coin_power = get_coin_power();
-         uint64_t total_power = vote_power + coin_power;
-         reward_develop(block_rewards * REWARD_DEVELOP / 10000);
-         reward_block(schedule_version,block_rewards * REWARD_BP / 10000);
-         if (total_power != 0) {
-            reward_mines((block_rewards * REWARD_MINE / 10000) * coin_power / total_power);
-            reward_bps((block_rewards * REWARD_MINE / 10000) * vote_power / total_power);
-         }
-         print("logs:",block_rewards,"---",block_rewards * REWARD_DEVELOP / 10000,"---",block_rewards * REWARD_BP / 10000,"---",(block_rewards * REWARD_MINE / 10000) * coin_power / total_power,"---",
-         (block_rewards * REWARD_MINE / 10000) * vote_power / total_power,"\n");
-         update_elected_bps();
-      }
+      
    }
 
    void system_contract::updatebp( const account_name bpname, const public_key block_signing_key,
@@ -113,7 +148,9 @@ namespace eosiosystem {
       creation_producer creation_bp_tbl(_self,_self);
       for (int i=0;i!=26;++i) {
          creation_bp_tbl.emplace(_self, [&]( creation_bp& b ) {
-            b.bpname = CREATION_BP[i];
+            b.bpname = CREATION_BP[i].bp_name;
+            b.total_staked = CREATION_BP[i].total_staked;
+            b.mortgage = CREATION_BP[i].mortgage;
          });
       }
    }
@@ -125,7 +162,7 @@ namespace eosiosystem {
       std::vector<int64_t> sorts(NUM_OF_TOP_BPS, 0);
 
       creation_producer creation_bp_tbl(_self,_self);
-      auto create_bp = creation_bp_tbl.find(CREATION_BP[0]);
+      auto create_bp = creation_bp_tbl.find(CREATION_BP[0].bp_name);
       if (create_bp == creation_bp_tbl.end()) {
          init_creation_bp();
       }
@@ -143,12 +180,28 @@ namespace eosiosystem {
          for( int i = 0; i < NUM_OF_TOP_BPS; ++i ) {
             auto total_shaked = it->total_staked;
             auto bp_mortgage = it->mortgage;
-            create_bp = creation_bp_tbl.find(it->name);
-            if (create_bp != creation_bp_tbl.end()) {
-               total_shaked = 4000000;
-               bp_mortgage = asset(400000000);
+            if (it->isactive() && bp_mortgage <= asset(0)) {
+               create_bp = creation_bp_tbl.find(it->name);
+               if (create_bp != creation_bp_tbl.end()) {
+                  total_shaked = create_bp->total_staked;
+                  bp_mortgage = asset(create_bp->mortgage);
+               }
             }
-            if( sorts[size_t(i)] <= total_shaked && it->isactive && bp_mortgage > asset(block_mortgege)) {
+            if (it->active_type == static_cast<int32_t>(active_type::LackMortgage) && it->active_change_block_num < (current_block_num() - LACKMORTGAGE_FREEZE)) {
+               bps_tbl.modify(it, _self, [&]( bp_info& b ) {
+                  b.active_type = static_cast<int32_t>(active_type::Normal);
+               });
+            }
+
+            if (bp_mortgage < asset(block_mortgege,CORE_SYMBOL) && is_super_bp(it->name) && it->active_type == static_cast<int32_t>(active_type::Normal)) {
+               bps_tbl.modify(it, _self, [&]( bp_info& b ) {
+                  b.active_type = static_cast<int32_t>(active_type::LackMortgage);
+                  b.active_change_block_num = current_block_num();
+               });
+            }
+
+            if( sorts[size_t(i)] <= total_shaked && it->isactive() && it->active_type != static_cast<int32_t>(active_type::Punish) 
+                  && bp_mortgage > asset(block_mortgege)) {
                eosio::producer_key key;
                key.producer_name = it->name;
                key.block_signing_key = it->block_signing_key;
@@ -194,11 +247,12 @@ namespace eosiosystem {
 
    // TODO it need change if no bonus to accounts
 
-   void system_contract::reward_block(const uint32_t schedule_version,const uint64_t reward_amount ) {
+   void system_contract::reward_block(const uint32_t schedule_version,const uint64_t reward_amount,bool force_change) {
       schedules_table schs_tbl(_self, _self);
       bps_table bps_tbl(_self, _self);
       auto sch = schs_tbl.find(uint64_t(schedule_version));
       eosio_assert(sch != schs_tbl.end(),"cannot find schedule");
+      //print("-----------find schedule--------------\n");
       int64_t total_block_out_age = 0;
       asset total_punish = asset(0);
       reward_table reward_inf(_self,_self);
@@ -207,33 +261,70 @@ namespace eosiosystem {
          init_reward_info();
          reward = reward_inf.find(REWARD_ID);
       }
+      auto current_block = current_block_num();
+      last_drain_bp drain_bp_tbl(_self,_self);
       int64_t reward_pre_block = reward->cycle_reward / UPDATE_CYCLE;
       for( int i = 0; i < NUM_OF_TOP_BPS; i++ ) {
          auto bp = bps_tbl.find(sch->producers[i].bpname);
          eosio_assert(bp != bps_tbl.end(),"cannot find bpinfo");
-         if(bp->mortgage < asset(MORTGAGE * reward_pre_block)) {
+
+         auto bp_mortgage = bp->mortgage;
+         if (bp_mortgage <= asset(0)) {
+            for (int i = 0;i!=26;++i) {
+               if (CREATION_BP[i].bp_name == bp->name) {
+                  bp_mortgage = asset(CREATION_BP[i].mortgage);
+                  break;
+               }
+            }
+         }
+         
+         if(bp_mortgage < asset(MORTGAGE * reward_pre_block)) {
             print(sch->producers[i].bpname," Insufficient mortgage, please replenish in time \n");
             continue;
          }
+         auto drain_block_num = CYCLE_PREBP_BLOCK + bp->last_block_amount - sch->producers[i].amount;
+         if (force_change) drain_block_num = 0;
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-             b.block_age +=  (sch->producers[i].amount > b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
+            b.block_age +=  (sch->producers[i].amount > b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
             total_block_out_age += (sch->producers[i].amount > b.last_block_amount ? sch->producers[i].amount - b.last_block_amount : sch->producers[i].amount) * b.block_weight;
                
-            if(sch->producers[i].amount - b.last_block_amount != PER_CYCLE_AMOUNT) {
+            if(drain_block_num != 0) {
                b.block_weight = BLOCK_OUT_WEIGHT;
-               b.mortgage -= asset(reward_pre_block * 2);
-               total_punish += asset(reward_pre_block * 2);
+               b.mortgage -= asset(reward_pre_block * 2 * drain_block_num,CORE_SYMBOL);
+               b.remain_punish += asset(reward_pre_block * 2 * drain_block_num,CORE_SYMBOL);
+               b.total_drain_block += drain_block_num;
             } else {
               b.block_weight += 1;
             }
             b.last_block_amount = sch->producers[i].amount;
          });
+
+         auto drainbp = drain_bp_tbl.find(sch->producers[i].bpname);
+         if (drain_block_num != 0) {
+            if (drainbp == drain_bp_tbl.end()) {
+               drain_bp_tbl.emplace(_self, [&]( last_drain_block& s ) {
+                  s.bpname = sch->producers[i].bpname;
+                  s.drain_num = drain_block_num;
+                  s.update_block_num = current_block;
+               });
+            }
+            else {
+               drain_bp_tbl.modify(drainbp, _self, [&]( last_drain_block& s ) {
+                  s.drain_num += drain_block_num;
+                  s.update_block_num = current_block;
+               });
+            }
+         }
+         else {
+            if (drainbp != drain_bp_tbl.end()) {
+               drain_bp_tbl.erase(drainbp);
+            }
+         }
       }
 
       reward_inf.modify(reward, 0, [&]( reward_info& s ) {
          s.reward_block_out += asset(reward_amount);
          s.total_block_out_age += total_block_out_age;
-         s.bp_punish += total_punish;
       });
    }
 
@@ -247,18 +338,34 @@ namespace eosiosystem {
          return;
       }
       const auto rewarding_bp_staked_threshold = staked_all_bps / 200;
+      auto budget_reward = asset{0,CORE_SYMBOL};
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
-         if( !it->isactive || it->total_staked <= rewarding_bp_staked_threshold || it->commission_rate < 1 ||
+         if( it->total_staked <= rewarding_bp_staked_threshold || it->commission_rate < 1 ||
              it->commission_rate > 10000 ) {
             continue;
          }
+
          auto vote_reward = static_cast<int64_t>( reward_amount  * double(it->total_staked) / double(staked_all_bps));
+         if (it->active_type == static_cast<int32_t>(active_type::Punish) || it->active_type == static_cast<int32_t>(active_type::Removed)) {
+            budget_reward += asset(vote_reward,CORE_SYMBOL);
+            continue;
+         }
+
          const auto& bp = bps_tbl.get(it->name, "bpname is not registered");
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
             b.rewards_pool += asset(vote_reward * (10000 - b.commission_rate) / 10000);
             b.rewards_block += asset(vote_reward * b.commission_rate / 10000);
          });
       }
+      reward_table reward_inf(_self,_self);
+      auto reward = reward_inf.find(REWARD_ID);
+      if(reward == reward_inf.end()) {
+         init_reward_info();
+         reward = reward_inf.find(REWARD_ID);
+      }
+      reward_inf.modify(reward, _self, [&]( reward_info& s ) {
+         s.reward_budget += budget_reward;
+      });
    }
 
    void system_contract::init_reward_info() {
@@ -270,7 +377,7 @@ namespace eosiosystem {
             s.reward_block_out = asset(0);
             s.reward_develop = asset(0);
             s.total_block_out_age = 0;
-            s.bp_punish = asset(0);
+            s.reward_budget = asset(0);
             s.cycle_reward = PRE_BLOCK_REWARDS;
             s.gradient = PRE_GRADIENT;
          });
@@ -294,6 +401,7 @@ namespace eosiosystem {
          const auto& bp = bps_tbl.get(block_producers[i], "bpname is not registered");
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
             b.block_weight = BLOCK_OUT_WEIGHT;
+            b.last_block_amount = 0;
          });
       }
    }
@@ -326,6 +434,11 @@ namespace eosiosystem {
 
    void system_contract::addmortgage(const account_name bpname,const account_name payer,asset quantity) {
       require_auth(payer);
+
+      creation_producer creation_bp_tbl(_self,_self);
+      auto create_bp = creation_bp_tbl.find(bpname);
+      eosio_assert(create_bp == creation_bp_tbl.end(),"creation bp cannot add mortgage");
+      
       bps_table bps_tbl(_self, _self);
       auto bp = bps_tbl.find(bpname);
       eosio_assert(bp != bps_tbl.end(),"can not find the bp");
@@ -344,7 +457,7 @@ namespace eosiosystem {
       bps_table bps_tbl(_self, _self);
       auto bp = bps_tbl.find(bpname);
       eosio_assert(bp != bps_tbl.end(),"can not find the bp");
-      eosio_assert(bp->mortgage < quantity,"the quantity is bigger then bp mortgage");
+      eosio_assert(bp->mortgage > quantity,"the quantity is bigger then bp mortgage");
       
       bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
             b.mortgage -= quantity;
@@ -399,10 +512,18 @@ namespace eosiosystem {
             s.total_block_out_age -= block_age;
          });
       eosio_assert(claim_block > asset(100000),"claim amount must > 10");
-      INLINE_ACTION_SENDER(eosio::token, castcoin)(
-         config::token_account_name,
-         { ::config::reward_account_name, N(active) },
-         { ::config::reward_account_name, receiver, claim_block });
+      if (bp->mortgage == asset(0)) {
+         reward_inf.modify(reward, 0, [&]( reward_info& s ) {
+            s.reward_budget += claim_block;
+         });
+      }
+      else {
+         INLINE_ACTION_SENDER(eosio::token, castcoin)(
+            config::token_account_name,
+            { ::config::reward_account_name, N(active) },
+            { ::config::reward_account_name, receiver, claim_block });
+      }
+
    }
 
    void system_contract::claimvote(const account_name bpname,const account_name receiver) {
@@ -415,7 +536,7 @@ namespace eosiosystem {
       const auto& vts = votes_tbl.get(bpname, "voter have not add votes to the the producer yet");
 
       const auto curr_block_num = current_block_num();
-      const auto last_devide_num = curr_block_num - (curr_block_num % UPDATE_CYCLE);
+      const auto last_devide_num = curr_block_num - ((curr_block_num - 1) % UPDATE_CYCLE);
 
       const auto newest_voteage =
             static_cast<int128_t>(vts.voteage + vts.vote.amount / 10000 * (last_devide_num - vts.voteage_update_height));
@@ -425,7 +546,7 @@ namespace eosiosystem {
       eosio_assert(0 < newest_total_voteage, "claim is not available yet");
       const auto amount_voteage = static_cast<int128_t>(bp.rewards_pool.amount) * newest_voteage;
       asset reward = asset(static_cast<int64_t>( amount_voteage / newest_total_voteage ));
-      eosio_assert(asset{} <= reward && reward <= bp.rewards_pool,
+      eosio_assert(asset(0) <= reward && reward <= bp.rewards_pool,
                    "need 0 <= claim reward quantity <= rewards_pool");
 
       auto reward_all = reward;
@@ -461,6 +582,228 @@ namespace eosiosystem {
          }
       }
       return false;
+   }
+
+   bool system_contract::is_super_bp( account_name bpname) {
+      schedules_table schs_tbl(_self, _self);
+      auto producer_schs = schs_tbl.crbegin();
+      int32_t i = 0;
+      for ( i = 0;i!= NUM_OF_TOP_BPS; ++i) {
+         if (producer_schs->producers[i].bpname == bpname) {
+            return true;
+         }
+      }
+      return false;
+   }
+
+   int32_t system_contract::effective_approve_num(account_name punishbpname) {
+      punish_bps punish_bp(_self,_self);
+      auto bp_punish = punish_bp.find(punishbpname);
+      eosio_assert(bp_punish != punish_bp.end(), "the bp is not be punish");
+
+      approve_punish_bps app_punish_bp(_self,_self);
+      auto app_punish = app_punish_bp.find(punishbpname);
+      eosio_assert(app_punish != app_punish_bp.end(), "no producer approve to punish the bp");
+
+      schedules_table schs_tbl(_self, _self);
+      auto producer_schs = schs_tbl.crbegin();
+      int32_t i = 0,j = 0,result = 0;
+      for (i=0;i!=app_punish->approve_producer.size();++i) {
+         for (j=0;j!=NUM_OF_TOP_BPS;++j) {
+            if (producer_schs->producers[j].bpname == app_punish->approve_producer[i]) {
+               result++;
+               break;
+            }
+         }
+      }
+
+      return result;
+   }
+
+   void system_contract::exec_punish_bp(account_name punishbpname) {
+      auto effective_approve = effective_approve_num(punishbpname);
+      if (effective_approve < NUM_OF_TOP_BPS * 2 / 3) {
+         print("Need confirmation from other producers to punish the bp");
+         return ;
+      }
+
+      bps_table bps_tbl(_self, _self);
+      auto punishbp = bps_tbl.find(punishbpname);
+      if (punishbp == bps_tbl.end()) {
+         print("can not find punish bp");
+         return ;
+      }
+
+      auto total_reward = punishbp->remain_punish;
+      bps_tbl.modify(punishbp, _self, [&]( bp_info& b ) {
+         b.remain_punish = asset{0,CORE_SYMBOL};
+         b.active_type = static_cast<int32_t>(active_type::Punish);
+         b.active_change_block_num = current_block_num();
+      });
+
+      auto reward_initiator = total_reward / 2;
+
+      punish_bps punish_bp(_self,_self);
+      auto bp_punish = punish_bp.find(punishbpname);
+      eosio_assert(bp_punish != punish_bp.end(), "the bp is not be punish");
+      INLINE_ACTION_SENDER(force::token, transfer)(
+         config::token_account_name,
+         { ::config::system_account_name, N(active) },
+         { ::config::system_account_name, bp_punish->initiator, reward_initiator + PUNISH_BP_FEE, "cancle punishbp deposit" });
+      punish_bp.erase(bp_punish);
+
+      auto reward_approve = total_reward / 2 / effective_approve;
+      approve_punish_bps app_punish_bp(_self,_self);
+      auto app_punish = app_punish_bp.find(punishbpname);
+      eosio_assert(app_punish != app_punish_bp.end(), "no producer approve to punish the bp");
+      auto iSize = app_punish->approve_producer.size();
+      for(int i=0;i!=iSize;++i) {
+         if (is_super_bp(app_punish->approve_producer[i])) {
+            INLINE_ACTION_SENDER(force::token, transfer)(
+               config::token_account_name,
+               { ::config::system_account_name, N(active) },
+               { ::config::system_account_name, app_punish->approve_producer[i], reward_approve, "cancle punishbp deposit" });
+         }
+      }
+      app_punish_bp.erase(app_punish);
+
+      last_drain_bp drain_bp_tbl(_self,_self);
+      auto drainbp = drain_bp_tbl.find(punishbpname); 
+      if (drainbp != drain_bp_tbl.end()) {
+         drain_bp_tbl.erase(drainbp);
+      }
+   }
+
+   // @abi action
+   void system_contract::punishbp(const account_name initiator,const account_name bpname) {
+      require_auth(initiator);
+
+      INLINE_ACTION_SENDER(force::token, transfer)(
+         ::config::token_account_name,
+         { initiator, N(active) },
+         { initiator, ::config::system_account_name, PUNISH_BP_FEE, "punishbp deposit" });
+
+      last_drain_bp drain_bp_tbl(_self,_self);
+      auto drainbp = drain_bp_tbl.find(bpname); 
+      eosio_assert(drainbp != drain_bp_tbl.end(),"the bp cannot be punished");
+
+      creation_producer creation_bp_tbl(_self,_self);
+      auto create_bp = creation_bp_tbl.find(bpname);
+      eosio_assert(create_bp == creation_bp_tbl.end(),"creation bp cannot be punished");
+
+      punish_bps punish_bp(_self,_self);
+      auto bp_punish = punish_bp.find(bpname);
+      if (bp_punish != punish_bp.end()) {
+         eosio_assert(bp_punish->update_block_num < current_block_num() - UPDATE_CYCLE * CYCLE_PREDAY,"the punish motion has exist");
+
+         INLINE_ACTION_SENDER(force::token, transfer)(
+            ::config::token_account_name,
+            { ::config::system_account_name, N(active) },
+            { ::config::system_account_name, bp_punish->initiator, PUNISH_BP_FEE, "cancle punishbp return deposit" });
+
+         punish_bp.erase(bp_punish);
+
+         approve_punish_bps app_punish_bp(_self,_self);
+         auto app_punish = app_punish_bp.find(bpname);
+         if (app_punish != app_punish_bp.end()) {
+            app_punish_bp.erase(app_punish);
+         }
+      }
+
+      punish_bp.emplace(initiator,[&]( punish_bp_info& s) {
+         s.bpname = bpname;
+         s.initiator = initiator;
+         s.drain_num = drainbp->drain_num;
+         s.update_block_num = current_block_num();
+      });
+   }
+   // @abi action
+   void system_contract::canclepunish(const account_name initiator,const account_name bpname) {
+      require_auth(initiator);
+
+      punish_bps punish_bp(_self,_self);
+      auto bp_punish = punish_bp.find(bpname);
+      eosio_assert(bp_punish != punish_bp.end(), "the bp is not be punish");
+      eosio_assert(initiator == bp_punish->initiator,"only the initiator can cancle the punish proposal");
+      
+      if ( bp_punish->update_block_num < current_block_num() - UPDATE_CYCLE * CYCLE_PREDAY) {
+         INLINE_ACTION_SENDER(force::token, transfer)(
+            ::config::token_account_name,
+            { ::config::system_account_name, N(active) },
+            { ::config::system_account_name, initiator, PUNISH_BP_FEE, "cancle punishbp return deposit" });
+      }
+      
+      punish_bp.erase(bp_punish);
+
+      approve_punish_bps app_punish_bp(_self,_self);
+      auto app_punish = app_punish_bp.find(bpname);
+      if (app_punish != app_punish_bp.end()) {
+         app_punish_bp.erase(app_punish);
+      }
+   }
+   // @abi action
+   void system_contract::apppunish(const account_name bpname,const account_name punishbpname) {
+      require_auth(bpname);
+
+      eosio_assert(is_super_bp(bpname),"only super bp can approve to punish bp");
+
+      punish_bps punish_bp(_self,_self);
+      auto bp_punish = punish_bp.find(punishbpname);
+      eosio_assert(bp_punish != punish_bp.end(), "the bp is not be punish");
+      eosio_assert(bp_punish->update_block_num > current_block_num() - UPDATE_CYCLE * CYCLE_PREDAY, "the punish motion is already expired");
+
+      approve_punish_bps app_punish_bp(_self,_self);
+      auto app_punish = app_punish_bp.find(punishbpname);
+      if (app_punish == app_punish_bp.end()) {
+         app_punish_bp.emplace(bpname,[&]( approve_punish_bp& s) {
+            s.bpname = punishbpname;
+            s.approve_producer.push_back(bpname);
+         });
+      }
+      else {
+         auto iter = std::find(app_punish->approve_producer.begin(),app_punish->approve_producer.end(),bpname);
+         eosio_assert(iter == app_punish->approve_producer.end(),"the bp has approved");
+         app_punish_bp.modify(app_punish, _self, [&]( approve_punish_bp& s ) {
+               s.approve_producer.push_back(bpname);
+            });
+      }
+
+      app_punish = app_punish_bp.find(punishbpname);
+      if (app_punish->approve_producer.size() > NUM_OF_TOP_BPS * 2 / 3 ) {
+         exec_punish_bp(punishbpname);
+      }
+   }
+   // @abi action
+   void system_contract::unapppunish(const account_name bpname,const account_name punishbpname) {
+      require_auth(bpname);
+     
+      approve_punish_bps app_punish_bp(_self,_self);
+      auto app_punish = app_punish_bp.find(punishbpname);
+      eosio_assert(app_punish != app_punish_bp.end(), "can find the approve punish record");
+      app_punish_bp.erase(app_punish);
+   }
+   // @abi action
+   void system_contract::bailpunish(const account_name punishbpname) {
+      require_auth(punishbpname);
+
+      INLINE_ACTION_SENDER(force::token, transfer)(
+         ::config::token_account_name,
+         { punishbpname, N(active) },
+         { punishbpname, ::config::system_account_name, BAIL_PUNISH_FEE, "bail punish fee" });
+
+      bps_table bps_tbl(_self, _self);
+      auto punishbp = bps_tbl.find(punishbpname);
+      eosio_assert(punishbp != bps_tbl.end(),"can not find bp");
+
+      if (punishbp->active_type == static_cast<int32_t>(active_type::Punish) 
+         && punishbp->active_change_block_num + UPDATE_CYCLE*CYCLE_PREDAY*2 < current_block_num()) {
+         bps_tbl.modify(punishbp, _self, [&]( bp_info& b ) {
+            b.active_type = static_cast<int32_t>(active_type::Normal);
+         });
+      }
+      else {
+         eosio_assert(false,"the bp can not to be bailed");
+      }
    }
     
 }

@@ -170,6 +170,30 @@
           "type": "account_name"
         }
       ]
+    },
+    {
+      "name": "opencast",
+      "base": "",
+      "fields": [
+        {
+          "name": "to",
+          "type": "account_name"
+        }
+      ]
+    },
+    {
+      "name": "closecast",
+      "base": "",
+      "fields": [
+        {
+          "name": "to",
+          "type": "account_name"
+        },
+        {
+          "name": "finish_block",
+          "type": "int32"
+        }
+      ]
     }
   ],
   "actions": [
@@ -206,6 +230,16 @@
     {
       "name":"takecoin",
       "type":"takecoin",
+      "ricardian_contract":""
+    },
+    {
+      "name":"opencast",
+      "type":"opencast",
+      "ricardian_contract":""
+    },
+    {
+      "name":"closecast",
+      "type":"closecast",
       "ricardian_contract":""
     }
   ],

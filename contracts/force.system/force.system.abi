@@ -100,11 +100,14 @@
         {"name":"voteage_update_height","type":"uint32"},
         {"name":"url",                  "type":"string"},
         {"name":"emergency",            "type":"bool"},
-        {"name":"isactive",             "type":"bool"},
+        {"name":"active_type",             "type":"int32"},
         {"name":"block_age",            "type":"int64"},
         {"name":"last_block_amount",    "type":"uint32"},
         {"name":"block_weight",    "type":"int64"},
-        {"name":"bp_mortgageage",               "type":"asset"}
+        {"name":"bp_mortgageage",               "type":"asset"},
+        {"name":"total_drain_block",             "type":"int32"},
+        {"name":"remain_punish",             "type":"asset"},
+        {"name":"active_change_block_num",             "type":"int32"},
       ]
     },{
       "name": "setemergency",
@@ -350,10 +353,13 @@
             {"name":"id", "type":"uint64" },
             {"name":"reward_block_out",      "type":"asset"},
             {"name":"reward_develop",        "type":"asset"},
+            {"name":"reward_budget",             "type":"asset"},
             {"name":"total_block_out_age",   "type":"int64"},
-            {"name":"bp_punish",             "type":"asset"},
             {"name":"cycle_reward",          "type":"int64"},
-            {"name":"gradient",              "type":"int32"}
+            {"name":"gradient",              "type":"int32"},
+            {"name":"total_reward_time",              "type":"int32"},
+            {"name":"last_reward_block_num",              "type":"int32"},
+            {"name":"last_producer_name",              "type":"account_name"}
          ]
        },{
          "name": "addmortgage",
@@ -395,7 +401,9 @@
          "name": "creation_bp",
          "base": "",
          "fields": [
-            {"name":"bpname",                "type":"account_name"}
+            {"name":"bpname",                "type":"account_name"},
+            {"name":"total_staked",   "type":"int64"},
+            {"name":"mortgage",   "type":"int64"}
          ]
        },{
          "name": "fee",
@@ -404,6 +412,64 @@
             {"name":"payer",                 "type":"account_name"}
             {"name":"bpname",                "type":"account_name"}
             {"name":"voteage",               "type":"int64"}
+         ]
+       },{
+         "name": "punish_bp_info",
+         "base": "",
+         "fields": [
+            {"name":"initiator",                "type":"account_name"},
+            {"name":"bpname",                "type":"account_name"},
+            {"name":"drain_num",   "type":"int32"},
+            {"name":"update_block_num",   "type":"int32"}
+         ]
+       },{
+         "name": "last_drain_block",
+         "base": "",
+         "fields": [
+            {"name":"bpname",                "type":"account_name"},
+            {"name":"drain_num",   "type":"int32"},
+            {"name":"update_block_num",   "type":"int32"}
+         ]
+       },{
+         "name": "approve_punish_bp",
+         "base": "",
+         "fields": [
+            {"name":"bpname",                "type":"account_name"},
+            {"name":"approve_producer",   "type":"account_name[]"}
+         ]
+       },{
+         "name": "punishbp",
+         "base": "",
+         "fields": [
+            {"name":"initiator",                "type":"account_name"},
+            {"name":"bpname",                "type":"account_name"}
+         ]
+       },{
+         "name": "canclepunish",
+         "base": "",
+         "fields": [
+            {"name":"initiator",                "type":"account_name"},
+            {"name":"bpname",                "type":"account_name"}
+         ]
+       },{
+         "name": "apppunish",
+         "base": "",
+         "fields": [
+            {"name":"bpname",                "type":"account_name"},
+            {"name":"punishbpname",                "type":"account_name"}
+         ]
+       },{
+         "name": "unapppunish",
+         "base": "",
+         "fields": [
+            {"name":"bpname",                "type":"account_name"},
+            {"name":"punishbpname",                "type":"account_name"}
+         ]
+       },{
+         "name": "bailpunish",
+         "base": "",
+         "fields": [
+            {"name":"bpname",                "type":"account_name"}
          ]
        }
   ],
@@ -519,6 +585,26 @@
          "name": "fee",
          "type": "fee",
          "ricardian_contract": ""
+      },{
+         "name": "punishbp",
+         "type": "punishbp",
+         "ricardian_contract": ""
+      },{
+         "name": "canclepunish",
+         "type": "canclepunish",
+         "ricardian_contract": ""
+      },{
+         "name": "apppunish",
+         "type": "apppunish",
+         "ricardian_contract": ""
+      },{
+         "name": "unapppunish",
+         "type": "unapppunish",
+         "ricardian_contract": ""
+      },{
+         "name": "bailpunish",
+         "type": "bailpunish",
+         "ricardian_contract": ""
       }
   ],
   "tables": [
@@ -585,6 +671,24 @@
        },{
             "name": "creationbp",
             "type": "creation_bp",
+            "index_type": "i64",
+            "key_names" : ["bpname"],
+            "key_types" : ["uint64"]
+       },{
+            "name": "lastdrainbp",
+            "type": "last_drain_block",
+            "index_type": "i64",
+            "key_names" : ["bpname"],
+            "key_types" : ["uint64"]
+       },{
+            "name": "punishbps",
+            "type": "punish_bp_info",
+            "index_type": "i64",
+            "key_names" : ["bpname"],
+            "key_types" : ["uint64"]
+       },{
+            "name": "apppunishbps",
+            "type": "approve_punish_bp",
             "index_type": "i64",
             "key_names" : ["bpname"],
             "key_types" : ["uint64"]
