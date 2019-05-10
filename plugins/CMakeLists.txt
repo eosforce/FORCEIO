@@ -21,7 +21,9 @@ add_subdirectory(mongo_db_plugin)
 add_subdirectory(login_plugin)
 add_subdirectory(test_control_plugin)
 add_subdirectory(test_control_api_plugin)
-add_subdirectory(bus_plugin)
+
+# no use bus plugin now
+# add_subdirectory(bus_plugin)
 
 # Forward variables to top level so packaging picks them up
 set(CPACK_DEBIAN_PACKAGE_DEPENDS ${CPACK_DEBIAN_PACKAGE_DEPENDS} PARENT_SCOPE)

@@ -72,7 +72,8 @@ if(BUILD_MONGO_DB_PLUGIN)
 endif()
 # notify_plugin
 target_link_libraries( ${NODE_EXECUTABLE_NAME} PRIVATE -Wl,${whole_archive_flag} notify_plugin -Wl,${no_whole_archive_flag} )
-target_link_libraries( ${NODE_EXECUTABLE_NAME} PRIVATE -Wl,${whole_archive_flag} bus_plugin -Wl,${no_whole_archive_flag} )
+
+# target_link_libraries( ${NODE_EXECUTABLE_NAME} PRIVATE -Wl,${whole_archive_flag} bus_plugin -Wl,${no_whole_archive_flag} )
 
 include(additionalPlugins)
 
