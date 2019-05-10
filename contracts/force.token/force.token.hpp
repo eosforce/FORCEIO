@@ -56,7 +56,7 @@ namespace eosio {
    static constexpr double WEAKEN_CAST_NUM = 2.5;
    #else
    static constexpr uint32_t PRE_CAST_NUM = 5184000;
-   static constexpr uint32_t STABLE_CAST_NUM = 1209600;
+   static constexpr uint32_t STABLE_CAST_NUM = 604800;
    static constexpr double WEAKEN_CAST_NUM = 2.5;
    #endif
 

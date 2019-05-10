@@ -56,7 +56,7 @@ using std::string;
 #ifdef BEFORE_ONLINE_TEST  
 static constexpr uint32_t UPDATE_CYCLE = 126;
 #else
-static constexpr uint32_t UPDATE_CYCLE = 630;
+static constexpr uint32_t UPDATE_CYCLE = 315;
 #endif
 static constexpr uint64_t OTHER_COIN_WEIGHT = 500;
 class token : public eosio::contract {

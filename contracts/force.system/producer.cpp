@@ -694,7 +694,7 @@ namespace eosiosystem {
       punish_bps punish_bp(_self,_self);
       auto bp_punish = punish_bp.find(bpname);
       if (bp_punish != punish_bp.end()) {
-         eosio_assert(bp_punish->update_block_num < current_block_num() - UPDATE_CYCLE * CYCLE_PREDAY,"the punish motion has exist");
+         eosio_assert(bp_punish->update_block_num < static_cast<int32_t>(current_block_num() - UPDATE_CYCLE * CYCLE_PREDAY),"the punish motion has exist");
 
          INLINE_ACTION_SENDER(force::token, transfer)(
             ::config::token_account_name,
@@ -726,7 +726,7 @@ namespace eosiosystem {
       eosio_assert(bp_punish != punish_bp.end(), "the bp is not be punish");
       eosio_assert(initiator == bp_punish->initiator,"only the initiator can cancle the punish proposal");
       
-      if ( bp_punish->update_block_num < current_block_num() - UPDATE_CYCLE * CYCLE_PREDAY) {
+      if ( bp_punish->update_block_num < static_cast<int32_t>(current_block_num() - UPDATE_CYCLE * CYCLE_PREDAY)) {
          INLINE_ACTION_SENDER(force::token, transfer)(
             ::config::token_account_name,
             { ::config::system_account_name, N(active) },
@@ -750,7 +750,7 @@ namespace eosiosystem {
       punish_bps punish_bp(_self,_self);
       auto bp_punish = punish_bp.find(punishbpname);
       eosio_assert(bp_punish != punish_bp.end(), "the bp is not be punish");
-      eosio_assert(bp_punish->update_block_num > current_block_num() - UPDATE_CYCLE * CYCLE_PREDAY, "the punish motion is already expired");
+      eosio_assert(bp_punish->update_block_num > static_cast<int32_t>(current_block_num() - UPDATE_CYCLE * CYCLE_PREDAY), "the punish motion is already expired");
 
       approve_punish_bps app_punish_bp(_self,_self);
       auto app_punish = app_punish_bp.find(punishbpname);
