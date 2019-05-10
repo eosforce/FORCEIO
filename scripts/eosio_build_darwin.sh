@@ -480,64 +480,6 @@
 	else
 		printf "\\tWASM found at /usr/local/wasm/bin/.\\n"
 	fi
-	
-	if [ ! -e "${HOME}"/opt/protobuf ]; then
-		printf "\\n\\tstart to install protobuf\\n"
-		if ! cd externals/grpc/third_party/protobuf/ 
-		then
-			printf "\\n\\tunable to enter direction protobuf.\\n"
-			printf "\\n\\tExiting now.\\n\\n"
-			exit 1;
-		fi
-		if ! ./autogen.sh 
-		then
-			printf "\\n\\tunable to make configure.\\n"
-			printf "\\n\\tExiting now.\\n\\n"
-			exit 1;
-		fi
-		if ! ./configure --prefix="${HOME}"/opt/protobuf
-		then
-			printf "\\n\\tconfigure fail.\\n"
-			printf "\\n\\tExiting now.\\n\\n"
-			exit 1;
-		fi
-		if ! make -j"${CPU_CORE}"
-		then
-			printf "\\n\\tprotobuf make fail.\\n"
-			printf "\\n\\tExiting now.\\n\\n"
-			exit 1;
-		fi
-		if ! make install
-		then
-			printf "\\n\\tprotobuf unable to enter direction protobuf.\\n"
-			printf "\\n\\tExiting now.\\n\\n"
-			exit 1;
-		fi	
-	fi
-	if [ ! -e "${HOME}"/opt/grpc ]; then
-		printf "\\n\\tstart to install grpc\\n"
-		if ! cd ../..
-		then
-			printf "\\n\\tunable to enter direction grpc.\\n"
-			printf "\\n\\tExiting now.\\n\\n"
-			exit 1;
-		fi
-		if ! make -j"${CPU_CORE}"
-		then
-			printf "\\n\\tgrpc make fail.\\n"
-			printf "\\n\\tExiting now.\\n\\n"
-			exit 1;
-		fi
-		if ! make install prefix="${HOME}"/opt/grpc
-		then
-			printf "\\n\\tgrpc make install fail.\\n"
-			printf "\\n\\tExiting now.\\n\\n"
-			exit 1;
-		fi
-	fi
-
-
-
 
 	function print_instructions()
 	{
