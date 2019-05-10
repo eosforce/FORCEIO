@@ -201,57 +201,9 @@ namespace eosio { namespace chain {
     *  Extentions are prefixed with type and are a buffer that can be
     *  interpreted by code that is aware and ignored by unaware code.
     */
-   struct extensions_type {
-      vector<std::pair<uint64_t, vector<char>>> datas;
+   typedef vector<std::pair<uint16_t,vector<char>>> extensions_type;
 
-      std::size_t size() const {
-         return datas.size();
-      }
-
-   public:
-      // get data from extensions
-      template <typename T>
-      inline T get( const name& typ_name ) const {
-         // datas size is not too mush
-         for( const auto& i : datas ){
-            if( i.first == typ_name.value ){
-               return fc::raw::unpack<T>(i.second);
-            }
-         }
-
-         FC_THROW("not found typ ${t} in ext data", ("t", typ_name));
-      }
-
-      // get data to res, if no found return false
-      template <typename T>
-      inline bool get( const name& typ_name, T& res ) const {
-         for( const auto& i : datas ){
-            if( i.first == typ_name.value ){
-               fc::raw::unpack(i.second, res);
-               return true;
-            }
-         }
-
-         return false;
-      }
-
-      // set data to extensions
-      template <typename T>
-      inline void set( const name& typ_name, const T& data ) {
-         // datas size is not too mush
-         for( const auto& i : datas ){
-            if( i.first == typ_name.value ){
-               i.second = fc::raw::pack(data);
-               return;
-            }
-         }
-
-         datas.emplace_back(typ_name, fc::raw::pack(data));
-      }
-
-   };
 
 } }  // eosio::chain
 
 FC_REFLECT( eosio::chain::void_t, )
-FC_REFLECT( eosio::chain::extensions_type, (datas) )

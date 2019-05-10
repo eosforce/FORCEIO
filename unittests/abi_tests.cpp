@@ -485,7 +485,7 @@ fc::variant verify_type_round_trip_conversion( const abi_serializer& abis, const
   "tables": [],
   "ricardian_clauses": [{"id":"clause A","body":"clause body A"},
               {"id":"clause B","body":"clause body B"}],
-  "abi_extensions": { "datas":[] }
+  "abi_extensions": []
 }
 )=====";
 
@@ -720,7 +720,7 @@ BOOST_AUTO_TEST_CASE(general)
         "actions" : [{"name":"action1","type":"type1", "ricardian_contract":""}],
         "tables" : [{"name":"table1","index_type":"indextype1","key_names":["keyname1"],"key_types":["typename1"],"type":"type1"}],
         "ricardian_clauses": [],
-        "abi_extensions": { "datas":[] }
+        "abi_extensions": []
       },
       "abidef_arr": [{
         "version": "eosio::abi/1.0",
@@ -729,7 +729,7 @@ BOOST_AUTO_TEST_CASE(general)
         "actions" : [{"name":"action1","type":"type1", "ricardian_contract":""}],
         "tables" : [{"name":"table1","index_type":"indextype1","key_names":["keyname1"],"key_types":["typename1"],"type":"type1"}],
         "ricardian_clauses": [],
-        "abi_extensions": { "datas":[] }
+        "abi_extensions": []
       },{
         "version": "eosio::abi/1.0",
         "types" : [{"new_type_name":"new", "type":"old"}],
@@ -737,7 +737,7 @@ BOOST_AUTO_TEST_CASE(general)
         "actions" : [{"name":"action1","type":"type1", "ricardian_contract": ""}],
         "tables" : [{"name":"table1","index_type":"indextype1","key_names":["keyname1"],"key_types":["typename1"],"type":"type1"}],
         "ricardian_clauses": [],
-        "abi_extensions": { "datas":[] }
+        "abi_extensions": []
       }]
     }
    )=====";
@@ -1235,7 +1235,7 @@ BOOST_AUTO_TEST_CASE(setabi_test)
          "actions": [],
          "tables": [],
          "ricardian_clauses": [],
-         "abi_extensions": { "datas":[] }
+         "abi_extensions": []
       }
    )=====";
 
@@ -1298,7 +1298,7 @@ BOOST_AUTO_TEST_CASE(setabi_test)
           }
         ],
        "ricardian_clauses": [],
-       "abi_extensions": { "datas":[] }
+       "abi_extensions": []
       }
    )=====";
 
