@@ -130,6 +130,7 @@ private:
       int128_t     mineage               = 0;         // asset.amount * block height
       uint32_t     mineage_update_height = 0;
       int64_t      pending_mineage       = 0;
+      asset reward = asset(0);
 
       uint64_t  primary_key() const { return id; }
       uint128_t get_index_i128() const { return get_account_idx(chain, balance); }
@@ -186,6 +187,7 @@ private:
 
    void sub_balance( account_name owner, name chain, asset value );
    void add_balance( account_name owner, name chain, asset value, account_name ram_payer );
+   void settle_user(account_name owner, name chain, asset value);
 
    int64_t get_current_age(name chain,asset balance,int64_t first,int64_t last);
 
@@ -198,6 +200,8 @@ public:
       asset quantity;
       string memo;
    };
+
+   int128_t get_power();
 
 };
 

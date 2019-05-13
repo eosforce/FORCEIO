@@ -138,6 +138,7 @@ namespace eosiosystem {
          account_name bpname                = 0;
          int64_t      voteage               = 0;         // asset.amount * block height
          uint32_t     voteage_update_height = 0;
+         asset        total_reward = asset(0);
 
          uint64_t primary_key() const { return bpname; }
 
@@ -198,11 +199,10 @@ namespace eosiosystem {
          int64_t      block_weight = BLOCK_OUT_WEIGHT;   
          asset        mortgage = asset(0);
 
-         vector<vote_reward_info> reward_vote;
-
          int32_t     total_drain_block = 0;
          asset       remain_punish = asset(0);
          int32_t     active_change_block_num = 0;
+         vector<vote_reward_info> reward_vote;
 
          uint64_t primary_key() const { return name; }
 
@@ -259,18 +259,30 @@ namespace eosiosystem {
          return (uint128_t(uint64_t(chain)) << 64) + uint128_t(a.symbol.name());
       }
 
-      struct currency_stats {
-         asset        supply;
-         asset        max_supply;
-         account_name issuer;
-         eosio::name         chain;
+      // struct reward_mine_info {
+      //    int128_t total_mineage = 0;
+      //    asset    reward_pool = asset(0);
+      //    int32_t  reward_block_num = 0;
+      // };
 
-         asset        reward_pool;
-         int64_t      total_mineage               = 0;         // asset.amount * block height
-         uint32_t     total_mineage_update_height = 0;
+      // struct currency_stats {
+      //    asset        supply;
+      //    asset        max_supply;
+      //    account_name issuer;
+      //    eosio::name         chain;
 
-         uint64_t primary_key() const { return supply.symbol.name(); }
-      };
+      //    account_name side_account;
+      //    action_name  side_action;
+
+      //    asset        reward_pool;
+      //    int128_t     total_mineage               = 0; // asset.amount * block height
+      //    uint32_t     total_mineage_update_height = 0;
+      //    int64_t      total_pending_mineage       = 0;
+      //    vector<reward_mine_info>   reward_mine;
+
+      //    uint64_t primary_key() const { return supply.symbol.name(); }
+      // };
+
       struct reward_currency {
          uint64_t     id;
          eosio::name         chain;
@@ -315,10 +327,10 @@ namespace eosiosystem {
          EOSLIB_SERIALIZE(approve_punish_bp, (bpname)(approve_producer))
       };
 
-      typedef eosio::multi_index<N(stat), currency_stats> stats;
-      typedef eosio::multi_index<N(reward), reward_currency,
-         eosio::indexed_by< N(bychain),
-                     eosio::const_mem_fun<reward_currency, uint128_t, &reward_currency::get_index_i128 >>> rewards;
+      // typedef eosio::multi_index<N(stat), currency_stats> stats;
+      // typedef eosio::multi_index<N(reward), reward_currency,
+      //    eosio::indexed_by< N(bychain),
+      //                eosio::const_mem_fun<reward_currency, uint128_t, &reward_currency::get_index_i128 >>> rewards;
       /** from relay.token end*/
       typedef eosio::multi_index<N(freezed),     freeze_info>   freeze_table;
       typedef eosio::multi_index<N(votes),       vote_info>     votes_table;
@@ -357,13 +369,14 @@ namespace eosiosystem {
       void update_votes( const account_name voter, const std::vector<account_name>& producers, bool voting );
 
       void reset_block_weight(account_name block_producers[]);
-      int64_t get_coin_power();
-      int64_t get_vote_power();
+      int128_t get_coin_power();
+      int128_t get_vote_power();
 
       void init_reward_info();
       void update_reward_stable();
 
-      void settlevote();
+      void settlebpvote();
+      void settlevoter(const account_name voter, const account_name bpname);
    
    public:
       inline asset get_freezed( account_name voter )const;

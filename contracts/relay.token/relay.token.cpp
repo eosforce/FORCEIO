@@ -465,11 +465,29 @@ void token::rewardmine(asset quantity) {
       eosio_assert(existing != statstable.end(), "token with symbol already exists");
       uint64_t devide_amount = quantity.amount * existing->supply.amount * OTHER_COIN_WEIGHT / 10000 / total_power;
       statstable.modify(*existing, 0, [&]( auto& s ) {
-         s.reward_pool += asset(devide_amount);
+         s.reward_mine[s.reward_mine.size() - 1].reward_pool = asset(devide_amount);
       });
    }
 }
 
+int128_t token::get_power() {
+   int128_t total_power = 0; 
+   rewards coin_reward(_self,_self);
+   exchange::exchange t(SYS_MATCH);
+
+   for( auto it = coin_reward.cbegin(); it != coin_reward.cend(); ++it ) {
+      if (!it->reward_now) continue;
+      stats statstable(_self, it->chain);
+      auto existing = statstable.find(it->supply.symbol.name());
+      eosio_assert(existing != statstable.end(), "token with symbol already exists");
+      auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
+      auto today_index = existing->reward_mine.size() - 1;
+      auto power = existing->reward_mine[today_index].total_mineage * OTHER_COIN_WEIGHT / 10000 * price / 10000;
+      total_power += power;
+   }
+   return total_power ;
+}
+//todo
 void token::claim(name chain,asset quantity,account_name receiver) {
 
    require_auth(receiver);
@@ -539,6 +557,51 @@ void token::claim(name chain,asset quantity,account_name receiver) {
            N(force.token), N(castcoin),
            std::make_tuple(::config::reward_account_name, receiver,total_reward)
    ).send();
+}
+
+void token::settle_user(account_name owner, name chain, asset value) {
+   accounts from_acnts(_self, owner);
+   auto idx = from_acnts.get_index<N(bychain)>();
+   const auto& from = idx.get(get_account_idx(chain, value), "no balance object found");
+   eosio_assert(from.chain == chain, "symbol chain mismatch");
+
+   stats statstable(_self, chain);
+   auto existing = statstable.find(value.symbol);
+   eosio_assert(existing != statstable.end(), "token with symbol does not exist, create token before issue");
+
+   auto isize = existing->reward_mine.size();
+   auto last_update_height = from.mineage_update_height;
+   auto last_mineage = from.mineage;
+   auto total_reward = asset(0);
+   bool cross_day = false;
+   for(int i=0;i!=isize;++i) {
+      if (last_update_height < existing->reward_mine[i].reward_block_num) {
+         auto mineage = last_mineage + from.balance.amount * (existing->reward_mine[i].reward_block_num - last_update_height);
+         auto reward = existing->reward_mine[i].reward_pool * mineage / existing->reward_mine[i].total_mineage;
+         total_reward += reward;
+         statstable.modify(*existing, 0, [&]( auto& s ) {
+            s.reward_mine[i].total_mineage -= mineage;
+            s.reward_mine[i].reward_pool -= reward;
+         });
+         last_update_height = existing->reward_mine[i].reward_block_num;
+         last_mineage = 0;
+         cross_day = true;
+      }
+   }
+   //是否跨天
+   from_acnts.modify(from, owner, [&]( auto& a ) {
+      a.reward += total_reward;
+      if (cross_day){
+         a.mineage = a.balance.amount * (current_block_num() - last_update_height);
+      }
+      else
+      {
+         a.mineage += a.balance.amount * (current_block_num() - last_update_height);
+      }
+      
+      a.mineage_update_height = current_block_num();
+   });
+
 }
 
 void splitMemo(std::vector<std::string>& results, const std::string& memo,char separator) {
