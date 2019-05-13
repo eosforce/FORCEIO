@@ -28,6 +28,16 @@
       {"name": "exc_acc","type": "account_name"}
       ]
     },{
+      "name": "open",
+      "base": "",
+      "fields": [
+      {"name": "base_chain","type": "name"},
+      {"name": "base_sym","type": "symbol_type"},
+      {"name": "quote_chain","type": "name"},
+      {"name": "quote_sym","type": "symbol_type"},
+      {"name": "exc_acc","type": "account_name"}
+      ]
+    },{
        "name": "trade",
        "base": "",
        "fields": [
@@ -38,7 +48,8 @@
         {"name": "price","type": "asset"},
         {"name": "bid_or_ask","type": "uint32"},
         {"name": "exc_acc","type": "account_name"},
-        {"name": "referer","type": "string"}
+        {"name": "referer","type": "string"},
+        {"name": "fee_type","type": "uint32"}
        ]
      },{
        "name": "cancel",
@@ -96,6 +107,7 @@
         {"name": "base","type": "asset"},
         {"name": "price","type": "asset"},
         {"name": "bid_or_ask","type": "uint32"},
+        {"name": "fee_type","type": "uint32"},
         {"name": "timestamp","type":"time_point_sec"}
        ]
     },{
@@ -124,13 +136,15 @@
        "name": "freeze",
        "base": "",
        "fields": [
-        {"name": "id","type": "uint32"}
+        {"name": "exc_acc","type":"account_name"},
+        {"name": "pair_id","type": "uint32"}
        ]
      },{
        "name": "unfreeze",
        "base": "",
        "fields": [
-        {"name": "id","type": "uint32"}
+        {"name": "exc_acc","type":"account_name"},
+        {"name": "pair_id","type": "uint32"}
        ]
      },{
        "name": "exc",
@@ -144,10 +158,7 @@
        "fields": [
         {"name": "exc_acc","type": "account_name"},
         {"name": "pair_id","type": "uint32"},
-        {"name": "type","type": "uint32"},
         {"name": "rate","type": "uint32"},
-        {"name": "chain","type": "name"},
-        {"name": "fee","type": "asset"}
        ]
      },{
        "name": "fee_info",
@@ -156,12 +167,26 @@
         {"name": "id","type": "uint32"},
         {"name": "exc_acc","type": "account_name"},
         {"name": "pair_id","type": "uint32"},
-        {"name": "type","type": "uint32"},
+        {"name": "frozen","type": "uint32"},
         {"name": "rate","type": "uint32"},
-        {"name": "chain","type": "name"},
-        {"name": "fee","type": "asset"},
         {"name": "fees_base","type": "asset"},
-        {"name": "fees_quote","type": "asset"}
+        {"name": "fees_quote","type": "asset"},
+        {"name": "points_enabled","type": "bool"}
+        {"name": "points","type": "asset"}
+       ]
+     },{
+       "name": "account_info",
+       "base": "",
+       "fields": [
+        {"name": "balance","type": "asset"}
+       ]
+     },{
+       "name": "enpoints",
+       "base": "",
+       "fields": [
+        {"name": "exc_acc","type": "account_name"},
+        {"name": "pair_id","type": "uint32"},
+        {"name": "points_sym","type": "symbol_type"}
        ]
      }
   ],
@@ -174,12 +199,12 @@
       "type": "create",
       "ricardian_contract": ""
     },{
-      "name": "match",
-      "type": "trade",
-      "ricardian_contract": ""
-    },{
       "name": "cancel",
       "type": "cancel",
+      "ricardian_contract": ""
+    },{
+      "name": "match",
+      "type": "trade",
       "ricardian_contract": ""
     },{
       "name": "done",
@@ -194,6 +219,10 @@
       "type": "claim",
       "ricardian_contract": ""
     },{
+      "name": "open",
+      "type": "open",
+      "ricardian_contract": ""
+    },{
       "name": "freeze",
       "type": "freeze",
       "ricardian_contract": ""
@@ -204,6 +233,10 @@
     },{
       "name": "setfee",
       "type": "setfee",
+      "ricardian_contract": ""
+    },{
+      "name": "enpoints",
+      "type": "enpoints",
       "ricardian_contract": ""
     }
   ],
@@ -230,6 +263,10 @@
     },{
       "name": "fees",
       "type": "fee_info",
+      "index_type": "i64"
+    },{
+      "name": "accounts",
+      "type": "account_info",
       "index_type": "i64"
     }
   ],

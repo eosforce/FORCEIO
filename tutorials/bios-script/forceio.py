@@ -106,7 +106,7 @@ def getRAM(account, ram):
     cleos("push action force vote4ram '{\"voter\":\"%s\",\"bpname\":\"biosbpa\",\"stake\":\"%s\"}' -p %s" % (account, intToCurrency(ram), account))
 
 def setContract(account):
-    getRAM(account, 10000 * 10000)
+    getRAM(account, 50000 * 10000)
     cleos('set contract %s %s/%s/' % (account, datas.config_dir, account))
 
 def parserArgsAndRun(parser, commands):
@@ -117,7 +117,7 @@ def parserArgsAndRun(parser, commands):
     parser.add_argument('--wallet-dir', metavar='', help="Path to wallet directory", default='./wallet/')
     parser.add_argument('--config-dir', metavar='', help="Path to config directory", default='./config')
     parser.add_argument('--data-dir', metavar='', help="Path to datas", default='./testnet')
-    parser.add_argument('--symbol', metavar='', help="The core symbol", default='SYS')
+    parser.add_argument('--symbol', metavar='', help="The core symbol", default='CDX')
     parser.add_argument('--pr', metavar='', help="The Public Key Start Symbol", default='FOSC')
     parser.add_argument('-a', '--all', action='store_true', help="Do everything marked with (*)")
     parser.add_argument('--use-port', metavar='', help="port X to listen, http X001-X099, p2p X101-X199 and wallet X666", default='8')

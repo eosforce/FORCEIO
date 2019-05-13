@@ -267,32 +267,6 @@ void token::add_balance( account_name owner, name chain, asset value, account_na
    }
 }
 
-int64_t precision(uint64_t decimals)
-{
-   int64_t p10 = 1;
-   int64_t p = (int64_t)decimals;
-   while( p > 0  ) {
-      p10 *= 10; --p;
-   }
-   return p10;
-}
-
-asset convert( symbol_type expected_symbol, const asset& a ) {
-   int64_t factor;
-   asset b;
-   
-   if (expected_symbol.precision() >= a.symbol.precision()) {
-      factor = precision( expected_symbol.precision() ) / precision( a.symbol.precision() );
-      b = asset( a.amount * factor, expected_symbol );
-   }
-   else {
-      factor =  precision( a.symbol.precision() ) / precision( expected_symbol.precision() );
-      b = asset( a.amount / factor, expected_symbol );
-      
-   }
-   return b;
-}
-
 void token::trade( account_name from,
                   account_name to,
                   name chain,
@@ -331,40 +305,7 @@ void token::trade( account_name from,
       ).send();
    }
    else if(type == trade_type::match && to == N(sys.match)) {
-      transfer(from, to, chain, quantity, memo);
-      sys_match_match smm;
-      smm.parse(memo);
-      
-      auto trade_imp = [smm](account_name payer, account_name receiver, uint32_t pair_id, asset quantity, asset price2, uint32_t bid_or_ask, account_name exc_acc, string referer) {
-         asset           quant_after_fee;
-         asset           base;
-         asset           price;
-         
-         exchange::exchange e(N(sys.match));
-         auto base_sym = e.get_pair_base(pair_id);
-         auto quote_sym = e.get_pair_quote(pair_id);
-         //auto exc_acc = e.get_exchange_account(pair_id);
-         
-         if (bid_or_ask) {
-            // to preserve precision
-            quant_after_fee = convert(base_sym, quantity);
-            //base = quant_after_fee * precision(price2.symbol.precision()) / price2.amount;
-            base = quant_after_fee;
-            print("after convert: quant_after_fee=", quant_after_fee, ", base=", base, "\n");
-         } else {
-            base = convert(base_sym, quantity);
-         }
-         price = convert(quote_sym, price2);
-         
-         print("\n before inline call sys.match --payer=",payer,", receiver=",receiver,", pair_id=",pair_id,", quantity=",quantity,", price=",price2,", bid_or_ask=",bid_or_ask, ", base=",quantity);
-         
-         eosio::action(
-                 permission_level{ exc_acc, N(active) },
-                 N(sys.match), N(match),
-                 std::make_tuple(pair_id, payer, receiver, base, price, bid_or_ask, exc_acc, referer)
-         ).send();
-      };
-      trade_imp(from, smm.receiver, smm.pair_id, quantity, smm.price, smm.bid_or_ask, smm.exc_acc, smm.referer);
+      SEND_INLINE_ACTION(*this, transfer, { from, N(active) }, { from, to, chain, quantity, memo });
    }
    else {
       eosio_assert(false,"invalid trade type");
@@ -516,75 +457,6 @@ void sys_bridge_exchange::parse(const string memo) {
    this->recv = ::eosio::string_to_name(memoParts[2].c_str());
    this->type = atoi(memoParts[3].c_str());
    eosio_assert(this->type == 1 || this->type == 2,"type is not adapted with bridge_addmortgage");
-}
-
-inline std::string trim(const std::string str) {
-   auto s = str;
-   s.erase(s.find_last_not_of(" ") + 1);
-   s.erase(0, s.find_first_not_of(" "));
-   
-   return s;
-}
-
-asset asset_from_string(const std::string& from) {
-   std::string s = trim(from);
-   const char * str1 = s.c_str();
-
-   // Find space in order to split amount and symbol
-   const char * pos = strchr(str1, ' ');
-   eosio_assert((pos != NULL), "Asset's amount and symbol should be separated with space");
-   auto space_pos = pos - str1;
-   auto symbol_str = trim(s.substr(space_pos + 1));
-   auto amount_str = s.substr(0, space_pos);
-   eosio_assert((amount_str[0] != '-'), "now do not support negetive asset");
-
-   // Ensure that if decimal point is used (.), decimal fraction is specified
-   const char * str2 = amount_str.c_str();
-   const char *dot_pos = strchr(str2, '.');
-   if (dot_pos != NULL) {
-      eosio_assert((dot_pos - str2 != amount_str.size() - 1), "Missing decimal fraction after decimal point");
-   }
-   print("------asset_from_string: symbol_str=",symbol_str, ", amount_str=",amount_str, "\n");
-   // Parse symbol
-   uint32_t precision_digits;
-   if (dot_pos != NULL) {
-      precision_digits = amount_str.size() - (dot_pos - str2 + 1);
-   } else {
-      precision_digits = 0;
-   }
-
-   symbol_type sym;
-   sym.value = ::eosio::string_to_symbol((uint8_t)precision_digits, symbol_str.c_str());
-   // Parse amount
-   int64_t int_part, fract_part;
-   if (dot_pos != NULL) {
-      int_part = ::atoll(amount_str.substr(0, dot_pos - str2).c_str());
-      fract_part = ::atoll(amount_str.substr(dot_pos - str2 + 1).c_str());
-   } else {
-      int_part = ::atoll(amount_str.c_str());
-      fract_part = 0;
-   }
-   int64_t amount = int_part * precision(precision_digits);
-   amount += fract_part;
-
-   return asset(amount, sym);
-}
-
-void sys_match_match::parse(const string memo) {
-   using namespace boost;
-
-   std::vector<std::string> memoParts;
-   //splitMemo(memoParts, memo, ';');
-   split( memoParts, memo, is_any_of( ";" ) );
-   eosio_assert(memoParts.size() == 6,"memo is not adapted with sys_match_match");
-   receiver    = ::eosio::string_to_name(memoParts[0].c_str());
-   pair_id     = (uint32_t)atoi(memoParts[1].c_str());
-   price       = asset_from_string(memoParts[2]);
-   bid_or_ask  = (uint32_t)atoi(memoParts[3].c_str());
-   exc_acc     = ::eosio::string_to_name(memoParts[4].c_str());
-   referer     = memoParts[5];
-   eosio_assert(bid_or_ask == 0 || bid_or_ask == 1,"type is not adapted with sys_match_match");
-   print("-------sys_match_match::parse receiver=", ::eosio::name{.value=receiver}, ", pair_id=", pair_id, ", price=", price, " bid_or_ask=", bid_or_ask, " exc_acc=", ::eosio::name{.value=exc_acc}, " referer=", referer, "\n");
 }
 
 };
