@@ -44,16 +44,18 @@ namespace eosiosystem {
             init_reward_info();
             reward = reward_inf.find(REWARD_ID);
          }
-
+         
          auto cycle_block_out = current_block_num() - reward->last_reward_block_num;
          int64_t block_rewards = reward->cycle_reward * cycle_block_out / UPDATE_CYCLE;
-
          auto reward_times = reward->total_reward_time + 1;
+         bool reward_update = false;
 
          if(reward_times % (reward_times * STABLE_DAY) == 0) {
+            reward_update = true;
             update_reward_stable();
          }
          else if(reward_times % CYCLE_PREDAY == 0) {
+            reward_update = true;
             reward_inf.modify(reward, 0, [&]( reward_info& s ) {
                s.cycle_reward = static_cast<int64_t>(s.cycle_reward * s.gradient / 10000);
             });
@@ -69,12 +71,16 @@ namespace eosiosystem {
             s.last_producer_name = bpname;
          });
          
-         uint64_t  vote_power = get_vote_power();
-         uint64_t  coin_power = get_coin_power();
-         uint64_t total_power = vote_power + coin_power;
+
          reward_develop(block_rewards * REWARD_DEVELOP / 10000);
          reward_block(reward_block_version,block_rewards * REWARD_BP / 10000,force_change);
          
+         if (reward_update) {
+            //结算   投票分红和挖矿分红
+         }
+         uint64_t  vote_power = get_vote_power();
+         uint64_t  coin_power = get_coin_power();
+         uint64_t total_power = vote_power + coin_power;
          if (total_power != 0) {
             reward_mines((block_rewards * REWARD_MINE / 10000) * coin_power / total_power);
             reward_bps((block_rewards * REWARD_MINE / 10000) * vote_power / total_power);
@@ -379,6 +385,7 @@ namespace eosiosystem {
             s.reward_budget = asset(0);
             s.cycle_reward = PRE_BLOCK_REWARDS;
             s.gradient = PRE_GRADIENT;
+            s.reward_block_num.push_back(0);
          });
       }
    }
@@ -803,6 +810,23 @@ namespace eosiosystem {
       else {
          eosio_assert(false,"the bp can not to be bailed");
       }
+   }
+//仅结算有分红的BP   不参与分红的BP不进行结算   结算的时候  全部进行汇总
+   void system_contract::settlevote() {
+      bps_table bps_tbl(_self, _self);
+      auto current_block = current_block_num();
+
+      for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
+         vote_reward_info temp_reward;
+         temp_reward.reward_block_num = current_block;
+         temp_reward.total_voteage = it->total_voteage + it->total_staked * (current_block - it->voteage_update_height);
+         bps_tbl.modify(*it, 0, [&]( bp_info& b ) {
+            b.reward_vote.push_back(temp_reward);
+            b.voteage_update_height = current_block;
+            b.total_voteage = 0;
+         });
+      }
+
    }
     
 }

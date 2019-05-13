@@ -174,6 +174,12 @@ namespace eosiosystem {
          EOSLIB_SERIALIZE(vote4ram_info, (voter)(staked))
       };
 
+      struct vote_reward_info {
+         int64_t total_voteage;
+         asset total_reward = asset(0);
+         int32_t  reward_block_num;
+      };
+
       struct bp_info {
          account_name name;
          public_key   block_signing_key;
@@ -191,6 +197,8 @@ namespace eosiosystem {
          uint32_t     last_block_amount = 0;
          int64_t      block_weight = BLOCK_OUT_WEIGHT;   
          asset        mortgage = asset(0);
+
+         vector<vote_reward_info> reward_vote;
 
          int32_t     total_drain_block = 0;
          asset       remain_punish = asset(0);
@@ -239,6 +247,7 @@ namespace eosiosystem {
          int32_t   total_reward_time = 0;
          int32_t   last_reward_block_num = 0;
          account_name  last_producer_name;
+         vector<int32_t> reward_block_num;
 
          uint64_t primary_key() const { return id; }
          EOSLIB_SERIALIZE(reward_info, ( id )(reward_block_out)(reward_develop)(reward_budget)(total_block_out_age)(cycle_reward)(gradient)
@@ -353,6 +362,8 @@ namespace eosiosystem {
 
       void init_reward_info();
       void update_reward_stable();
+
+      void settlevote();
    
    public:
       inline asset get_freezed( account_name voter )const;
@@ -447,6 +458,7 @@ namespace eosiosystem {
       void unapppunish(const account_name bpname,const account_name punishbpname);
       // @abi action
       void bailpunish(const account_name bpname);
+
    };
    
    asset system_contract::get_freezed( account_name voter )const
