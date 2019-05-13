@@ -288,7 +288,6 @@ else()
     set(IS_ACTIVE_BONUS_TO_VOTE 0)
 endif(USE_BONUS_TO_VOTE)
 
-include(wasm)
 add_subdirectory( libraries )
 add_subdirectory( plugins )
 add_subdirectory( programs )
