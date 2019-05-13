@@ -129,7 +129,6 @@ private:
 
       int128_t     mineage               = 0;         // asset.amount * block height
       uint32_t     mineage_update_height = 0;
-      int64_t      pending_mineage       = 0;
       asset reward = asset(0);
 
       uint64_t  primary_key() const { return id; }
@@ -161,7 +160,6 @@ private:
       asset        reward_pool;
       int128_t     total_mineage               = 0; // asset.amount * block height
       uint32_t     total_mineage_update_height = 0;
-      int64_t      total_pending_mineage       = 0;
       vector<reward_mine_info>   reward_mine;
 
       uint64_t primary_key() const { return supply.symbol.name(); }

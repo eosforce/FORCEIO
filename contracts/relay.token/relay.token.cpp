@@ -253,7 +253,6 @@ void token::add_balance( account_name owner, name chain, asset value, account_na
          a.balance = value;
          a.chain = chain;
          a.mineage = 0;
-         a.pending_mineage = 0;
          a.mineage_update_height = current_block_num();
       });
    } else {
