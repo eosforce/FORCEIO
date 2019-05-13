@@ -544,7 +544,14 @@ namespace eosiosystem {
       auto reward_all = vts.total_reward;
       if( receiver == bpname ) {
          reward_all += bp.rewards_block;
+         bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
+            b.rewards_block = asset(0);
+         });
       }
+
+      votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
+         v.total_reward = asset(0);
+      });
 
       eosio_assert(reward_all> asset(100000),"claim amount must > 10");
       INLINE_ACTION_SENDER(eosio::token, castcoin)(

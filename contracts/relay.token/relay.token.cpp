@@ -110,16 +110,9 @@ void token::issue( name chain, account_name to, asset quantity, string memo ) {
    eosio_assert(quantity.amount <= st.max_supply.amount - st.supply.amount, "quantity exceeds available supply");
 
    auto current_block = current_block_num();
-   auto last_devidend_num = current_block - current_block % UPDATE_CYCLE;
 
    statstable.modify(st, 0, [&]( auto& s ) {
-      if (s.total_mineage_update_height < last_devidend_num) {
-         s.total_mineage += get_current_age(s.chain,s.supply,s.total_mineage_update_height,last_devidend_num) + s.total_pending_mineage;
-         s.total_pending_mineage = get_current_age(s.chain,s.supply,last_devidend_num,current_block);
-      }
-      else {
-         s.total_pending_mineage += get_current_age(s.chain,s.supply,s.total_mineage_update_height,current_block);
-      }
+      s.total_mineage += s.supply.amount * (current_block - s.total_mineage_update_height);
       s.total_mineage_update_height = current_block_num();
       s.supply += quantity;
    });
@@ -153,13 +146,7 @@ void token::destroy( name chain, account_name from, asset quantity, string memo 
    auto current_block = current_block_num();
    auto last_devidend_num = current_block - current_block % UPDATE_CYCLE;
    statstable.modify(st, 0, [&]( auto& s ) {
-      if (s.total_mineage_update_height < last_devidend_num) {
-         s.total_mineage += get_current_age(s.chain,s.supply,s.total_mineage_update_height,last_devidend_num) + s.total_pending_mineage;
-         s.total_pending_mineage = get_current_age(s.chain,s.supply,last_devidend_num,current_block);
-      }
-      else {
-         s.total_pending_mineage += get_current_age(s.chain,s.supply,s.total_mineage_update_height,current_block);
-      }
+      s.total_mineage += s.supply.amount * (current_block - s.total_mineage_update_height);
       s.total_mineage_update_height = current_block;
       s.supply -= quantity;
    });
@@ -223,21 +210,15 @@ void token::sub_balance( account_name owner, name chain, asset value ) {
 
    auto idx = from_acnts.get_index<N(bychain)>();
 
-   const auto& from = idx.get(get_account_idx(chain, value), "no balance object found");
+   auto from = idx.get(get_account_idx(chain, value), "no balance object found");
    eosio_assert(from.balance.amount >= value.amount, "overdrawn balance");
    eosio_assert(from.chain == chain, "symbol chain mismatch");
    auto current_block = current_block_num();
    auto last_devidend_num = current_block - current_block % UPDATE_CYCLE;
 
+   settle_user(owner,chain,value);
+   from = idx.get(get_account_idx(chain, value), "no balance object found");
    from_acnts.modify(from, owner, [&]( auto& a ) {
-      if (a.mineage_update_height < last_devidend_num) {
-         a.mineage += get_current_age(a.chain,a.balance,a.mineage_update_height,last_devidend_num) + a.pending_mineage;
-         a.pending_mineage = get_current_age(a.chain,a.balance,last_devidend_num,current_block);
-      }
-      else {
-         a.pending_mineage += get_current_age(a.chain,a.balance,a.mineage_update_height,current_block);
-      }
-      a.mineage_update_height = current_block;
       a.balance -= value;
    });
 
@@ -275,18 +256,13 @@ void token::add_balance( account_name owner, name chain, asset value, account_na
          a.pending_mineage = 0;
          a.mineage_update_height = current_block_num();
       });
-   } else { 
+   } else {
+      settle_user(owner,chain,value); 
+      to = idx.find(get_account_idx(chain, value));
       idx.modify(to, 0, [&]( auto& a ) {
-         if (a.mineage_update_height < last_devidend_num) {
-            a.mineage += get_current_age(a.chain,a.balance,a.mineage_update_height,last_devidend_num) + a.pending_mineage;
-            a.pending_mineage = get_current_age(a.chain,a.balance,last_devidend_num,current_block);
-         }
-         else {
-            a.pending_mineage += get_current_age(a.chain,a.balance,a.mineage_update_height,current_block);
-         }
-         a.mineage_update_height = current_block_num();
          a.balance += value;
       });
+      
    }
 }
 
@@ -503,52 +479,15 @@ void token::claim(name chain,asset quantity,account_name receiver) {
    auto existing = statstable.find(quantity.symbol.name());
    eosio_assert(existing != statstable.end(), "token with symbol already exists");
 
-   auto reward_pool = existing->reward_pool;
-   auto total_mineage = existing->total_mineage;
-   auto total_mineage_update_height = existing->total_mineage_update_height;
-   auto total_pending_mineage = existing->total_pending_mineage;
-   auto supply = existing->supply;
-
    accounts to_acnts(_self, receiver);
    auto idxx = to_acnts.get_index<N(bychain)>();
    const auto& to = idxx.get(get_account_idx(chain, quantity), "no balance object found");
    eosio_assert(to.chain == chain, "symbol chain mismatch");
-   auto current_block = current_block_num();
-   auto last_devidend_num = current_block - current_block % UPDATE_CYCLE;
-
-   auto power = to.mineage;
-   if (to.mineage_update_height < last_devidend_num) {
-      power = to.mineage + get_current_age(to.chain,to.balance,to.mineage_update_height,last_devidend_num) + to.pending_mineage ;
-   }
-
-   eosio_assert(power != 0, "the devident is zreo");
-
-   auto total_power = total_mineage;
-   if (total_mineage_update_height < last_devidend_num) {
-      total_power = total_mineage + get_current_age(existing->chain,supply,total_mineage_update_height,last_devidend_num) + total_pending_mineage;
-   }
-   int128_t reward_temp = static_cast<int128_t>(reward_pool.amount) * power;
-   auto total_reward = asset(static_cast<int64_t>(reward_temp / total_power));
-   statstable.modify( existing,0,[&](auto &st) {
-      st.reward_pool -= total_reward;
-      st.total_mineage = total_power - power;
-      
-      if (st.total_mineage_update_height < last_devidend_num) {
-         st.total_mineage += st.total_pending_mineage;
-         st.total_pending_mineage = 0;
-      }
-      st.total_mineage_update_height = last_devidend_num;
-   });
+   
+   auto total_reward = to.reward;
 
    to_acnts.modify(to, receiver, [&]( auto& a ) {
-      a.mineage = 0;
-      if (a.mineage_update_height < last_devidend_num) {
-         a.pending_mineage = get_current_age(a.chain,a.balance,last_devidend_num,current_block);
-      }
-      else {
-         a.pending_mineage += get_current_age(a.chain,a.balance,a.mineage_update_height,current_block);
-      }
-      a.mineage_update_height = current_block;
+      a.reward = asset(0);
    });
 
    eosio_assert(total_reward > asset(100000),"claim amount must > 10");
