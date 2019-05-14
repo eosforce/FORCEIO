@@ -333,8 +333,13 @@ namespace exchange {
 
       if (fee_type == 2 && itr_fee_taker->points_enabled) {
          asset points_as_fee;
-         auto points = get_balance(payer, itr_fee_taker->points.symbol);
-         auto points_price = get_avg_price( current_block_num(), itr1->base_chain, itr1->base_sym, eosio::name{.value=0}, itr_fee_taker->points.symbol );
+         auto  points = get_balance(payer, itr_fee_taker->points.symbol);
+         asset points_price;
+         if (base_or_quote) {
+            points_price = get_avg_price( current_block_num(), itr1->base_chain, itr1->base_sym, eosio::name{.value=0}, itr_fee_taker->points.symbol );
+         } else {
+            points_price = get_avg_price( current_block_num(), itr1->quote_chain, itr1->quote_sym, eosio::name{.value=0}, itr_fee_taker->points.symbol );
+         }
          print("\n charge_fee: points=", points,", points_price=", points_price, ", fee=", fee,"\n");
          if (fee.amount > 0) {
             if (points.amount > 0 && points_price.amount > 0) {
@@ -972,6 +977,15 @@ namespace exchange {
          inline_transfer(escrow, fee_acc, quote_chain, itr->fees_quote, "");
          idx_fees.modify(itr, exc_acc, [&]( auto& f ) {
             f.fees_quote = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym));
+         });
+         claimed = true;
+      }
+      
+      if (escrow != fee_acc && itr->points.amount > 0)
+      {
+         inline_transfer(escrow, fee_acc, eosio::name{.value=0}, itr->points, "");
+         idx_fees.modify(itr, exc_acc, [&]( auto& f ) {
+            f.points = to_asset(relay_token_acc, eosio::name{.value=0}, itr->points.symbol, asset(0, itr->points.symbol));
          });
          claimed = true;
       }   
