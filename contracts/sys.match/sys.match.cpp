@@ -7,7 +7,6 @@
 namespace exchange {
    using namespace eosio;
    const int64_t max_fee_rate = 10000;
-  
    const account_name escrow = N(sys.match);
 
    uint128_t compute_pair_index(symbol_type base, symbol_type quote)
@@ -16,16 +15,84 @@ namespace exchange {
       return idxkey;
    }
    
+   uint128_t compute_orderbook_lookupkey(uint32_t pair_id, uint32_t bid_or_ask, uint64_t value) {
+      auto lookup_key = (uint128_t(pair_id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | value;
+      return lookup_key;
+   }
+   
+   void inline_transfer(account_name from, account_name to, name chain, asset quantity, string memo ) {
+      if (chain.value == 0) {
+         action(
+                 permission_level{ from, N(active) },
+                 config::token_account_name, N(transfer),
+                 std::make_tuple(from, to, quantity, memo)
+         ).send();
+      } else {
+         action(
+                 permission_level{ from, N(active) },
+                 relay_token_acc, N(transfer),
+                 std::make_tuple(from, to, chain, quantity, memo)
+         ).send();
+      }
+   }
+   
+   int64_t precision(uint64_t decimals)
+   {
+      int64_t p10 = 1;
+      int64_t p = (int64_t)decimals;
+      while( p > 0  ) {
+         p10 *= 10; --p;
+      }
+      return p10;
+   }
+   
+   /*
+   convert a to expected_symbol, including symbol name and symbol precision
+   */
+   asset convert( symbol_type expected_symbol, const asset& a ) {
+      int64_t factor;
+      asset b;
+      
+      if (expected_symbol.precision() >= a.symbol.precision()) {
+         factor = precision( expected_symbol.precision() ) / precision( a.symbol.precision() );
+         b = asset( a.amount * factor, expected_symbol );
+      }
+      else {
+         factor =  precision( a.symbol.precision() ) / precision( expected_symbol.precision() );
+         b = asset( a.amount / factor, expected_symbol );
+         
+      }
+      return b;
+   }
+
+   asset to_asset( account_name code, name chain, symbol_type sym, const asset& a ) {
+      asset b;
+      symbol_type expected_symbol;
+      
+      if (chain.value == 0) {
+         eosio::token t(config::token_account_name);
+      
+         expected_symbol = t.get_supply(sym.name()).symbol ;
+      } else {
+         relay::token t(relay_token_acc);
+      
+         expected_symbol = t.get_supply(chain, sym.name()).symbol ;
+      }
+
+      b = convert(expected_symbol, a);
+      return b;
+   }
+   
    void exchange::regex(account_name exc_acc) {
       require_auth( exc_acc );
-      
-      const asset min_staked(10000000);
-      
+
       // check if exc_acc has freezed 1000 SYS
       eosiosystem::system_contract sys_contract(config::system_account_name);
-      eosio_assert(sys_contract.get_freezed(exc_acc) >= min_staked, "must freeze 1000 or more CDX!");
+      eosio_assert(sys_contract.get_freezed(exc_acc) >= REG_STAKE, "must freeze 1000 or more CDX!");
       
       exchanges exc_tbl(_self,_self);
+      auto itr = exc_tbl.find(exc_acc);
+      eosio_assert(itr == exc_tbl.cend(), "exchange has been registered! can not be registered again!");
       
       exc_tbl.emplace( exc_acc, [&]( auto& e ) {
          e.exc_acc      = exc_acc;
@@ -79,18 +146,20 @@ namespace exchange {
    void exchange::open(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc) {
       require_auth( exc_acc );
       
-      const asset min_staked(10000000);
+      exchanges exc_tbl(_self,_self);
+      auto itr1 = exc_tbl.find(exc_acc);
+      eosio_assert(itr1 != exc_tbl.end(), "exchange account has not been registered!");
       
-      // check if exc_acc has freezed 1000 SYS
+      // check if exc_acc has freezed enough CDX
       eosiosystem::system_contract sys_contract(config::system_account_name);
-      eosio_assert(sys_contract.get_freezed(exc_acc) >= min_staked, "must freeze 1000 or more CDX!");
+      eosio_assert(sys_contract.get_freezed(exc_acc) >= REG_STAKE + OPEN__PAIR_STAKE, "must freeze 2000 or more CDX!");
       
       fees fees_tbl(_self,_self);
       auto idx_fees  = fees_tbl.template get_index<N(idxkey)>();
       auto pair_id   = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
       auto idxkey    = (uint128_t(exc_acc) << 64) | pair_id;
       auto itr = idx_fees.find(idxkey);
-      eosio_assert(itr == idx_fees.cend(), "trading_pair has been opened, no need to open again!");
+      eosio_assert(itr == idx_fees.cend(), "trading_pair has been opened, can not be opened again!");
       
       auto pk = fees_tbl.available_primary_key();
       fees_tbl.emplace( exc_acc, [&]( auto& f ) {
@@ -104,64 +173,81 @@ namespace exchange {
       });
    }
    
-   uint128_t compute_orderbook_lookupkey(uint32_t pair_id, uint32_t bid_or_ask, uint64_t value) {
-      auto lookup_key = (uint128_t(pair_id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | value;
-      return lookup_key;
-   }
-   
-   void inline_transfer(account_name from, account_name to, name chain, asset quantity, string memo ) {
-      if (chain.value == 0) {
-         action(
-                 permission_level{ from, N(active) },
-                 config::token_account_name, N(transfer),
-                 std::make_tuple(from, to, quantity, memo)
-         ).send();
-      } else {
-         action(
-                 permission_level{ from, N(active) },
-                 relay_token_acc, N(transfer),
-                 std::make_tuple(from, to, chain, quantity, memo)
-         ).send();
-      }
-   }
+   void exchange::close(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc) {
+      require_auth( exc_acc );
+      
+      fees fees_tbl(_self,_self);
+      auto idx_fees  = fees_tbl.template get_index<N(idxkey)>();
+      auto pair_id   = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
+      auto idxkey    = (uint128_t(exc_acc) << 64) | pair_id;
+      auto itr1 = idx_fees.find(idxkey);
+      eosio_assert(itr1 != idx_fees.cend(), "trading_pair has not been opened, can not be closed!");
+      
+      // refund
+      orderbook orders(_self,_self);
+      auto idx_orderbook = orders.template get_index<N(idxkey)>();
+      auto lower_key = compute_orderbook_lookupkey(pair_id, 1, std::numeric_limits<uint64_t>::lowest());
+      auto lower     = idx_orderbook.lower_bound( lower_key );
+      auto upper_key = compute_orderbook_lookupkey(pair_id, 0, std::numeric_limits<uint64_t>::max());
+      auto upper     = idx_orderbook.lower_bound( upper_key );
 
-   asset exchange::to_asset( account_name code, name chain, symbol_type sym, const asset& a ) {
-      asset b;
-      symbol_type expected_symbol;
+      asset quant_after_fee;
       
-      if (chain.value == 0) {
-         eosio::token t(config::token_account_name);
-      
-         expected_symbol = t.get_supply(sym.name()).symbol ;
-      } else {
-         relay::token t(relay_token_acc);
-      
-         expected_symbol = t.get_supply(chain, sym.name()).symbol ;
-      }
-
-      b = convert(expected_symbol, a);
-      return b;
-   }
-   
-   /*
-   convert a to expected_symbol, including symbol name and symbol precision
-   */
-   asset exchange::convert( symbol_type expected_symbol, const asset& a ) {
-      int64_t factor;
-      asset b;
-      
-      if (expected_symbol.precision() >= a.symbol.precision()) {
-         factor = precision( expected_symbol.precision() ) / precision( a.symbol.precision() );
-         b = asset( a.amount * factor, expected_symbol );
-      }
-      else {
-         factor =  precision( a.symbol.precision() ) / precision( expected_symbol.precision() );
-         b = asset( a.amount / factor, expected_symbol );
+      for ( ; lower != upper; ) {
+         if (exc_acc != lower->exc_acc) {
+            lower++;
+            continue;
+         }
          
+         auto itr = lower++;
+         // refund the escrow
+         if (itr->bid_or_ask) {
+            if (itr->price.symbol.precision() >= itr->base.symbol.precision())
+               quant_after_fee = itr->price * itr->base.amount / precision(itr->base.symbol.precision());
+            else
+               quant_after_fee = itr->base * itr->price.amount / precision(itr->price.symbol.precision());
+            //print("bid step1: quant_after_fee=",quant_after_fee);
+            quant_after_fee = to_asset(relay_token_acc, quote_chain, quote_sym, quant_after_fee);
+            //print("bid step2: quant_after_fee=",quant_after_fee);
+            inline_transfer(escrow, itr->maker, quote_chain, quant_after_fee, "");
+         } else {
+            quant_after_fee = to_asset(relay_token_acc, base_chain, base_sym, itr->base);
+            //print("bid step2: quant_after_fee=",quant_after_fee);
+            inline_transfer(escrow, itr->maker, base_chain, quant_after_fee, "");
+         }
+         sub_balance(itr->maker, quant_after_fee);
+         
+         idx_orderbook.erase(itr);
       }
-      return b;
+      
+      idx_fees.erase( itr1 );
    }
-
+   
+   void exchange::withdraw(account_name to, asset quantity) {
+      require_auth( to );
+      
+      // check if pending order
+      orderbook      orders(_self,_self);
+      auto lower_key = std::numeric_limits<uint64_t>::lowest();
+      auto lower = orders.lower_bound( lower_key );
+      auto upper_key = std::numeric_limits<uint64_t>::max();
+      auto upper = orders.lower_bound( upper_key );
+      
+      for ( ; lower != upper; lower++ ) {
+         if (to != lower->maker) {
+            continue;
+         }
+         
+         if ( lower->base.symbol.name() == quantity.symbol.name() || lower->price.symbol.name() == quantity.symbol.name() ) {
+            eosio_assert(false, "have pending orders, can not withdraw!");
+         }
+      }
+      
+      inline_transfer( escrow, to, eosio::name{.value=0}, quantity, "" );
+      
+      sub_balance( to, to_asset(relay_token_acc, eosio::name{.value=0}, quantity.symbol, quantity) );
+   }
+   
    void exchange::insert_order(
                               orderbook &orders, 
                               uint32_t pair_id, 
@@ -225,7 +311,7 @@ namespace exchange {
    
       const auto& itr = from_acnts.find( points_sym.name() );
       if (itr == from_acnts.cend())
-         return asset(0, points_sym);
+         return to_asset(relay_token_acc, eosio::name{.value=0}, points_sym, asset(0));
    
       return itr->balance;
    }
@@ -249,35 +335,48 @@ namespace exchange {
          asset points_as_fee;
          auto points = get_balance(payer, itr_fee_taker->points.symbol);
          auto points_price = get_avg_price( current_block_num(), itr1->base_chain, itr1->base_sym, eosio::name{.value=0}, itr_fee_taker->points.symbol );
-         if (fee.amount > 0 && points.amount > 0 && points_price.amount > 0) {
-            points_as_fee = fee * precision(points_price.symbol.precision()) / points_price.amount; 
-            if (points >= points_as_fee) {
-               // deduct points_as_fee
-               sub_balance(payer, points_as_fee);
-               idx_fees.modify(itr_fee_taker, exc_acc, [&]( auto& f ) {
-                  f.points += points_as_fee;
-               });
-               need_fee -= fee;
-            } else {
-               // deduct points
-               sub_balance(payer, points);
-               idx_fees.modify(itr_fee_taker, exc_acc, [&]( auto& f ) {
-                  f.points += points;
-               });
-               // deduct (fee - points / points_price)
-               auto deduction_fee = points * precision(points_price.symbol.precision()) / points_price.amount;
-               deduction_fee = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, deduction_fee);
-               need_fee -= deduction_fee;
-               if (fee.amount > 0) {
+         print("\n charge_fee: points=", points,", points_price=", points_price, ", fee=", fee,"\n");
+         if (fee.amount > 0) {
+            if (points.amount > 0 && points_price.amount > 0) {
+               points_as_fee = fee * points_price.amount / precision(points_price.symbol.precision());
+               points_as_fee = to_asset(relay_token_acc, eosio::name{.value=0}, points.symbol, points_as_fee);
+               
+               if (points >= points_as_fee) {
+                  // deduct points_as_fee
+                  sub_balance(payer, points_as_fee);
                   idx_fees.modify(itr_fee_taker, exc_acc, [&]( auto& f ) {
-                     if (base_or_quote)
-                        f.fees_base += fee - deduction_fee;
-                     else
-                        f.fees_quote += fee - deduction_fee;
+                     f.points += points_as_fee;
                   });
+                  need_fee -= fee;
+               } else {
+                  // deduct points
+                  sub_balance(payer, points);
+                  idx_fees.modify(itr_fee_taker, exc_acc, [&]( auto& f ) {
+                     f.points += points;
+                  });
+                  // deduct (fee - points / points_price)
+                  auto deduction_fee = points * precision(points_price.symbol.precision()) / points_price.amount;
+                  deduction_fee = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, deduction_fee);
+                  need_fee -= deduction_fee;
+                  if (fee.amount > 0) {
+                     idx_fees.modify(itr_fee_taker, exc_acc, [&]( auto& f ) {
+                        if (base_or_quote)
+                           f.fees_base += fee - deduction_fee;
+                        else
+                           f.fees_quote += fee - deduction_fee;
+                     });
+                  }
                }
+               print("\n charge_fee: points_as_fee=", points_as_fee, ", need_fee=", need_fee, "\n");
+            } else {
+               idx_fees.modify(itr_fee_taker, exc_acc, [&]( auto& f ) {
+                  if (base_or_quote)
+                     f.fees_base += fee;
+                  else
+                     f.fees_quote += fee;
+               });
             }
-         }
+         }  
       } else {
          // transfer fee to exchange
          if (fee.amount > 0) {
@@ -682,7 +781,15 @@ namespace exchange {
       
       print("\n--------------enter exchange::match: pair_id=", pair_id, ", payer=", eosio::name{.value = payer}, ", receiver=", eosio::name{.value = receiver},", quantity=", quantity, ", price=", price,", bid_or_ask=", bid_or_ask,"\n");
 
-      //add_balance( payer, quantity, exc_acc );
+      // check if exc_acc has freezed enough CDX
+      eosiosystem::system_contract sys_contract(config::system_account_name);
+      eosio_assert(sys_contract.get_freezed(exc_acc) >= REG_STAKE + OPEN__PAIR_STAKE, "must freeze 2000 or more CDX!");
+      
+      fees fees_tbl(_self,_self);
+      auto idx_fees  = fees_tbl.template get_index<N(idxkey)>();
+      auto idxkey    = (uint128_t(exc_acc) << 64) | pair_id;
+      auto itr1 = idx_fees.find(idxkey);
+      eosio_assert(itr1 != idx_fees.cend(), "trading_pair has not been opened for exchange, can not be traded!");
 
       if (bid_or_ask) {
          match_for_bid(pair_id, payer, receiver, quantity, price, exc_acc, referer, fee_type);
@@ -955,7 +1062,7 @@ namespace exchange {
       
       idx_fee.modify(itr, exc_acc, [&]( auto& f ) {
          f.points_enabled  = true;
-      f.points          = to_asset(relay_token_acc, eosio::name{.value=0}, points_sym, asset(0, points_sym));
+         f.points          = to_asset(relay_token_acc, eosio::name{.value=0}, points_sym, asset(0, points_sym));
       });
    }
    
@@ -1016,7 +1123,7 @@ namespace exchange {
          int_part = ::atoll(amount_str.c_str());
          fract_part = 0;
       }
-      int64_t amount = int_part * exchange::precision(precision_digits);
+      int64_t amount = int_part * precision(precision_digits);
       amount += fract_part;
    
       return asset(amount, sym);
@@ -1064,7 +1171,7 @@ namespace exchange {
       //print("-------sys_match_match::parse receiver=", ::eosio::name{.value=receiver}, ", pair_id=", pair_id, ", price=", price, " bid_or_ask=", bid_or_ask, " exc_acc=", ::eosio::name{.value=exc_acc}, " referer=", referer, "\n");
    }
    
-   void inline_match(account_name from, asset quantity, string memo) {
+   void exchange::inline_match(account_name from, asset quantity, string memo) {
       sys_match_match smm;
       smm.parse(memo);
       
@@ -1076,7 +1183,7 @@ namespace exchange {
                  std::make_tuple(smm.pair_id, from, smm.receiver, quantity, smm.price, smm.bid_or_ask, smm.exc_acc, smm.referer, smm.fee_type)
          ).send();
       } else { // points
-         
+         add_balance( from, to_asset(relay_token_acc, eosio::name{.value=0}, quantity.symbol, quantity) , from );
       }
    }
    
@@ -1086,9 +1193,9 @@ namespace exchange {
                       string memo ) {
       if (to != _self) return;
                            
-      print("\n exchange::force_token_transfer\n");
+      //print("\n exchange::force_token_transfer\n");
       inline_match(from, quantity, memo);
-      
+
       return;
    }
    
@@ -1134,4 +1241,4 @@ extern "C" { \
    } \
 } \
 
-EOSIO_ABI_EX( exchange::exchange, (regex)(create)(open)(cancel)(match)(done)(mark)(claim)(freeze)(unfreeze)(setfee)(enpoints))
+EOSIO_ABI_EX( exchange::exchange, (regex)(create)(open)(close)(cancel)(match)(done)(mark)(claim)(freeze)(unfreeze)(setfee)(enpoints)(withdraw))

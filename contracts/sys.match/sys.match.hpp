@@ -28,6 +28,8 @@ namespace exchange {
    const uint32_t INTERVAL_BLOCKS = /*172800*/ 24 * 3600 * 1000 / config::block_interval_ms;
 
    typedef double real_type;
+   
+   int64_t precision(uint64_t decimals);
 
    class exchange : public contract  {
 
@@ -39,6 +41,8 @@ namespace exchange {
       void create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym, account_name exc_acc);
 
       void open(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc);
+      
+      void close(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc);
 
       void match( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, uint32_t bid_or_ask, account_name exc_acc, string referer, uint32_t fee_type );
       
@@ -63,6 +67,8 @@ namespace exchange {
       void setfee(account_name exc_acc, uint32_t pair_id, uint32_t rate);
       
       void enpoints(account_name exc_acc, uint32_t pair_id, symbol_type points_sym);
+      
+      void withdraw(account_name to, asset quantity);
          
       asset calcfee(asset quant, uint64_t fee_rate);
       
@@ -97,7 +103,8 @@ namespace exchange {
                       asset quantity,
                       uint32_t type,
                       string memo );
-
+                      
+      void inline_match(account_name from, asset quantity, string memo);
 
       inline void get_pair(uint32_t pair_id, name &base_chain, symbol_type &base_sym, name &quote_chain, symbol_type &quote_sym) const;
       inline symbol_type get_pair_base( uint32_t pair_id ) const;
@@ -211,6 +218,9 @@ namespace exchange {
          indexed_by< N(idxkey), const_mem_fun<fee_info, uint128_t, &fee_info::by_exc_and_pair>>
       > fees;
       typedef eosio::multi_index<N(accounts), account_info> accounts;
+      
+      const asset REG_STAKE         = asset(1000'0000);
+      const asset OPEN__PAIR_STAKE  = asset(1000'0000);
 
       void insert_order(
                        orderbook &orders, 
@@ -223,17 +233,10 @@ namespace exchange {
                        account_name receiver,
                        uint32_t fee_type);
 
-      static asset to_asset( account_name code, name chain, symbol_type sym, const asset& a );
-      static asset convert( symbol_type expected_symbol, const asset& a );
-      static int64_t precision(uint64_t decimals)
-      {
-         int64_t p10 = 1;
-         int64_t p = (int64_t)decimals;
-         while( p > 0  ) {
-            p10 *= 10; --p;
-         }
-         return p10;
-      }
+      //static asset to_asset( account_name code, name chain, symbol_type sym, const asset& a );
+      //static asset convert( symbol_type expected_symbol, const asset& a );
+      
+      
    };
    
    void exchange::check_pair( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) {

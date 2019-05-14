@@ -38,6 +38,16 @@
       {"name": "exc_acc","type": "account_name"}
       ]
     },{
+      "name": "close",
+      "base": "",
+      "fields": [
+      {"name": "base_chain","type": "name"},
+      {"name": "base_sym","type": "symbol_type"},
+      {"name": "quote_chain","type": "name"},
+      {"name": "quote_sym","type": "symbol_type"},
+      {"name": "exc_acc","type": "account_name"}
+      ]
+    },{
        "name": "trade",
        "base": "",
        "fields": [
@@ -188,6 +198,13 @@
         {"name": "pair_id","type": "uint32"},
         {"name": "points_sym","type": "symbol_type"}
        ]
+     },{
+       "name": "withdraw",
+       "base": "",
+       "fields": [
+        {"name": "to","type": "account_name"},
+        {"name": "quantity","type": "asset"}
+       ]
      }
   ],
   "actions": [{
@@ -223,6 +240,10 @@
       "type": "open",
       "ricardian_contract": ""
     },{
+      "name": "close",
+      "type": "close",
+      "ricardian_contract": ""
+    },{
       "name": "freeze",
       "type": "freeze",
       "ricardian_contract": ""
@@ -237,6 +258,10 @@
     },{
       "name": "enpoints",
       "type": "enpoints",
+      "ricardian_contract": ""
+    },{
+      "name": "withdraw",
+      "type": "withdraw",
       "ricardian_contract": ""
     }
   ],
