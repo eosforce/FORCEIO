@@ -28,6 +28,8 @@ namespace exchange {
    const uint32_t INTERVAL_BLOCKS = /*172800*/ 24 * 3600 * 1000 / config::block_interval_ms;
 
    typedef double real_type;
+   
+   int64_t precision(uint64_t decimals);
 
    class exchange : public contract  {
 
@@ -38,7 +40,11 @@ namespace exchange {
 
       void create(symbol_type base, name base_chain, symbol_type base_sym, symbol_type quote, name quote_chain, symbol_type quote_sym, account_name exc_acc);
 
-      void match( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, uint32_t bid_or_ask, account_name exc_acc, string referer );
+      void open(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc);
+      
+      void close(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc);
+
+      void match( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, uint32_t bid_or_ask, account_name exc_acc, string referer, uint32_t fee_type );
       
       void cancel(account_name maker, uint32_t type, uint64_t order_or_pair_id);
       
@@ -46,21 +52,59 @@ namespace exchange {
       
       void done_helper(account_name taker_exc_acc, account_name maker_exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t bid_or_ask);
       
-      void match_for_bid( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, account_name exc_acc, string referer);
+      void match_for_bid( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, account_name exc_acc, string referer, uint32_t fee_type);
       
-      void match_for_ask( uint32_t pair_id, account_name payer, account_name receiver, asset base, asset price, account_name exc_acc, string referer);
+      void match_for_ask( uint32_t pair_id, account_name payer, account_name receiver, asset base, asset price, account_name exc_acc, string referer, uint32_t fee_type);
       
       void mark(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym);
       
       void claim(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc, account_name fee_acc);
       
-      void freeze(uint32_t id);
+      void freeze(account_name exc_acc, uint32_t pair_id);
       
-      void unfreeze(uint32_t id);
+      void unfreeze(account_name exc_acc, uint32_t pair_id);
       
-      void setfee(account_name exc_acc, uint32_t pair_id, uint32_t type, uint32_t rate, name chain, asset fee);
+      void setfee(account_name exc_acc, uint32_t pair_id, uint32_t rate);
+      
+      void enpoints(account_name exc_acc, uint32_t pair_id, symbol_type points_sym);
+      
+      void withdraw(account_name to, asset quantity);
          
       asset calcfee(asset quant, uint64_t fee_rate);
+      
+      asset charge_fee(uint32_t pair_id, account_name payer, asset quantity, account_name exc_acc, uint32_t fee_type);
+      
+      void sub_balance( account_name owner, asset value );
+
+      void add_balance( account_name owner, asset value, account_name ram_payer );
+      
+      asset get_balance( account_name owner, symbol_type points_sym );
+      
+      void force_token_transfer( account_name from,
+                      account_name to,
+                      asset quantity,
+                      string memo );
+                      
+      void relay_token_transfer( account_name from,
+                      account_name to,
+                      name chain,
+                      asset quantity,
+                      string memo );
+
+      void force_token_trade( account_name from,
+                      account_name to,
+                      asset quantity,
+                      uint32_t type,
+                      string memo );
+                      
+      void relay_token_trade( account_name from,
+                      account_name to,
+                      name chain,
+                      asset quantity,
+                      uint32_t type,
+                      string memo );
+                      
+      void inline_match(account_name from, asset quantity, string memo);
 
       inline void get_pair(uint32_t pair_id, name &base_chain, symbol_type &base_sym, name &quote_chain, symbol_type &quote_sym) const;
       inline symbol_type get_pair_base( uint32_t pair_id ) const;
@@ -108,6 +152,7 @@ namespace exchange {
          asset           base;
          asset           price;
          uint32_t        bid_or_ask;
+         uint32_t        fee_type;
          time_point_sec  timestamp;
 
          uint64_t primary_key() const { return id; }
@@ -137,19 +182,26 @@ namespace exchange {
          uint32_t    id;
          account_name exc_acc;
          uint32_t    pair_id;
+         uint32_t    frozen;
          
-         uint32_t    type;
          uint32_t    rate;
-         name        chain;
-         asset       fee;
          
          asset       fees_base;
          asset       fees_quote;
+         
+         bool        points_enabled;
+         asset       points;
          
          uint64_t primary_key() const { return id; }
          uint128_t by_exc_and_pair() const {
             return (uint128_t(exc_acc) << 64) | pair_id;
          }
+      };
+      
+      struct account_info {
+         asset    balance;
+
+         uint64_t primary_key()const { return balance.symbol.name(); }
       };
 
       typedef eosio::multi_index<N(exchanges), exc> exchanges;
@@ -164,7 +216,11 @@ namespace exchange {
       > deals;
       typedef eosio::multi_index<N(fees), fee_info,
          indexed_by< N(idxkey), const_mem_fun<fee_info, uint128_t, &fee_info::by_exc_and_pair>>
-      > fees;    
+      > fees;
+      typedef eosio::multi_index<N(accounts), account_info> accounts;
+      
+      const asset REG_STAKE         = asset(1000'0000);
+      const asset OPEN__PAIR_STAKE  = asset(1000'0000);
 
       void insert_order(
                        orderbook &orders, 
@@ -174,19 +230,13 @@ namespace exchange {
                        asset base, 
                        asset price, 
                        account_name payer, 
-                       account_name receiver);
+                       account_name receiver,
+                       uint32_t fee_type);
 
-      static asset to_asset( account_name code, name chain, symbol_type sym, const asset& a );
-      static asset convert( symbol_type expected_symbol, const asset& a );
-      static int64_t precision(uint64_t decimals)
-      {
-         int64_t p10 = 1;
-         int64_t p = (int64_t)decimals;
-         while( p > 0  ) {
-            p10 *= 10; --p;
-         }
-         return p10;
-      }
+      //static asset to_asset( account_name code, name chain, symbol_type sym, const asset& a );
+      //static asset convert( symbol_type expected_symbol, const asset& a );
+      
+      
    };
    
    void exchange::check_pair( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) {
@@ -324,13 +374,13 @@ namespace exchange {
       for ( itr = lower; itr != upper; ++itr ) {
          if (itr->base_chain == base_chain && itr->base_sym.name() == base_sym.name() && 
                itr->quote_chain == quote_chain && itr->quote_sym.name() == quote_sym.name()) {
-            //print("exchange::get_avg_price -- pair: id=", itr->id, "\n");
+            //print("\n exchange::get_avg_price -- pair: id=", itr->id, "\n");
             pair_id = itr->id;
             break;
          }
       }
       if (itr == upper) {
-         //print("exchange::get_avg_price: trading pair not exist! base_chain=", base_chain.to_string().c_str(), ", base_sym=", base_sym, ", quote_chain", quote_chain.to_string().c_str(), ", quote_sym=", quote_sym, "\n");
+         //print("\n exchange::get_avg_price: trading pair not exist! base_chain=", base_chain.to_string().c_str(), ", base_sym=", base_sym, ", quote_chain", quote_chain.to_string().c_str(), ", quote_sym=", quote_sym, "\n");
          return avg_price;
       }
       
@@ -363,7 +413,7 @@ namespace exchange {
       auto idx_deals = deals_table.template get_index<N(idxkey)>();
       auto itr1 = idx_deals.lower_bound(lower_key);
       if (!( itr1 != idx_deals.end() && itr1->pair_id == pair_id )) {
-         print("exchange::upd_mark trading pair not marked!\n");
+         //print("exchange::upd_mark trading pair not marked!\n");
          return;
       }
       
