@@ -10,8 +10,7 @@
 namespace eosio {
 
 void token::create( account_name issuer,
-                    asset        maximum_supply )
-{
+                    asset        maximum_supply ) {
     require_auth( issuer );
 
     auto sym = maximum_supply.symbol;
@@ -32,8 +31,7 @@ void token::create( account_name issuer,
 }
 
 
-void token::issue( account_name to, asset quantity, string memo )
-{
+void token::issue( account_name to, asset quantity, string memo ) {
     auto sym = quantity.symbol;
     eosio_assert( sym.is_valid(), "invalid symbol name" );
     eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
@@ -65,8 +63,7 @@ void token::issue( account_name to, asset quantity, string memo )
 void token::transfer( account_name from,
                       account_name to,
                       asset        quantity,
-                      string       memo )
-{
+                      string       memo ) {
     eosio_assert( from != to, "cannot transfer to self" );
     require_auth( from );
     eosio_assert( is_account( to ), "to account does not exist");
@@ -82,23 +79,35 @@ void token::transfer( account_name from,
     eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
     eosio_assert( memo.size() <= 256, "memo has more than 256 bytes" );
 
-
     sub_balance( from, quantity );
     add_balance( to, quantity, from );
 }
+
+inline uint32_t calc_castfinish_block_num( const uint32_t current_block_num ) {
+   const auto weaken_num =  static_cast<uint32_t>( static_cast<double>(current_block_num) / WEAKEN_CAST_NUM );
+   // if PRE_CAST_NUM - weaken_num < STABLE_CAST_NUM
+   // mean weaken_num > PRE_CAST_NUM - STABLE_CAST_NUM
+   static_assert( PRE_CAST_NUM >= STABLE_CAST_NUM, "PRE_CAST_NUM >= STABLE_CAST_NUM" );
+
+   auto cast_num = STABLE_CAST_NUM;
+   if ( weaken_num <= ( PRE_CAST_NUM - STABLE_CAST_NUM ) ) {
+      cast_num = PRE_CAST_NUM - weaken_num;
+   }
+
+   return current_block_num + cast_num;
+}
+
 void token::castcoin( account_name from,
                       account_name to,
-                      asset        quantity)
+                      asset        quantity )
 {
    eosio_assert( from == ::config::reward_account_name, "only the account force.reward can cast coin to others" );
    require_auth( from );
 
    eosio_assert( is_account( to ), "to account does not exist");
    coincasts coincast_table( _self, to );
-   auto current_block = current_block_num();
-   int32_t cast_num = PRE_CAST_NUM - static_cast<int32_t>(current_block / WEAKEN_CAST_NUM);
-   if (cast_num < static_cast<int32_t>(STABLE_CAST_NUM)) cast_num = STABLE_CAST_NUM;
-   auto finish_block = current_block + cast_num;
+
+   const auto finish_block = calc_castfinish_block_num( current_block_num() );
    const auto cc = coincast_table.find( static_cast<uint64_t>(finish_block) );
 
    require_recipient( from );
@@ -106,7 +115,6 @@ void token::castcoin( account_name from,
 
    eosio_assert( quantity.is_valid(), "invalid quantity" );
    eosio_assert( quantity.amount > 0, "must transfer positive quantity" );
-      
    eosio_assert( cc != coincast_table.end(), "the cast is not opened" );
    eosio_assert( quantity.symbol == cc->balance.symbol, "symbol precision mismatch" );
 
@@ -116,24 +124,29 @@ void token::castcoin( account_name from,
       a.balance += quantity;
    });
 }
-void token::takecoin(account_name to) {
+
+void token::takecoin( account_name to ) {
    require_auth( to );
    coincasts coincast_table( _self, to );
-   auto current_block = current_block_num();
-   vector<uint32_t>  finish_block;
-   asset finish_coin = asset(0);
-   finish_block.clear();
-   for( auto it = coincast_table.cbegin(); it != coincast_table.cend(); ++it ) {
-      if(it->finish_block < current_block) {
-         finish_block.push_back(it->finish_block);
-         finish_coin += it->balance;
+
+   const auto current_block = current_block_num();
+
+   vector<uint32_t> finish_block;
+   asset finish_coin = asset{0};
+
+   finish_block.reserve(128);
+   for( const auto& coincast : coincast_table ) {
+      if( coincast.finish_block < current_block ) {
+         finish_block.push_back(coincast.finish_block);
+         finish_coin += coincast.balance;
       }
    }
+
    add_balance( to, finish_coin, to );
-   for (auto val : finish_block)
-   {
+
+   for( const auto& val : finish_block ) {
       const auto cc = coincast_table.find( static_cast<uint64_t>(val) );
-      if (cc != coincast_table.end()) {
+      if( cc != coincast_table.end() ) {
          coincast_table.erase(cc);
       }
    }
@@ -144,10 +157,8 @@ void token::opencast(account_name to) {
 
    eosio_assert( is_account( to ), "to account does not exist");
    coincasts coincast_table( _self, to );
-   auto current_block = current_block_num();
-   int32_t cast_num = PRE_CAST_NUM - static_cast<int32_t>(current_block / WEAKEN_CAST_NUM);
-   if (cast_num < static_cast<int32_t>(STABLE_CAST_NUM)) cast_num = STABLE_CAST_NUM;
-   auto finish_block = current_block + cast_num;
+
+   const auto finish_block = calc_castfinish_block_num( current_block_num() );
    const auto cc = coincast_table.find( static_cast<uint64_t>(finish_block) );
 
    eosio_assert(cc == coincast_table.end(),"the cast is been opened");
@@ -157,20 +168,20 @@ void token::opencast(account_name to) {
       });
 }
 
-void token::closecast(account_name to,int32_t finish_block) {
+void token::closecast( account_name to, int32_t finish_block ) {
    require_auth( to );
 
    eosio_assert( is_account( to ), "to account does not exist");
    coincasts coincast_table( _self, to );
    const auto cc = coincast_table.find( static_cast<uint64_t>(finish_block) );
-   eosio_assert(cc != coincast_table.end(),"the cast is not exist");
-   eosio_assert(cc->balance == asset(0),"the cast can not be closed");
+   eosio_assert(cc != coincast_table.end(), "the cast is not exist");
+   eosio_assert(cc->balance == asset(0), "the cast can not be closed");
 
    coincast_table.erase(cc);
 }
 
 void token::fee( account_name payer, asset quantity ){
-   const auto fee_account = N(force.fee);
+   const auto fee_account = N(force.fee); // TODO use define in config file
 
    require_auth( payer );
 
@@ -217,8 +228,7 @@ void token::add_balance( account_name owner, asset value, account_name ram_payer
    }
 }
 
-int64_t precision(uint64_t decimals)
-{
+int64_t precision( uint64_t decimals ) {
    int64_t p10 = 1;
    int64_t p = (int64_t)decimals;
    while( p > 0  ) {
@@ -238,7 +248,6 @@ asset convert( symbol_type expected_symbol, const asset& a ) {
    else {
       factor =  precision( a.symbol.precision() ) / precision( expected_symbol.precision() );
       b = asset( a.amount / factor, expected_symbol );
-      
    }
    return b;
 }
@@ -319,20 +328,22 @@ void token::trade(account_name from,
    }
 }
 
-void splitMemo(std::vector<std::string>& results, const std::string& memo,char separator) {
+void splitMemo( std::vector<std::string>& results, const std::string& memo, char separator ) {
    auto start = memo.cbegin();
    auto end = memo.cend();
 
-   for (auto it = start; it != end; ++it) {
-     if (*it == separator) {
+   for( auto it = start; it != end; ++it ) {
+     if( *it == separator ) {
          results.emplace_back(start, it);
          start = it + 1;
-     }
+      }
    }
    if (start != end) results.emplace_back(start, end);
 }
-void sys_bridge_addmort::parse(const string memo) {
+
+void sys_bridge_addmort::parse( const std::string& memo ) {
    std::vector<std::string> memoParts;
+   memoParts.reserve(8);
    splitMemo(memoParts, memo, ';');
    eosio_assert(memoParts.size() == 3,"memo is not adapted with bridge_addmortgage");
    this->trade_name.value = ::eosio::string_to_name(memoParts[0].c_str());
@@ -341,8 +352,9 @@ void sys_bridge_addmort::parse(const string memo) {
    eosio_assert(this->type == 1 || this->type == 2,"type is not adapted with bridge_addmortgage");
 }
 
-void sys_bridge_exchange::parse(const string memo) {
+void sys_bridge_exchange::parse( const std::string& memo ) {
    std::vector<std::string> memoParts;
+   memoParts.reserve(8);
    splitMemo(memoParts, memo, ';');
    eosio_assert(memoParts.size() == 4,"memo is not adapted with bridge_addmortgage");
    this->trade_name.value = ::eosio::string_to_name(memoParts[0].c_str());
@@ -352,7 +364,7 @@ void sys_bridge_exchange::parse(const string memo) {
    eosio_assert(this->type == 1 || this->type == 2,"type is not adapted with bridge_addmortgage");
 }
 
-inline std::string trim(const std::string str) {
+inline std::string trim( const std::string& str ) {
    auto s = str;
    s.erase(s.find_last_not_of(" ") + 1);
    s.erase(0, s.find_first_not_of(" "));
@@ -360,65 +372,70 @@ inline std::string trim(const std::string str) {
    return s;
 }
 
-asset asset_from_string(const std::string& from) {
+asset asset_from_string( const std::string& from ) {
    std::string s = trim(from);
-   const char * str1 = s.c_str();
+   const auto str1 = s.c_str();
 
    // Find space in order to split amount and symbol
-   const char * pos = strchr(str1, ' ');
-   eosio_assert((pos != NULL), "Asset's amount and symbol should be separated with space");
-   auto space_pos = pos - str1;
-   auto symbol_str = trim(s.substr(space_pos + 1));
-   auto amount_str = s.substr(0, space_pos);
+   const auto pos = strchr(str1, ' ');
+   eosio_assert((pos != nullptr), "Asset's amount and symbol should be separated with space");
+
+   const auto space_pos = pos - str1;
+   const auto symbol_str = trim(s.substr(space_pos + 1));
+   const auto amount_str = s.substr(0, space_pos);
    eosio_assert((amount_str[0] != '-'), "now do not support negetive asset");
 
    // Ensure that if decimal point is used (.), decimal fraction is specified
-   const char * str2 = amount_str.c_str();
-   const char *dot_pos = strchr(str2, '.');
-   if (dot_pos != NULL) {
+   const auto str2 = amount_str.c_str();
+   const auto dot_pos = strchr(str2, '.');
+   if (dot_pos != nullptr) {
       eosio_assert((dot_pos - str2 != amount_str.size() - 1), "Missing decimal fraction after decimal point");
    }
+
    print("------asset_from_string: symbol_str=",symbol_str, ", amount_str=",amount_str, "\n");
+
    // Parse symbol
-   uint32_t precision_digits;
-   if (dot_pos != NULL) {
+   uint32_t precision_digits = 0;
+   if (dot_pos != nullptr) {
       precision_digits = amount_str.size() - (dot_pos - str2 + 1);
-   } else {
-      precision_digits = 0;
    }
 
    symbol_type sym;
    sym.value = ::eosio::string_to_symbol((uint8_t)precision_digits, symbol_str.c_str());
+
    // Parse amount
-   int64_t int_part, fract_part;
-   if (dot_pos != NULL) {
+   int64_t int_part   = ::atoll(amount_str.c_str());
+   int64_t fract_part = 0;
+   if (dot_pos != nullptr) {
       int_part = ::atoll(amount_str.substr(0, dot_pos - str2).c_str());
       fract_part = ::atoll(amount_str.substr(dot_pos - str2 + 1).c_str());
-   } else {
-      int_part = ::atoll(amount_str.c_str());
-      fract_part = 0;
    }
-   int64_t amount = int_part * precision(precision_digits);
-   amount += fract_part;
 
+   const auto amount = int_part * precision(precision_digits) + fract_part;
    return asset(amount, sym);
 }
 
-void sys_match_match::parse(const string memo) {
+void sys_match_match::parse( const std::string& memo ) {
    using namespace boost;
 
    std::vector<std::string> memoParts;
-   //splitMemo(memoParts, memo, ';');
+   memoParts.reserve(8);
+
    split( memoParts, memo, is_any_of( ";" ) );
-   eosio_assert(memoParts.size() == 6,"memo is not adapted with sys_match_match");
-   receiver = ::eosio::string_to_name(memoParts[0].c_str());
-   pair_id = (uint32_t)atoi(memoParts[1].c_str());
-   price = asset_from_string(memoParts[2]);
+   eosio_assert( memoParts.size() == 6, "memo is not adapted with sys_match_match" );
+
+   receiver   = ::eosio::string_to_name(memoParts[0].c_str());
+   pair_id    = (uint32_t)atoi(memoParts[1].c_str());
+   price      = asset_from_string(memoParts[2]);
    bid_or_ask = (uint32_t)atoi(memoParts[3].c_str());
-   exc_acc     = ::eosio::string_to_name(memoParts[4].c_str());
-   referer     = memoParts[5];
+   exc_acc    = ::eosio::string_to_name(memoParts[4].c_str());
+   referer    = memoParts[5];
+
    eosio_assert(bid_or_ask == 0 || bid_or_ask == 1,"type is not adapted with sys_match_match");
-print("-------sys_match_match::parse receiver=", eosio::name{.value=receiver}, ", pair_id=", pair_id, ", price=", price, " bid_or_ask=", bid_or_ask, " exc_acc=", exc_acc, " referer=", referer, "\n");
+
+   print("-------sys_match_match::parse receiver=", eosio::name{.value=receiver}, 
+            ", pair_id=", pair_id, ", price=", price, 
+            " bid_or_ask=", bid_or_ask, " exc_acc=", exc_acc, " referer=", referer, "\n");
 }
 
 } /// namespace eosio

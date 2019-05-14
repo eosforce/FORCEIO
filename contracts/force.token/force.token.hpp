@@ -17,11 +17,12 @@ namespace eosio {
 
    using std::string;
 
+   // TODO by CODEREVIEW need make one for force.token and relay.token
    struct sys_bridge_addmort {
       name trade_name;
       account_name trade_maker;
       uint64_t type;
-      void parse(const string memo);
+      void parse( const std::string& memo );
    };
 
    struct sys_bridge_exchange {
@@ -29,7 +30,7 @@ namespace eosio {
       account_name trade_maker;
       account_name recv;
       uint64_t type;
-      void parse(const string memo);
+      void parse( const std::string& memo );
    };
 
    struct sys_match_match {
@@ -39,7 +40,7 @@ namespace eosio {
       uint32_t bid_or_ask;
       account_name exc_acc;
       std::string referer;
-      void parse(const string memo);
+      void parse( const std::string& memo );
    };
 
    enum  class func_type:uint64_t {
@@ -53,13 +54,14 @@ namespace eosio {
    #ifdef BEFORE_ONLINE_TEST   
    static constexpr uint32_t PRE_CAST_NUM = 28800;
    static constexpr uint32_t STABLE_CAST_NUM = 7200;
-   static constexpr double WEAKEN_CAST_NUM = 2.5;
+   static constexpr double WEAKEN_CAST_NUM = 2.5; // per block
    #else
    static constexpr uint32_t PRE_CAST_NUM = 5184000;
    static constexpr uint32_t STABLE_CAST_NUM = 604800;
    static constexpr double WEAKEN_CAST_NUM = 2.5;
    #endif
 
+   // TODO by CODEREVIEW need unity force.token and relay.token
    class token : public contract {
       public:
          token( account_name self ):contract(self){}
@@ -100,16 +102,16 @@ namespace eosio {
          };
 
          struct currency_stats {
-            asset          supply;
-            asset          max_supply;
-            account_name   issuer;
+            asset        supply;
+            asset        max_supply;
+            account_name issuer;
 
             uint64_t primary_key()const { return supply.symbol.name(); }
          };
 
          struct coin_cast {
-            asset    balance = asset(0);
-            uint32_t   finish_block = 0;
+            asset    balance      = asset(0);
+            uint32_t finish_block = 0;
 
             uint64_t primary_key()const { return static_cast<uint64_t>(finish_block); }
          };
