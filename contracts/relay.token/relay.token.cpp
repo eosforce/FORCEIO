@@ -402,12 +402,26 @@ void token::trade( account_name from,
    
 }
 
-void token::addreward(name chain,asset supply) {
+void token::addreward(name chain,asset supply,int32_t reward_now) {
    require_auth(_self);
 
    auto sym = supply.symbol;
    eosio_assert(sym.is_valid(), "invalid symbol name");
-   
+
+   stats statstable(_self, chain);
+   auto existing = statstable.find(supply.symbol.name());
+   eosio_assert(existing != statstable.end(), "token with symbol do not exists");
+
+   if (reward_now == 1) {
+      statstable.modify(*existing, 0, [&]( auto& s ) {
+         reward_mine_info temp_remind;
+         temp_remind.total_mineage = 0;
+         temp_remind.reward_block_num = 0;
+         temp_remind.reward_pool = asset(0);
+         s.reward_mine.push_back(temp_remind);
+      });
+   }
+
    rewards rewardtable(_self, _self);
    auto idx = rewardtable.get_index<N(bychain)>();
    auto con = idx.find(get_account_idx(chain, supply));
@@ -437,7 +451,7 @@ void token::rewardmine(asset quantity) {
    for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
       stats statstable(_self, it->chain);
       auto existing = statstable.find(it->supply.symbol.name());
-      eosio_assert(existing != statstable.end(), "token with symbol already exists");
+      eosio_assert(existing != statstable.end(), "token with symbol do not exists");
       uint64_t devide_amount = quantity.amount * existing->supply.amount * OTHER_COIN_WEIGHT / 10000 / total_power;
       statstable.modify(*existing, 0, [&]( auto& s ) {
          s.reward_mine[s.reward_mine.size() - 1].reward_pool = asset(devide_amount);

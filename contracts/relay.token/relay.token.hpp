@@ -107,7 +107,7 @@ public:
                string memo);
                   
    /// @abi action
-   void addreward(name chain,asset supply);
+   void addreward(name chain,asset supply,int32_t reward_now);
    /// @abi action
    void rewardmine(asset quantity);
    /// @abi action
