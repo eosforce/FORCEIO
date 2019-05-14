@@ -6,7 +6,6 @@ namespace force {
 
 void relay::commit( const name chain, const account_name transfer, const relay::block_type& block, const vector<action>& actions ) {
    //print("commit ", chain, " ", name{transfer}, " in ", block.num, "\n");
-
    require_auth(transfer);
 
    transfers_table transfers(_self, chain);
@@ -199,9 +198,9 @@ void relay::onblockimp( const name chain, const block_type& block, const vector<
 
    handlers_table handlers(_self, chain);
 
-   for(const auto& act : actions){
+   for( const auto& act : actions ) {
       //print("check act ", act.account, " ", act.name, "\n");
-      for(const auto& h : handlers){
+      for( const auto& h : handlers ) {
          // handler num will <= 10, so just search by for
          if( (h.actaccount == act.account) && (h.actname == act.name) ) {
             onaction(block, act, h);
@@ -249,7 +248,7 @@ void relay::ontransfer( const account_name from,
       return;
    }
 
-   new_transfer(name{string_to_name(memo.c_str())}, from, quantity);
+   new_transfer( name{string_to_name(memo.c_str())}, from, quantity );
 }
 
 } // namespace force

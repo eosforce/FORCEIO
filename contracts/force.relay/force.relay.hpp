@@ -15,8 +15,6 @@
 #include <vector>
 #include <array>
 
-
-
 namespace force {
 
 using namespace eosio;
@@ -27,29 +25,29 @@ public:
       : contract(self)
       {}
 
-
 public:
-   // action
+
+   // action the action committed from chain map to relay
    struct action {
-      account_name               account;
-      action_name                name;
-      vector<permission_level>   authorization;
-      bytes                      data;
+      account_name             account;
+      action_name              name;
+      vector<permission_level> authorization;
+      bytes                    data;
 
       EOSLIB_SERIALIZE( action, (account)(name)(authorization)(data) )
    };
 
-   // block
+   // block_type the block info committed from chain map to relay
    struct block_type {
    public:
-      account_name            producer = name{0};
-      uint32_t                num = 0;
-      checksum256             id;
-      checksum256             previous;
-      uint16_t                confirmed = 1;
-      checksum256             transaction_mroot;
-      checksum256             action_mroot;
-      checksum256             mroot;
+      account_name producer  = name{0};
+      uint32_t     num       = 0;
+      checksum256  id;
+      checksum256  previous;
+      uint16_t     confirmed = 1;
+      checksum256  transaction_mroot;
+      checksum256  action_mroot;
+      checksum256  mroot;
 
       bool is_nil() const {
          return this->producer == name{0};
@@ -60,17 +58,15 @@ public:
       }
 
       bool operator == (const block_type &m) const {
-         return id == m.id
+         return id  == m.id
              && num == m.num
              && transaction_mroot == m.transaction_mroot
-             && action_mroot == m.action_mroot
-             && mroot == m.mroot;
+             && action_mroot      == m.action_mroot
+             && mroot             == m.mroot;
       }
 
       EOSLIB_SERIALIZE( block_type,
-            (producer)(num)(id)(previous)(confirmed)
-            (transaction_mroot)(action_mroot)(mroot)
-             )
+            (producer)(num)(id)(previous)(confirmed)(transaction_mroot)(action_mroot)(mroot) )
    };
 
    struct unconfirm_block {
@@ -80,14 +76,14 @@ public:
       vector<action>       actions;
       vector<account_name> confirmeds;
 
-      bool operator < (const unconfirm_block &m) const {
+      bool operator < ( const unconfirm_block &m ) const {
          return base.num < m.base.num;
       }
 
-      void confirm_by(const account_name& committer) {
-         const auto itr = std::find(confirmeds.begin(), confirmeds.end(), committer);
-         eosio_assert(itr == confirmeds.end(), "committer has confirmed");
-         confirmeds.push_back(committer);
+      void confirm_by( const account_name& committer ) {
+         const auto itr = std::find( confirmeds.begin(), confirmeds.end(), committer );
+         eosio_assert( itr == confirmeds.end(), "committer has confirmed" );
+         confirmeds.push_back( committer );
       }
 
       EOSLIB_SERIALIZE( unconfirm_block, (base)(confirm)(actions)(confirmeds) )
@@ -162,8 +158,7 @@ private:
    void new_transfer( name chain, account_name transfer, const asset& deposit );
 
 public:
-   void ontransfer( const account_name from, const account_name to,
-            const asset& quantity, const std::string& memo);
+   void ontransfer( const account_name from, const account_name to, const asset& quantity, const std::string& memo);
 
 public:
    /// @abi action
