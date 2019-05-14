@@ -6,6 +6,8 @@
 #include <eosio/chain/name.hpp>
 #include <eosio/chain/config.hpp>
 
+#include <boost/exception/diagnostic_information.hpp>
+
 #include <fstream>
 
 //using namespace eosio;
@@ -32,6 +34,8 @@ FC_REFLECT(key_map, ( keymap ))
 
 
 int main( int argc, const char **argv ) {
+   try {
+
    eosio::chain::genesis_state gs;
    const std::string path = "./genesis.json";
    const std::string activeacc = "./activeacc.json";
@@ -109,4 +113,14 @@ int main( int argc, const char **argv ) {
    fc::json::save_to_file<key_map>(my_sign_keymap, sigkeypath, true);
 
    return 0;
+
+   } catch (const fc::exception& e) {
+      elog("${e}", ("e",e.to_detail_string()));
+   } catch (const boost::exception& e) {
+      elog("${e}", ("e",boost::diagnostic_information(e)));
+   } catch (const std::exception& e) {
+      elog("${e}", ("e",e.what()));
+   } catch (...) {
+      // empty
+   }
 }
