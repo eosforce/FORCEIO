@@ -33,17 +33,6 @@ using std::string;
       void parse(const string memo);
    };
    
-   struct sys_match_match {
-      account_name receiver;
-      uint32_t pair_id;
-      
-      asset price;
-      uint32_t bid_or_ask;
-      account_name exc_acc;
-      std::string referer;
-      void parse(const string memo);
-   };
-
    enum  class trade_type:uint64_t {
       match=1,
       bridge_addmortgage,
