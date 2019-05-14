@@ -1273,7 +1273,7 @@ struct controller_impl {
                                            bool explicit_billed_cpu_time = false )
    {
       EOS_ASSERT(deadline != fc::time_point(), transaction_exception, "deadline cannot be uninitialized");
-      check_action(trx->trx.actions);
+      check_action(trx->packed_trx->get_transaction().actions);
 
       transaction_trace_ptr trace;
       try {
