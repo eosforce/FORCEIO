@@ -276,14 +276,11 @@ namespace exchange {
          account_name exc_acc;
          uint32_t     pair_id;
          uint32_t     frozen;
-
-         uint32_t rate;
-
-         asset fees_base;
-         asset fees_quote;
-
-         bool points_enabled;
-         asset points;
+         uint32_t     rate;
+         asset        fees_base;
+         asset        fees_quote;
+         bool         points_enabled;
+         asset        points;
 
          uint64_t primary_key() const { return id; }
 
@@ -298,20 +295,25 @@ namespace exchange {
          uint64_t primary_key() const { return balance.symbol.name(); }
       };
 
-      typedef eosio::multi_index<N(exchanges), exc> exchanges;
-      typedef eosio::multi_index<N(pairs), trading_pair,
+      using exchanges = eosio::multi_index<N(exchanges), exc>;
+
+      using trading_pairs = eosio::multi_index<N(pairs), trading_pair,
             indexed_by<N(idxkey), const_mem_fun<trading_pair, uint128_t, &trading_pair::by_pair_sym>>
-      > trading_pairs;
-      typedef eosio::multi_index<N(orderbook), order,
+      >;
+
+      using orderbook = eosio::multi_index<N(orderbook), order,
             indexed_by<N(idxkey), const_mem_fun<order, uint128_t, &order::by_pair_price>>
-      > orderbook;
-      typedef eosio::multi_index<N(deals), deal_info,
+      >;
+
+      using deals = eosio::multi_index<N(deals), deal_info,
             indexed_by<N(idxkey), const_mem_fun<deal_info, uint64_t, &deal_info::by_pair_and_block_height>>
-      > deals;
-      typedef eosio::multi_index<N(fees), fee_info,
+      >;
+
+      using fees = eosio::multi_index<N(fees), fee_info,
             indexed_by<N(idxkey), const_mem_fun<fee_info, uint128_t, &fee_info::by_exc_and_pair>>
-      > fees;
-      typedef eosio::multi_index<N(accounts), account_info> accounts;
+      >;
+
+      using accounts = eosio::multi_index<N(accounts), account_info>;
 
       const asset REG_STAKE = asset(1000'0000);
       const asset OPEN_PAIR_STAKE = asset(1000'0000);
@@ -340,14 +342,14 @@ namespace exchange {
       auto upper     = pairs_table.upper_bound(upper_key);
 
       for( auto itr = lower; itr != upper; ++itr ) {
-         if( itr->base_chain == base_chain && itr->base_sym.name() == base_sym.name() &&
-             itr->quote_chain == quote_chain && itr->quote_sym.name() == quote_sym.name() ) {
+         if(    itr->base_chain       == base_chain 
+             && itr->base_sym.name()  == base_sym.name() 
+             && itr->quote_chain      == quote_chain 
+             && itr->quote_sym.name() == quote_sym.name() ) {
             eosio_assert(false, "trading pair already exist");
             return;
          }
       }
-
-      return;
    }
 
    uint32_t exchange::get_pair_id( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const {
@@ -359,8 +361,10 @@ namespace exchange {
       auto upper     = pairs_table.upper_bound(upper_key);
 
       for( auto itr = lower; itr != upper; ++itr ) {
-         if( itr->base_chain == base_chain && itr->base_sym.name() == base_sym.name() &&
-             itr->quote_chain == quote_chain && itr->quote_sym.name() == quote_sym.name() ) {
+         if(    itr->base_chain       == base_chain 
+             && itr->base_sym.name()  == base_sym.name() 
+             && itr->quote_chain      == quote_chain 
+             && itr->quote_sym.name() == quote_sym.name() ) {
             return itr->id;
          }
       }
@@ -373,15 +377,12 @@ namespace exchange {
    void exchange::get_pair( uint32_t pair_id, name& base_chain, symbol_type& base_sym, name& quote_chain, symbol_type& quote_sym ) const {
       trading_pairs pairs_table(_self, _self);
 
-      auto itr = pairs_table.find(pair_id);
-      eosio_assert(itr != pairs_table.cend(), "pair does not exist");
+      const auto pair = pairs_table.get(pair_id, "pair does not exist");
 
-      base_chain  = itr->base_chain;
-      base_sym    = itr->base_sym;
-      quote_chain = itr->quote_chain;
-      quote_sym   = itr->quote_sym;
-
-      return;
+      base_chain  = pair.base_chain;
+      base_sym    = pair.base_sym;
+      quote_chain = pair.quote_chain;
+      quote_sym   = pair.quote_sym;
    }
 
    symbol_type exchange::get_pair_base( uint32_t pair_id ) const {
@@ -464,13 +465,16 @@ namespace exchange {
       auto itr       = lower;
 
       for( itr = lower; itr != upper; ++itr ) {
-         if( itr->base_chain == base_chain && itr->base_sym.name() == base_sym.name() &&
-             itr->quote_chain == quote_chain && itr->quote_sym.name() == quote_sym.name() ) {
+         if(    itr->base_chain       == base_chain 
+             && itr->base_sym.name()  == base_sym.name() 
+             && itr->quote_chain      == quote_chain 
+             && itr->quote_sym.name() == quote_sym.name() ) {
             //print("\n exchange::get_avg_price -- pair: id=", itr->id, "\n");
             pair_id = itr->id;
             break;
          }
       }
+
       if( itr == upper ) {
          //print("\n exchange::get_avg_price: trading pair not exist! base_chain=", base_chain.to_string().c_str(), ", base_sym=", base_sym, ", quote_chain", quote_chain.to_string().c_str(), ", quote_sym=", quote_sym, "\n");
          return avg_price;
