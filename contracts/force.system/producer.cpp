@@ -429,11 +429,10 @@ namespace eosiosystem {
          });
       }
    }
-   //relay.token 实现
+   
    int128_t system_contract::get_coin_power() {
 
       int128_t total_power = 0;
-      //rewards coin_reward(::config::relay_token_account_name,::config::relay_token_account_name);
       rewards coin_reward(N(relay.token),N(relay.token));
       exchange::exchange t(SYS_MATCH);
       for( auto it = coin_reward.cbegin(); it != coin_reward.cend(); ++it ) {
@@ -442,7 +441,6 @@ namespace eosiosystem {
          auto existing = statstable.find(it->supply.symbol.name());
          eosio_assert(existing != statstable.end(), "token with symbol already exists");
          auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
-         price = 10000;
          auto today_index = existing->reward_mine.size() - 1;
          auto power = existing->reward_mine[today_index].total_mineage * OTHER_COIN_WEIGHT / 10000 * price / 10000;
          total_power += power;

@@ -418,7 +418,7 @@ void token::addreward(name chain,asset supply,int32_t reward_now) {
       }
    });
 }
-//矿龄*价格
+
 void token::rewardmine(asset quantity) {
    require_auth(::config::system_account_name);
    rewards rewardtable(_self, _self);
@@ -429,8 +429,6 @@ void token::rewardmine(asset quantity) {
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol already exists");
       auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
-      // tobe delete
-      price = 1;
       total_power += existing->reward_mine[existing->reward_mine.size() - 1].total_mineage*price ;
    }
 
@@ -440,8 +438,6 @@ void token::rewardmine(asset quantity) {
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol do not exists");
       auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
-      // tobe delete
-      price = 1;
       uint128_t devide_amount =  existing->reward_mine[existing->reward_mine.size() - 1].total_mineage * price * quantity.amount  / total_power;
       statstable.modify(*existing, 0, [&]( auto& s ) {
          s.reward_mine[s.reward_mine.size() - 1].reward_pool = asset(devide_amount);
