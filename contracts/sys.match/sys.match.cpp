@@ -140,7 +140,7 @@ namespace exchange {
 
       // check if exc_acc has freezed enough CDX
       eosiosystem::system_contract sys_contract(config::system_account_name);
-      eosio_assert(sys_contract.get_freezed(exc_acc) >= REG_STAKE + OPEN__PAIR_STAKE, "must freeze 2000 or more CDX!");
+      eosio_assert(sys_contract.get_freezed(exc_acc) >= REG_STAKE + OPEN_PAIR_STAKE, "must freeze 2000 or more CDX!");
 
       fees fees_tbl(_self, _self);
       auto idx_fees = fees_tbl.template get_index<N(idxkey)>();
@@ -775,7 +775,7 @@ namespace exchange {
 
       // check if exc_acc has freezed enough CDX
       eosiosystem::system_contract sys_contract(config::system_account_name);
-      eosio_assert(sys_contract.get_freezed(exc_acc) >= REG_STAKE + OPEN__PAIR_STAKE, "must freeze 2000 or more CDX!");
+      eosio_assert(sys_contract.get_freezed(exc_acc) >= REG_STAKE + OPEN_PAIR_STAKE, "must freeze 2000 or more CDX!");
 
       fees fees_tbl(_self, _self);
       auto idx_fees = fees_tbl.template get_index<N(idxkey)>();

@@ -314,7 +314,7 @@ namespace exchange {
       typedef eosio::multi_index<N(accounts), account_info> accounts;
 
       const asset REG_STAKE = asset(1000'0000);
-      const asset OPEN__PAIR_STAKE = asset(1000'0000);
+      const asset OPEN_PAIR_STAKE = asset(1000'0000);
 
       void insert_order(
             orderbook& orders,
