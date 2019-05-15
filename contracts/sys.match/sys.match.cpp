@@ -6,13 +6,13 @@
 
 namespace exchange {
    uint128_t compute_pair_index( symbol_type base, symbol_type quote ) {
-      uint128_t idxkey = (uint128_t(base.name()) << 64) | quote.name();
-      return idxkey;
+      return (static_cast<uint128_t>(base.name()) << 64) | static_cast<uint128_t>(quote.name());
    }
 
    uint128_t compute_orderbook_lookupkey( uint32_t pair_id, uint32_t bid_or_ask, uint64_t value ) {
-      auto lookup_key = (uint128_t(pair_id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | value;
-      return lookup_key;
+      return (static_cast<uint128_t>(pair_id) << 96) 
+           | (static_cast<uint128_t>(bid_or_ask ? 0 : 1)) << 64 
+           | static_cast<uint128_t>(value);
    }
 
    void inline_transfer( account_name from, account_name to, name chain, asset quantity, string memo ) {
