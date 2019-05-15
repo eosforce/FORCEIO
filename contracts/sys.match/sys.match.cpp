@@ -34,19 +34,27 @@ namespace exchange {
    /*
    convert a to expected_symbol, including symbol name and symbol precision
    */
-   asset convert( symbol_type expected_symbol, const asset& a ) {
-      int64_t factor;
-      asset b;
+   inline asset convert( const symbol_type& expected_symbol, const asset& a ) {
+      /*
+         convert asset from one precision to another
+         example:
+            (5,AAA) -> (6, AAA)
+            500 (5, AAA) -> amount : 500 * 100000 
+            500 (6, AAA) -> amount` : 500 * 1000000 
+            convert need amount` = amount * (10 ^ ( 6 - 5 ))
 
-      if( expected_symbol.precision() >= a.symbol.precision() ) {
-         factor = precision(expected_symbol.precision()) / precision(a.symbol.precision());
-         b = asset(a.amount * factor, expected_symbol);
-      } else {
-         factor = precision(a.symbol.precision()) / precision(expected_symbol.precision());
-         b = asset(a.amount / factor, expected_symbol);
+            (5,AAA) -> (2, AAA)
+            500 (5, AAA) -> amount : 500 * 100000 
+            500 (2, AAA) -> amount` : 500 * 100 
+            convert need amount` = amount / (10 ^ ( 5 - 2 ))
+      */
+      const auto pre_diff = expected_symbol.precision() - a.symbol.precision();
+      const auto factor   = precision( pre_diff > 0 ? pre_diff : -pre_diff );
 
-      }
-      return b;
+      const auto amount_n =   pre_diff >= 0
+                            ? a.amount * factor
+                            : a.amount / factor;
+      return asset( amount_n, expected_symbol );
    }
 
    asset to_asset( account_name code, name chain, symbol_type sym, const asset& a ) {
