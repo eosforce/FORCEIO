@@ -374,13 +374,13 @@ namespace exchange {
       for ( itr = lower; itr != upper; ++itr ) {
          if (itr->base_chain == base_chain && itr->base_sym.name() == base_sym.name() && 
                itr->quote_chain == quote_chain && itr->quote_sym.name() == quote_sym.name()) {
-            //print("exchange::get_avg_price -- pair: id=", itr->id, "\n");
+            //print("\n exchange::get_avg_price -- pair: id=", itr->id, "\n");
             pair_id = itr->id;
             break;
          }
       }
       if (itr == upper) {
-         //print("exchange::get_avg_price: trading pair not exist! base_chain=", base_chain.to_string().c_str(), ", base_sym=", base_sym, ", quote_chain", quote_chain.to_string().c_str(), ", quote_sym=", quote_sym, "\n");
+         //print("\n exchange::get_avg_price: trading pair not exist! base_chain=", base_chain.to_string().c_str(), ", base_sym=", base_sym, ", quote_chain", quote_chain.to_string().c_str(), ", quote_sym=", quote_sym, "\n");
          return avg_price;
       }
       

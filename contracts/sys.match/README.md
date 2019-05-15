@@ -144,6 +144,7 @@ efc push action sys.match regex '["biosbpa"]' -p biosbpa
 efc push action sys.match create '["4,BTC", "btc1", "4,CBTC", "2,USDT", "usdt1", "2,CUSDT", "biosbpa"]' -p biosbpa
 
 7、 open trading pairs
+efc push action force freeze '{"voter":"biosbpa", "stake":"10000.0000 CDX"}' -p biosbpa
 efc push action sys.match open '["btc1", "4,CBTC", "usdt1", "2,CUSDT", "biosbpa"]' -p biosbpa
 
 8、set exchange trading fees
