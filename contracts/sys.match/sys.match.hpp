@@ -17,6 +17,8 @@
 
 #include <string>
 
+// TODO by CODEREVIEW need unity force.token and relay.token
+
 namespace exchange {
 
    using namespace eosio;
@@ -56,8 +58,6 @@ namespace exchange {
          }
          return p10;
       }
-
-
    }
 
    class exchange : public contract {

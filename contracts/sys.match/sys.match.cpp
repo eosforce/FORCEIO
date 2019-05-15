@@ -4,6 +4,8 @@
 #include "force.system/force.system.hpp"
 #include <boost/algorithm/string.hpp>
 
+// TODO by CODEREVIEW need unity force.token and relay.token
+
 namespace exchange {
    uint128_t compute_pair_index( symbol_type base, symbol_type quote ) {
       return (static_cast<uint128_t>(base.name()) << 64) | static_cast<uint128_t>(quote.name());
@@ -58,21 +60,16 @@ namespace exchange {
    }
 
    asset to_asset( account_name code, name chain, symbol_type sym, const asset& a ) {
-      asset b;
       symbol_type expected_symbol;
-
       if( chain.value == 0 ) {
          eosio::token t(config::token_account_name);
-
          expected_symbol = t.get_supply(sym.name()).symbol;
       } else {
          relay::token t(relay_token_acc);
-
          expected_symbol = t.get_supply(chain, sym.name()).symbol;
       }
 
-      b = convert(expected_symbol, a);
-      return b;
+      return convert(expected_symbol, a);
    }
 
    void exchange::regex( account_name exc_acc ) {
