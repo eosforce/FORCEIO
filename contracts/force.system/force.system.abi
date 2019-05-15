@@ -67,7 +67,8 @@
         {"name":"bpname",                "type":"account_name"},
         {"name":"vote",                  "type":"asset"},
         {"name":"voteage",               "type":"int64"},
-        {"name":"voteage_update_height", "type":"uint32"}
+        {"name":"voteage_update_height", "type":"uint32"},
+        {"name":"total_reward", "type":"asset"}
       ]
     },{
       "name": "votes_info",
@@ -85,6 +86,14 @@
         {"name":"unstaking",      "type":"asset"},
         {"name":"voter",          "type":"account_name"},
         {"name":"unstake_height", "type":"uint32"}
+      ]
+    },{
+      "name": "vote_reward_info",
+      "base": "",
+      "fields": [
+        {"name":"total_voteage",         "type":"int64"},
+        {"name":"total_reward",      "type":"asset"},
+        {"name":"reward_block_num",          "type":"int32"}
       ]
     },{
       "name": "bp_info",
@@ -108,6 +117,7 @@
         {"name":"total_drain_block",             "type":"int32"},
         {"name":"remain_punish",             "type":"asset"},
         {"name":"active_change_block_num",             "type":"int32"},
+        {"name":"reward_vote",             "type":"vote_reward_info[]"}
       ]
     },{
       "name": "setemergency",
@@ -359,7 +369,8 @@
             {"name":"gradient",              "type":"int32"},
             {"name":"total_reward_time",              "type":"int32"},
             {"name":"last_reward_block_num",              "type":"int32"},
-            {"name":"last_producer_name",              "type":"account_name"}
+            {"name":"last_producer_name",              "type":"account_name"},
+            {"name":"reward_block_num",              "type":"int32[]"}
          ]
        },{
          "name": "addmortgage",
@@ -470,6 +481,12 @@
          "base": "",
          "fields": [
             {"name":"bpname",                "type":"account_name"}
+         ]
+       },{
+         "name": "rewardmine",
+         "base": "",
+         "fields": [
+            {"name":"reward_num",                "type":"int64"}
          ]
        }
   ],
@@ -604,6 +621,10 @@
       },{
          "name": "bailpunish",
          "type": "bailpunish",
+         "ricardian_contract": ""
+      },{
+         "name": "rewardmine",
+         "type": "rewardmine",
          "ricardian_contract": ""
       }
   ],

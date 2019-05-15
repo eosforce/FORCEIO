@@ -9,7 +9,7 @@
 
 #include <eosiolib/eosio.hpp>
 #include "force.relay/force.relay.hpp"
-
+#include "sys.match/sys.match.hpp"
 
 
 namespace relay {
@@ -96,11 +96,15 @@ public:
                string memo);
                   
    /// @abi action
-   void addreward(name chain,asset supply);
+   void addreward(name chain,asset supply,int32_t reward_now);
    /// @abi action
    void rewardmine(asset quantity);
    /// @abi action
    void claim(name chain,asset quantity,account_name receiver);
+   /// @abi action
+   void settlemine(account_name system_account);
+   /// @abi action
+   void activemine(account_name system_account);
 
 private:
    inline static uint128_t get_account_idx(const name& chain, const asset& a) {
@@ -114,7 +118,7 @@ private:
 
       int128_t     mineage               = 0;         // asset.amount * block height
       uint32_t     mineage_update_height = 0;
-      int64_t      pending_mineage       = 0;
+      asset reward = asset(0);
 
       uint64_t  primary_key() const { return id; }
       uint128_t get_index_i128() const { return get_account_idx(chain, balance); }
@@ -125,6 +129,12 @@ private:
       account_name account;
 
       uint64_t  primary_key() const { return account; }
+   };
+
+   struct reward_mine_info {
+      int128_t total_mineage = 0;
+      asset    reward_pool = asset(0);
+      int32_t  reward_block_num = 0;
    };
 
    struct currency_stats {
@@ -139,7 +149,7 @@ private:
       asset        reward_pool;
       int128_t     total_mineage               = 0; // asset.amount * block height
       uint32_t     total_mineage_update_height = 0;
-      int64_t      total_pending_mineage       = 0;
+      vector<reward_mine_info>   reward_mine;
 
       uint64_t primary_key() const { return supply.symbol.name(); }
    };
@@ -147,6 +157,7 @@ private:
       uint64_t     id;
       name         chain;
       asset        supply;
+      bool         reward_now = true; //记录是否是立刻进行挖矿的代币
 
       uint64_t primary_key() const { return id; }
       uint128_t get_index_i128() const { return get_account_idx(chain, supply); }
@@ -158,13 +169,13 @@ private:
    typedef multi_index<N(stat), currency_stats> stats;
    typedef multi_index<N(accountid), account_next_id> account_next_ids ;
    typedef multi_index<N(reward), reward_currency,
-         indexed_by< N(bychain),
-                     const_mem_fun<reward_currency, uint128_t, &reward_currency::get_index_i128 >>> rewards;
+      indexed_by< N(bychain),
+                  const_mem_fun<reward_currency, uint128_t, &reward_currency::get_index_i128 >>> rewards;
+   
 
    void sub_balance( account_name owner, name chain, asset value );
    void add_balance( account_name owner, name chain, asset value, account_name ram_payer );
-
-   int64_t get_current_age(name chain,asset balance,int64_t first,int64_t last);
+   void settle_user(account_name owner, name chain, asset value);
 
 public:
    struct transfer_args {
@@ -174,6 +185,8 @@ public:
       asset quantity;
       string memo;
    };
+
+   
 
 };
 

@@ -78,10 +78,11 @@ namespace eosiosystem {
             v.voteage_update_height = curr_block_num;
          });
       } else {
-         change -= vts->vote;
-         votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
-            v.voteage += (v.vote.amount / 10000) * (curr_block_num - v.voteage_update_height);
-            v.voteage_update_height = curr_block_num;
+         settlevoter(voter,bpname);
+         votes_table votes_tbl_temp(_self, voter);
+         auto vts_temp = votes_tbl_temp.find(bpname);
+         change -= vts_temp->vote;
+         votes_tbl_temp.modify(vts_temp, 0, [&]( vote_info& v ) {
             v.vote = stake;
             if( change < asset{} ) {
                auto fts = freeze_tbl.find(voter);
@@ -139,62 +140,9 @@ namespace eosiosystem {
          v.unstake_height = curr_block_num;
       });
    }
-#if 0
-   void system_contract::claim( const account_name voter, const account_name bpname ) {
-      require_auth(voter);
-
-#if !IS_ACTIVE_BONUS_TO_VOTE
-      eosio_assert(false, "curr chain no bonus to account who vote");
-#endif
-
-      bps_table bps_tbl(_self, _self);
-      const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
-
-      votes_table votes_tbl(_self, voter);
-      const auto& vts = votes_tbl.get(bpname, "voter have not add votes to the the producer yet");
-
-      const auto curr_block_num = current_block_num();
-
-      const auto newest_voteage =
-            static_cast<int128_t>(vts.voteage + vts.vote.amount / 10000 * (curr_block_num - vts.voteage_update_height));
-      const auto newest_total_voteage =
-            static_cast<int128_t>(bp.total_voteage + bp.total_staked * (curr_block_num - bp.voteage_update_height));
-      eosio_assert(0 < newest_total_voteage, "claim is not available yet");
-
-      const auto amount_voteage = static_cast<int128_t>(bp.rewards_pool.amount) * newest_voteage;
-      asset reward = asset(static_cast<int64_t>( amount_voteage / newest_total_voteage ));
-      eosio_assert(asset{} <= reward && reward <= bp.rewards_pool,
-                   "need 0 <= claim reward quantity <= rewards_pool");
-
-      auto reward_all = reward;
-      // if( voter == bpname ) {
-      //    reward_all += bp.rewards_block;
-      // }
-
-      eosio_assert(reward_all > asset{}, "no any reward!");
-      INLINE_ACTION_SENDER(eosio::token, transfer)(
-            config::token_account_name,
-            { ::config::system_account_name, N(active) },
-            { ::config::system_account_name, voter, reward_all, "claim" });
-
-      votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
-         v.voteage = 0;
-         v.voteage_update_height = curr_block_num;
-      });
-
-      bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-         b.rewards_pool -= reward;
-         // if( voter == bpname ) {
-         //    b.rewards_block.set_amount(0);
-         // }
-         b.total_voteage = static_cast<int64_t>(newest_total_voteage - newest_voteage);
-         b.voteage_update_height = curr_block_num;
-      });
-   }
-   #endif
    
    /*
-   charge fee by voteage
+   charge fee by voteage   codex cannot use it
    */
    void system_contract::fee( const account_name payer, const account_name bpname, int64_t voteage ) {
       require_auth(payer);
