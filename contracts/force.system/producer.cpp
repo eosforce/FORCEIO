@@ -69,25 +69,24 @@ namespace eosiosystem {
             s.total_reward_time +=1;
             s.last_reward_block_num = current_block_num();
             s.last_producer_name = bpname;
+            s.reward_block_num.push_back(current_block_num());
          });
          
 
          reward_develop(block_rewards * REWARD_DEVELOP / 10000);
          reward_block(reward_block_version,block_rewards * REWARD_BP / 10000,force_change);
-         //分发分红
+   
          if (reward_update) {
-            cycle_block_out = current_block_num() - reward->reward_block_num[reward->reward_block_num.size() - 1];
+            cycle_block_out = current_block_num() - reward->reward_block_num[reward->reward_block_num.size() - 2];
             block_rewards = reward->cycle_reward * cycle_block_out / UPDATE_CYCLE;
             settlebpvote();
+
             INLINE_ACTION_SENDER(relay::token, settlemine)( ::config::relay_token_account_name, {{::config::system_account_name,N(active)}},
                                     { ::config::system_account_name} );
-            uint64_t  vote_power = get_vote_power();
-            uint64_t  coin_power = get_coin_power();
-            uint64_t total_power = vote_power + coin_power;
-            if (total_power != 0) {
-               reward_mines(static_cast<int64_t>((block_rewards * REWARD_MINE / 10000) * coin_power / total_power));
-               reward_bps(static_cast<int64_t>((block_rewards * REWARD_MINE / 10000) * vote_power / total_power));
-            }
+
+            INLINE_ACTION_SENDER(eosiosystem::system_contract, rewardmine)( ::config::system_account_name, {{::config::system_account_name,N(active)}},
+                        { block_rewards} );
+
             INLINE_ACTION_SENDER(relay::token, activemine)( ::config::relay_token_account_name, {{::config::system_account_name,N(active)}},
                         { ::config::system_account_name} );
          }
@@ -121,6 +120,17 @@ namespace eosiosystem {
          });
       }
       
+   }
+
+   void system_contract::rewardmine(int64_t reward_num) {
+      require_auth(::config::system_account_name);
+      uint64_t  vote_power = get_vote_power();
+      uint64_t  coin_power = get_coin_power();
+      uint64_t total_power = vote_power + coin_power;
+      if (total_power != 0) {
+         reward_mines(static_cast<int64_t>((reward_num * REWARD_MINE / 10000) * coin_power / total_power));
+         reward_bps(static_cast<int64_t>((reward_num * REWARD_MINE / 10000) * vote_power / total_power));
+      }
    }
 
    void system_contract::updatebp( const account_name bpname, const public_key block_signing_key,
@@ -344,7 +354,7 @@ namespace eosiosystem {
       bps_table bps_tbl(_self, _self);
       int64_t staked_all_bps = 0;
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
-         staked_all_bps += it->total_staked;
+         staked_all_bps += it->reward_vote[it->reward_vote.size() - 1].total_voteage;
       }
       if( staked_all_bps <= 0 ) {
          return;
@@ -352,17 +362,17 @@ namespace eosiosystem {
       const auto rewarding_bp_staked_threshold = staked_all_bps / 200;
       auto budget_reward = asset{0,CORE_SYMBOL};
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
-         if( it->total_staked <= rewarding_bp_staked_threshold || it->commission_rate < 1 ||
+         if( it->reward_vote[it->reward_vote.size() - 1].total_voteage <= rewarding_bp_staked_threshold || it->commission_rate < 1 ||
              it->commission_rate > 10000 ) {
             continue;
          }
 
-         auto vote_reward = static_cast<int64_t>( reward_amount  * double(it->total_staked) / double(staked_all_bps));
+         auto vote_reward = static_cast<int64_t>( reward_amount  * (double(it->reward_vote[it->reward_vote.size() - 1].total_voteage) / double(staked_all_bps)));
          if (it->active_type == static_cast<int32_t>(active_type::Punish) || it->active_type == static_cast<int32_t>(active_type::Removed)) {
             budget_reward += asset(vote_reward,CORE_SYMBOL);
             continue;
          }
-
+         
          const auto& bp = bps_tbl.get(it->name, "bpname is not registered");
          auto ireward_index = bp.reward_vote.size() - 1;
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
@@ -421,8 +431,23 @@ namespace eosiosystem {
    }
    //relay.token 实现
    int128_t system_contract::get_coin_power() {
-      relay::token rt(::config::relay_token_account_name);
-      return rt.get_power();
+
+      int128_t total_power = 0;
+      //rewards coin_reward(::config::relay_token_account_name,::config::relay_token_account_name);
+      rewards coin_reward(N(relay.token),N(relay.token));
+      exchange::exchange t(SYS_MATCH);
+      for( auto it = coin_reward.cbegin(); it != coin_reward.cend(); ++it ) {
+         if (!it->reward_now) continue;
+         stats statstable(::config::relay_token_account_name, it->chain);
+         auto existing = statstable.find(it->supply.symbol.name());
+         eosio_assert(existing != statstable.end(), "token with symbol already exists");
+         auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
+         price = 10000;
+         auto today_index = existing->reward_mine.size() - 1;
+         auto power = existing->reward_mine[today_index].total_mineage * OTHER_COIN_WEIGHT / 10000 * price / 10000;
+         total_power += power;
+      }
+      return total_power;
    }
 
    int128_t system_contract::get_vote_power() {
@@ -532,14 +557,12 @@ namespace eosiosystem {
 
    void system_contract::claimvote(const account_name bpname,const account_name receiver) {
       require_auth(receiver);
-
+      settlevoter(receiver,bpname);
       bps_table bps_tbl(_self, _self);
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
 
       votes_table votes_tbl(_self, receiver);
       const auto& vts = votes_tbl.get(bpname, "voter have not add votes to the the producer yet");
-
-      settlevoter(receiver,bpname);
 
       auto reward_all = vts.total_reward;
       if( receiver == bpname ) {
@@ -812,9 +835,10 @@ namespace eosiosystem {
       bps_table bps_tbl(_self, _self);
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
       auto current_block = current_block_num();
+
       votes_table votes_tbl(_self, voter);
       auto vts = votes_tbl.find(bpname);
-      eosio_assert(vts == votes_tbl.end(),"voter have not add votes to the the producer yet");
+      eosio_assert(vts != votes_tbl.end(),"settlevoter wrong");
       auto imaxsize = bp.reward_vote.size();
       auto last_voteage = vts->voteage;
       auto last_voteage_update_height = vts->voteage_update_height;

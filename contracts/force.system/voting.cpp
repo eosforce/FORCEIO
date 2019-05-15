@@ -79,9 +79,10 @@ namespace eosiosystem {
          });
       } else {
          settlevoter(voter,bpname);
-         auto vts = votes_tbl.find(bpname);
-         change -= vts->vote;
-         votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
+         votes_table votes_tbl_temp(_self, voter);
+         auto vts_temp = votes_tbl_temp.find(bpname);
+         change -= vts_temp->vote;
+         votes_tbl_temp.modify(vts_temp, 0, [&]( vote_info& v ) {
             v.vote = stake;
             if( change < asset{} ) {
                auto fts = freeze_tbl.find(voter);

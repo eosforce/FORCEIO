@@ -45,5 +45,5 @@ EOSIO_ABI( eosiosystem::system_contract,
 #if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
       (delegatebw)(undelegatebw)(refund)
 #endif
-      (punishbp)(canclepunish)(apppunish)(unapppunish)(bailpunish)
+      (punishbp)(canclepunish)(apppunish)(unapppunish)(bailpunish)(rewardmine)
 )

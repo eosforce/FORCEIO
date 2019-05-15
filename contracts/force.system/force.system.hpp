@@ -25,8 +25,8 @@ namespace eosiosystem {
    static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
 #ifdef BEFORE_ONLINE_TEST 
    static constexpr uint32_t CYCLE_PREHOUR = 10;
-   static constexpr uint32_t CYCLE_PREBP_BLOCK = 6;
-   static constexpr uint32_t CYCLE_PREDAY = 50;//5;//275;
+   static constexpr uint32_t CYCLE_PREBP_BLOCK = 3;
+   static constexpr uint32_t CYCLE_PREDAY = 5;//5;//275;
    static constexpr uint32_t STABLE_DAY = 10;//2;//60;
    static constexpr uint64_t PRE_BLOCK_REWARDS = 58.6*10000;
    static constexpr uint64_t STABLE_BLOCK_REWARDS = 126*10000;
@@ -142,7 +142,7 @@ namespace eosiosystem {
 
          uint64_t primary_key() const { return bpname; }
 
-         EOSLIB_SERIALIZE(vote_info, (bpname)(vote)(voteage)(voteage_update_height))
+         EOSLIB_SERIALIZE(vote_info, (bpname)(vote)(voteage)(voteage_update_height)(total_reward))
       };
 
       struct votes_info {
@@ -218,7 +218,7 @@ namespace eosiosystem {
          }
          EOSLIB_SERIALIZE(bp_info, ( name )(block_signing_key)(commission_rate)(total_staked)
                (rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(active_type)
-               (block_age)(last_block_amount)(block_weight)(mortgage)(total_drain_block)(remain_punish)(active_change_block_num))
+               (block_age)(last_block_amount)(block_weight)(mortgage)(total_drain_block)(remain_punish)(active_change_block_num)(reward_vote))
       };
 
       struct producer {
@@ -251,45 +251,7 @@ namespace eosiosystem {
 
          uint64_t primary_key() const { return id; }
          EOSLIB_SERIALIZE(reward_info, ( id )(reward_block_out)(reward_develop)(reward_budget)(total_block_out_age)(cycle_reward)(gradient)
-         (total_reward_time)(last_reward_block_num)(last_producer_name))
-      };
-
-      /** from relay.token begin*/
-      inline static uint128_t get_account_idx(const eosio::name& chain, const asset& a) {
-         return (uint128_t(uint64_t(chain)) << 64) + uint128_t(a.symbol.name());
-      }
-
-      // struct reward_mine_info {
-      //    int128_t total_mineage = 0;
-      //    asset    reward_pool = asset(0);
-      //    int32_t  reward_block_num = 0;
-      // };
-
-      // struct currency_stats {
-      //    asset        supply;
-      //    asset        max_supply;
-      //    account_name issuer;
-      //    eosio::name         chain;
-
-      //    account_name side_account;
-      //    action_name  side_action;
-
-      //    asset        reward_pool;
-      //    int128_t     total_mineage               = 0; // asset.amount * block height
-      //    uint32_t     total_mineage_update_height = 0;
-      //    int64_t      total_pending_mineage       = 0;
-      //    vector<reward_mine_info>   reward_mine;
-
-      //    uint64_t primary_key() const { return supply.symbol.name(); }
-      // };
-
-      struct reward_currency {
-         uint64_t     id;
-         eosio::name         chain;
-         asset        supply;
-
-         uint64_t primary_key() const { return id; }
-         uint128_t get_index_i128() const { return get_account_idx(chain, supply); }
+         (total_reward_time)(last_reward_block_num)(last_producer_name)(reward_block_num))
       };
 
       struct creation_bp {
@@ -327,10 +289,46 @@ namespace eosiosystem {
          EOSLIB_SERIALIZE(approve_punish_bp, (bpname)(approve_producer))
       };
 
-      // typedef eosio::multi_index<N(stat), currency_stats> stats;
-      // typedef eosio::multi_index<N(reward), reward_currency,
-      //    eosio::indexed_by< N(bychain),
-      //                eosio::const_mem_fun<reward_currency, uint128_t, &reward_currency::get_index_i128 >>> rewards;
+      /** from relay.token begin*/
+      inline static uint128_t get_account_idx(const eosio::name& chain, const asset& a) {
+         return (uint128_t(uint64_t(chain)) << 64) + uint128_t(a.symbol.name());
+      }
+      struct reward_mine_info {
+         int128_t total_mineage = 0;
+         asset    reward_pool = asset(0);
+         int32_t  reward_block_num = 0;
+      };
+
+      struct currency_stats {
+         asset        supply;
+         asset        max_supply;
+         account_name issuer;
+         eosio::name         chain;
+
+         account_name side_account;
+         action_name  side_action;
+
+         asset        reward_pool;
+         int128_t     total_mineage               = 0; // asset.amount * block height
+         uint32_t     total_mineage_update_height = 0;
+         vector<reward_mine_info>   reward_mine;
+
+         uint64_t primary_key() const { return supply.symbol.name(); }
+      };
+      struct reward_currency {
+         uint64_t     id;
+         eosio::name         chain;
+         asset        supply;
+         bool         reward_now = true;
+
+         uint64_t primary_key() const { return id; }
+         uint128_t get_index_i128() const { return get_account_idx(chain, supply); }
+      };
+      
+      typedef eosio::multi_index<N(stat), currency_stats> stats;
+      typedef eosio::multi_index<N(reward), reward_currency,
+         eosio::indexed_by< N(bychain),
+                     eosio::const_mem_fun<reward_currency, uint128_t, &reward_currency::get_index_i128 >>> rewards;
       /** from relay.token end*/
       typedef eosio::multi_index<N(freezed),     freeze_info>   freeze_table;
       typedef eosio::multi_index<N(votes),       vote_info>     votes_table;
@@ -471,6 +469,8 @@ namespace eosiosystem {
       void unapppunish(const account_name bpname,const account_name punishbpname);
       // @abi action
       void bailpunish(const account_name bpname);
+      // @abi action
+      void rewardmine(int64_t reward_num);
 
    };
    

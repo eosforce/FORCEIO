@@ -4,7 +4,6 @@
 
 #include "relay.token.hpp"
 #include "force.relay/force.relay.hpp"
-#include "sys.match/sys.match.hpp"
 #include <eosiolib/action.hpp>
 #include <string>
 #include <stdlib.h>
@@ -85,6 +84,11 @@ void token::create( account_name issuer,
       s.reward_pool = asset(0);
       s.total_mineage = 0;
       s.total_mineage_update_height = current_block_num();
+      reward_mine_info temp_remind;
+      temp_remind.total_mineage = 0;
+      temp_remind.reward_block_num = current_block_num();
+      temp_remind.reward_pool = asset(0);
+      s.reward_mine.push_back(temp_remind);
    });
 }
 
@@ -96,7 +100,7 @@ void token::issue( name chain, account_name to, asset quantity, string memo ) {
 
    auto sym_name = sym.name();
    stats statstable(_self, chain);
-   auto existing = statstable.find(sym_name);
+   auto existing = statstable.find(sym.name());
    eosio_assert(existing != statstable.end(), "token with symbol does not exist, create token before issue");
    const auto& st = *existing;
 
@@ -116,7 +120,6 @@ void token::issue( name chain, account_name to, asset quantity, string memo ) {
       s.total_mineage_update_height = current_block_num();
       s.supply += quantity;
    });
-
    add_balance(st.issuer, chain, quantity, st.issuer);
 
    if( to != st.issuer ) {
@@ -180,43 +183,16 @@ void token::transfer( account_name from,
    add_balance(to, chain, quantity, from);
 }
 
-int64_t token::get_current_age(name chain,asset balance,int64_t first,int64_t last) {
-   eosio_assert(first <= last,"wrong entering");
-   if (first == last) return 0;
-
-   exchange::exchange t(SYS_MATCH);
-   auto interval_block = exchange::INTERVAL_BLOCKS;
-   uint32_t first_index = first / interval_block,last_index = last / interval_block;
-   if (first_index == last_index) {
-      asset price = t.get_avg_price(last_index * interval_block + 1, chain,balance.symbol);
-      return balance.amount * OTHER_COIN_WEIGHT / 10000 * (last - first) * price.amount / 10000;
-   }
-   else
-   {
-      auto temp_start = first;
-      int64_t result = 0;
-      for(uint32_t i = first_index +1;i!=last_index + 1;++i) {
-         asset price = t.get_avg_price(last_index * interval_block + 1, chain,balance.symbol);
-         result += balance.amount * OTHER_COIN_WEIGHT / 10000 * (i*interval_block - temp_start) * price.amount / 10000;
-         temp_start = i*interval_block;
-      }
-      return result;
-   }
-   
-}
-
 void token::sub_balance( account_name owner, name chain, asset value ) {
+   settle_user(owner,chain,value);
    accounts from_acnts(_self, owner);
-
    auto idx = from_acnts.get_index<N(bychain)>();
-
    auto from = idx.get(get_account_idx(chain, value), "no balance object found");
    eosio_assert(from.balance.amount >= value.amount, "overdrawn balance");
    eosio_assert(from.chain == chain, "symbol chain mismatch");
    auto current_block = current_block_num();
    auto last_devidend_num = current_block - current_block % UPDATE_CYCLE;
 
-   settle_user(owner,chain,value);
    from = idx.get(get_account_idx(chain, value), "no balance object found");
    from_acnts.modify(from, owner, [&]( auto& a ) {
       a.balance -= value;
@@ -255,8 +231,10 @@ void token::add_balance( account_name owner, name chain, asset value, account_na
          a.mineage = 0;
          a.mineage_update_height = current_block_num();
       });
-   } else {
-      settle_user(owner,chain,value); 
+   } else { 
+      settle_user(owner,chain,value);
+      accounts to_acnts_temp(_self, owner);
+      idx = to_acnts_temp.get_index<N(bychain)>();
       to = idx.find(get_account_idx(chain, value));
       idx.modify(to, 0, [&]( auto& a ) {
          a.balance += value;
@@ -412,15 +390,15 @@ void token::addreward(name chain,asset supply,int32_t reward_now) {
    auto existing = statstable.find(supply.symbol.name());
    eosio_assert(existing != statstable.end(), "token with symbol do not exists");
 
-   if (reward_now == 1) {
-      statstable.modify(*existing, 0, [&]( auto& s ) {
-         reward_mine_info temp_remind;
-         temp_remind.total_mineage = 0;
-         temp_remind.reward_block_num = 0;
-         temp_remind.reward_pool = asset(0);
-         s.reward_mine.push_back(temp_remind);
-      });
-   }
+   // if (reward_now == 1) {
+   //    statstable.modify(*existing, 0, [&]( auto& s ) {
+   //       reward_mine_info temp_remind;
+   //       temp_remind.total_mineage = 0;
+   //       temp_remind.reward_block_num = 0;
+   //       temp_remind.reward_pool = asset(0);
+   //       s.reward_mine.push_back(temp_remind);
+   //    });
+   // }
 
    rewards rewardtable(_self, _self);
    auto idx = rewardtable.get_index<N(bychain)>();
@@ -432,19 +410,28 @@ void token::addreward(name chain,asset supply,int32_t reward_now) {
       s.id = rewardtable.available_primary_key();
       s.supply = supply;
       s.chain = chain;
-      s.reward_now = true;
+      if (reward_now == 1){
+         s.reward_now = true;
+      }
+      else {
+         s.reward_now = false;
+      }
    });
 }
-
+//矿龄*价格
 void token::rewardmine(asset quantity) {
    require_auth(::config::system_account_name);
    rewards rewardtable(_self, _self);
-   uint64_t total_power = 0;
+   exchange::exchange t(SYS_MATCH);
+   uint128_t total_power = 0;
    for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
       stats statstable(_self, it->chain);
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol already exists");
-      total_power += existing->supply.amount * OTHER_COIN_WEIGHT / 10000 ;
+      auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
+      // tobe delete
+      price = 1;
+      total_power += existing->reward_mine[existing->reward_mine.size() - 1].total_mineage*price ;
    }
 
    if (total_power == 0) return ;
@@ -452,30 +439,16 @@ void token::rewardmine(asset quantity) {
       stats statstable(_self, it->chain);
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol do not exists");
-      uint64_t devide_amount = quantity.amount * existing->supply.amount * OTHER_COIN_WEIGHT / 10000 / total_power;
+      auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
+      // tobe delete
+      price = 1;
+      uint128_t devide_amount =  existing->reward_mine[existing->reward_mine.size() - 1].total_mineage * price * quantity.amount  / total_power;
       statstable.modify(*existing, 0, [&]( auto& s ) {
          s.reward_mine[s.reward_mine.size() - 1].reward_pool = asset(devide_amount);
       });
    }
 }
 
-int128_t token::get_power() {
-   int128_t total_power = 0; 
-   rewards coin_reward(_self,_self);
-   exchange::exchange t(SYS_MATCH);
-
-   for( auto it = coin_reward.cbegin(); it != coin_reward.cend(); ++it ) {
-      if (!it->reward_now) continue;
-      stats statstable(_self, it->chain);
-      auto existing = statstable.find(it->supply.symbol.name());
-      eosio_assert(existing != statstable.end(), "token with symbol already exists");
-      auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
-      auto today_index = existing->reward_mine.size() - 1;
-      auto power = existing->reward_mine[today_index].total_mineage * OTHER_COIN_WEIGHT / 10000 * price / 10000;
-      total_power += power;
-   }
-   return total_power ;
-}
 //todo
 void token::claim(name chain,asset quantity,account_name receiver) {
 
@@ -491,6 +464,8 @@ void token::claim(name chain,asset quantity,account_name receiver) {
    stats statstable(_self, chain);
    auto existing = statstable.find(quantity.symbol.name());
    eosio_assert(existing != statstable.end(), "token with symbol already exists");
+
+   settle_user(receiver,chain,quantity);
 
    accounts to_acnts(_self, receiver);
    auto idxx = to_acnts.get_index<N(bychain)>();
@@ -518,8 +493,8 @@ void token::settle_user(account_name owner, name chain, asset value) {
    eosio_assert(from.chain == chain, "symbol chain mismatch");
 
    stats statstable(_self, chain);
-   auto existing = statstable.find(value.symbol);
-   eosio_assert(existing != statstable.end(), "token with symbol does not exist, create token before issue");
+   auto existing = statstable.find(value.symbol.name());
+   eosio_assert(existing != statstable.end(), "settle wrong can not find stat");
 
    auto isize = existing->reward_mine.size();
    auto last_update_height = from.mineage_update_height;
@@ -530,6 +505,7 @@ void token::settle_user(account_name owner, name chain, asset value) {
       if (last_update_height < existing->reward_mine[i].reward_block_num) {
          auto mineage = last_mineage + from.balance.amount * (existing->reward_mine[i].reward_block_num - last_update_height);
          auto reward = existing->reward_mine[i].reward_pool * mineage / existing->reward_mine[i].total_mineage;
+         
          total_reward += reward;
          statstable.modify(*existing, 0, [&]( auto& s ) {
             s.reward_mine[i].total_mineage -= mineage;
@@ -541,7 +517,7 @@ void token::settle_user(account_name owner, name chain, asset value) {
       }
    }
    //是否跨天
-   from_acnts.modify(from, owner, [&]( auto& a ) {
+   from_acnts.modify(from, 0, [&]( auto& a ) {
       a.reward += total_reward;
       if (cross_day){
          a.mineage = a.balance.amount * (current_block_num() - last_update_height);
@@ -660,4 +636,4 @@ void sys_match_match::parse(const string memo) {
 
 };
 
-EOSIO_ABI(relay::token, (on)(create)(issue)(destroy)(transfer)(trade)(rewardmine)(addreward)(claim))
+EOSIO_ABI(relay::token, (on)(create)(issue)(destroy)(transfer)(trade)(rewardmine)(addreward)(claim)(settlemine)(activemine))

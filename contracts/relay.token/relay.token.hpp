@@ -9,7 +9,7 @@
 
 #include <eosiolib/eosio.hpp>
 #include "force.relay/force.relay.hpp"
-
+#include "sys.match/sys.match.hpp"
 
 
 namespace relay {
@@ -180,15 +180,13 @@ private:
    typedef multi_index<N(stat), currency_stats> stats;
    typedef multi_index<N(accountid), account_next_id> account_next_ids ;
    typedef multi_index<N(reward), reward_currency,
-         indexed_by< N(bychain),
-                     const_mem_fun<reward_currency, uint128_t, &reward_currency::get_index_i128 >>> rewards;
+      indexed_by< N(bychain),
+                  const_mem_fun<reward_currency, uint128_t, &reward_currency::get_index_i128 >>> rewards;
+   
 
    void sub_balance( account_name owner, name chain, asset value );
    void add_balance( account_name owner, name chain, asset value, account_name ram_payer );
    void settle_user(account_name owner, name chain, asset value);
-
-   int64_t get_current_age(name chain,asset balance,int64_t first,int64_t last);
-
 
 public:
    struct transfer_args {
@@ -199,7 +197,7 @@ public:
       string memo;
    };
 
-   int128_t get_power();
+   
 
 };
 
