@@ -428,8 +428,9 @@ void token::rewardmine(asset quantity) {
       stats statstable(_self, it->chain);
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol already exists");
+
       auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
-      total_power += existing->reward_mine[existing->reward_mine.size() - 1].total_mineage*price ;
+      total_power += existing->reward_mine[existing->reward_mine.size() - 1].total_mineage * price / precision(existing->supply.symbol.precision()) ;
    }
 
    if (total_power == 0) return ;
@@ -437,8 +438,12 @@ void token::rewardmine(asset quantity) {
       stats statstable(_self, it->chain);
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol do not exists");
-      auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
-      uint128_t devide_amount =  existing->reward_mine[existing->reward_mine.size() - 1].total_mineage * price * quantity.amount  / total_power;
+
+      auto price_core_symbol = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol);
+      int64_t precision_poor =existing->supply.symbol.precision() - price_core_symbol.symbol.precision();
+      auto price = static_cast<int64_t>(price_core_symbol.amount * pow(10,precision_poor));
+      //auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
+      uint128_t devide_amount =  existing->reward_mine[existing->reward_mine.size() - 1].total_mineage * price / precision(existing->supply.symbol.precision())* quantity.amount  / total_power;
       statstable.modify(*existing, 0, [&]( auto& s ) {
          s.reward_mine[existing->reward_mine.size() - 1].reward_pool = asset(devide_amount);
       });

@@ -5,7 +5,7 @@ namespace eosiosystem {
       require_auth(voter);
 
       eosio_assert(stake.symbol == CORE_SYMBOL, "only support CORE SYMBOL token");
-      eosio_assert(0 <= stake.amount && stake.amount % 10000 == 0,
+      eosio_assert(0 <= stake.amount && stake.amount % CORE_SYMBOL_PRECISION == 0,
                    "need stake quantity >= 0 and quantity is integer");
 
       const auto curr_block_num = current_block_num();
@@ -60,7 +60,7 @@ namespace eosiosystem {
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
 
       eosio_assert(stake.symbol == CORE_SYMBOL, "only support CORE SYMBOL token");
-      eosio_assert(0 <= stake.amount && stake.amount % 10000 == 0,
+      eosio_assert(0 <= stake.amount && stake.amount % CORE_SYMBOL_PRECISION == 0,
                    "need stake quantity >= 0 and quantity is integer");
 
       const auto curr_block_num = current_block_num();
@@ -115,7 +115,7 @@ namespace eosiosystem {
       bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
          b.total_voteage += b.total_staked * (curr_block_num - b.voteage_update_height);
          b.voteage_update_height = curr_block_num;
-         b.total_staked += (change.amount / 10000);
+         b.total_staked += (change.amount / CORE_SYMBOL_PRECISION);
       });
    }
 
@@ -162,9 +162,9 @@ namespace eosiosystem {
       votes_table votes_tbl(_self, payer);
       const auto& vts = votes_tbl.get(bpname, "voter have not add votes to the the producer yet");
       
-      int64_t newest_voteage = vts.voteage + (vts.vote.amount / 10000) * (curr_block_num - vts.voteage_update_height);
+      int64_t newest_voteage = vts.voteage + (vts.vote.amount / CORE_SYMBOL_PRECISION) * (curr_block_num - vts.voteage_update_height);
       
-      //print("system_contract::fee: voter voteage=", vts.voteage, ", voter vote=", vts.vote.amount / 10000, ", voteage_update_height=", vts.voteage_update_height, ", voter newest_voteage=", newest_voteage, "\n");
+      //print("system_contract::fee: voter voteage=", vts.voteage, ", voter vote=", vts.vote.amount / CORE_SYMBOL_PRECISION, ", voteage_update_height=", vts.voteage_update_height, ", voter newest_voteage=", newest_voteage, "\n");
       
       eosio_assert(voteage > 0 && voteage <= newest_voteage, "voteage must be greater than zero and have sufficient voteage!");
       
