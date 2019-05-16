@@ -12,8 +12,11 @@
 #include <eosiolib/privileged.hpp>
 #include <eosiolib/singleton.hpp>
 #include <eosiolib/eosio.hpp>
+
 #include <force.token/force.token.hpp>
 #include <relay.token/relay.token.hpp>
+
+#include "exchange_pair.hpp"
 
 #include <string>
 
@@ -33,34 +36,6 @@ namespace exchange {
    const account_name escrow          = N(sys.match);
    const account_name relay_token_acc = N(relay.token);
    const uint32_t INTERVAL_BLOCKS     = /*172800*/ 24 * 3600 * 1000 / config::block_interval_ms;
-
-   inline int64_t precision( uint64_t decimals ) {
-      const uint64_t res_size = 16;
-      const static int64_t res[res_size] = 
-         {  1, 10, 100, 1000, 10000, 
-            100000, 
-            1000000, 
-            10000000,
-            100000000,
-            1000000000,
-            10000000000,
-            100000000000,
-            1000000000000,
-            10000000000000,
-            100000000000000,
-            1000000000000000 };
-
-      if( decimals < res_size ){
-         return res[decimals];
-      } else {
-         auto p10 = res[res_size - 1];
-         for( auto p = static_cast<int64_t>(decimals - res_size + 1); 
-              p > 0; --p ) {
-            p10 *= 10;
-         }
-         return p10;
-      }
-   }
 
    class exchange : public contract {
    public:
