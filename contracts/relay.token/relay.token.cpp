@@ -440,7 +440,7 @@ void token::rewardmine(asset quantity) {
       auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
       uint128_t devide_amount =  existing->reward_mine[existing->reward_mine.size() - 1].total_mineage * price * quantity.amount  / total_power;
       statstable.modify(*existing, 0, [&]( auto& s ) {
-         s.reward_mine[s.reward_mine.size() - 1].reward_pool = asset(devide_amount);
+         s.reward_mine[existing->reward_mine.size() - 1].reward_pool = asset(devide_amount);
       });
    }
 }
