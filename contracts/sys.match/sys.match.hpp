@@ -157,12 +157,6 @@ namespace exchange {
 
       void inline_match( account_name from, asset quantity, string memo );
 
-      inline void get_pair( uint32_t pair_id,
-                            name& base_chain,
-                            symbol_type& base_sym,
-                            name& quote_chain,
-                            symbol_type& quote_sym ) const;
-
       inline symbol_type get_pair_base( uint32_t pair_id ) const;
 
       inline symbol_type get_pair_quote( uint32_t pair_id ) const;
@@ -330,17 +324,6 @@ namespace exchange {
       eosio_assert(false, "pair does not exist");
 
       return 0;
-   }
-
-   void exchange::get_pair( uint32_t pair_id, name& base_chain, symbol_type& base_sym, name& quote_chain, symbol_type& quote_sym ) const {
-      trading_pairs pairs_table(_self, _self);
-
-      const auto pair = pairs_table.get(pair_id, "pair does not exist");
-
-      base_chain  = pair.base_chain;
-      base_sym    = pair.base_sym;
-      quote_chain = pair.quote_chain;
-      quote_sym   = pair.quote_sym;
    }
 
    symbol_type exchange::get_pair_base( uint32_t pair_id ) const {
