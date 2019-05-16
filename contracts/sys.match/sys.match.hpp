@@ -18,6 +18,8 @@
 #include <string>
 
 // TODO by CODEREVIEW need unity force.token and relay.token
+// TODO by CODEREVIEW need fix pair search logic
+// TODO by CODEREVIEW need use a ext_sym to contain chain info and symbol info
 
 namespace exchange {
 
@@ -219,9 +221,11 @@ namespace exchange {
          symbol_type  base;
          name         base_chain;
          symbol_type  base_sym;
+
          symbol_type  quote;
          name         quote_chain;
          symbol_type  quote_sym;
+
          account_name exc_acc;
          uint32_t     frozen;
 
