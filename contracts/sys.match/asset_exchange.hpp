@@ -13,7 +13,7 @@ namespace exchange {
    using namespace eosio;
 
    // TODO to config
-   const account_name relay_token_acc = N(relay.token);
+   const account_name relay_token_account = N(relay.token);
 
    // ex_asset for params 
    struct ex_asset {
@@ -32,7 +32,7 @@ namespace exchange {
                                            const symbol_type& sym ) {
       return   chain.value == 0 
              ? eosio::token::get_symbol( config::token_account_name, sym )
-             : relay::token::get_symbol( relay_token_acc, chain, sym );
+             : relay::token::get_symbol( relay_token_account, chain, sym );
    }
 
       /*
@@ -68,12 +68,12 @@ namespace exchange {
 
       asset_exchange( const name& chain, const symbol_type& sym )
          : chain(chain)
-         , contract( chain.value == 0 ? config::token_account_name : relay_token_acc )
+         , contract( chain.value == 0 ? config::token_account_name : relay_token_account )
          , asset_data( 0, get_symbol_in_chain( chain, this->contract, sym ) ) {}
 
       asset_exchange( const name& chain, const symbol_type& sym, const asset& a )
          : chain(chain)
-         , contract( chain.value == 0 ? config::token_account_name : relay_token_acc ) {
+         , contract( chain.value == 0 ? config::token_account_name : relay_token_account ) {
          const auto expected_symbol = get_symbol_in_chain( chain, this->contract, sym );
          if( expected_symbol.value != a.symbol.value ){
             asset_data = convert_asset_precision( expected_symbol, a );
