@@ -70,7 +70,6 @@ namespace eosio {
       
       
          inline asset get_supply( symbol_name sym )const;
-         
          inline asset get_balance( account_name owner, symbol_name sym )const;
 
          void trade( account_name   from,
@@ -120,6 +119,11 @@ namespace eosio {
             asset         quantity;
             string        memo;
          };
+
+         static symbol_type get_symbol( const account_name& contract, const symbol_name& sym ) {
+            stats statstable( contract, sym );
+            return statstable.get( sym, "symbol no found" ).supply.symbol;
+         }
    };
 
    asset token::get_supply( symbol_name sym )const

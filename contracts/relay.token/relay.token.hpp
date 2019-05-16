@@ -186,8 +186,10 @@ public:
       string memo;
    };
 
-   
-
+   static symbol_type get_symbol( const account_name& contract, const name& chain, const symbol_name& sym ) {
+      stats statstable( contract, chain );
+      return statstable.get( sym, "symbol no found" ).supply.symbol;
+   }
 };
 
    asset token::get_supply( name chain, symbol_name sym )const

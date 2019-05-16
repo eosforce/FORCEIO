@@ -3,6 +3,7 @@
 #include "eosiolib/transaction.hpp"
 #include "force.system/force.system.hpp"
 #include <boost/algorithm/string.hpp>
+#include "asset_exchange.hpp"
 
 // TODO by CODEREVIEW need unity force.token and relay.token
 
@@ -118,10 +119,10 @@ namespace exchange {
       trading_pairs_table.emplace(exc_acc, [&]( auto& p ) {
          p.id          = static_cast<uint32_t>(pk);
          p.base_chain  = base_chain;
-         p.base_sym    = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym)).symbol;
+         p.base_sym    = get_symbol_in_chain( base_chain, base_sym );
          p.base        = (base.name() << 8) | (p.base_sym.value & 0xff);
          p.quote_chain = quote_chain;
-         p.quote_sym   = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym)).symbol;
+         p.quote_sym   = get_symbol_in_chain( quote_chain, quote_sym );
          p.quote       = (quote.name() << 8) | (p.quote_sym.value & 0xff);
          p.exc_acc     = exc_acc;
          p.frozen      = 0;
@@ -156,8 +157,8 @@ namespace exchange {
          f.exc_acc        = exc_acc;
          f.pair_id        = pair_id;
          f.rate           = 0;
-         f.fees_base      = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym));
-         f.fees_quote     = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym));
+         f.fees_base      = asset_exchange{ base_chain, base_sym }.data();
+         f.fees_quote     = asset_exchange{ quote_chain, quote_sym }.data();
          f.points_enabled = false;
       });
    }
@@ -296,7 +297,7 @@ namespace exchange {
 
       const auto& itr = from_acnts.find(points_sym.name());
       if( itr == from_acnts.cend() ) {
-         return to_asset(relay_token_acc, name{}, points_sym, asset{});
+         return asset_exchange{ points_sym }.data();
       } else {
          return itr->balance;
       }
