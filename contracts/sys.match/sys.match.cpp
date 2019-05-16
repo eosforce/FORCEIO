@@ -144,6 +144,8 @@ namespace exchange {
       eosio_assert(exc_tbl.find(exc_acc) != exc_tbl.end(), 
                    "exchange account has not been registered!");
 
+      trading_pairs_t<trading_pairs> pairs_table( _self );
+
       // check if exc_acc has freezed enough CDX
       eosiosystem::system_contract sys_contract(config::system_account_name);
       eosio_assert(sys_contract.get_freezed(exc_acc) >= REG_STAKE + OPEN_PAIR_STAKE, 
@@ -151,7 +153,7 @@ namespace exchange {
 
       fees fees_tbl(_self, _self);
       auto idx_fees = fees_tbl.template get_index<N(idxkey)>();
-      const auto pair_id  = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
+      const auto pair_id  = pairs_table.get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
       const auto idxkey   = (uint128_t(exc_acc) << 64) | pair_id;
       eosio_assert(idx_fees.find(idxkey) == idx_fees.cend(), 
                    "trading_pair has been opened, can not be opened again!");
@@ -173,7 +175,10 @@ namespace exchange {
 
       fees fees_tbl(_self, _self);
       auto idx_fees = fees_tbl.template get_index<N(idxkey)>();
-      const auto pair_id = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
+
+      trading_pairs_t<trading_pairs> pairs_table( _self );
+
+      const auto pair_id = pairs_table.get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
       const auto idxkey  = (uint128_t(exc_acc) << 64) | pair_id;
       auto itr1 = idx_fees.find(idxkey);
       eosio_assert(itr1 != idx_fees.cend(), "trading_pair has not been opened, can not be closed!");
@@ -932,8 +937,10 @@ namespace exchange {
    void exchange::mark( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) {
       require_auth(_self);
 
+      trading_pairs_t<trading_pairs> pairs_table( _self );
+
       deals deals_table(_self, _self);
-      auto pair_id   = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
+      auto pair_id   = pairs_table.get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
       auto lower_key = ((uint64_t) pair_id << 32) | 0;
       auto idx_deals = deals_table.template get_index<N(idxkey)>();
       auto itr1      = idx_deals.lower_bound(lower_key);
@@ -955,7 +962,9 @@ namespace exchange {
    void exchange::claim( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc, account_name fee_acc ) {
       require_auth(exc_acc);
 
-      auto pair_id = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
+      trading_pairs_t<trading_pairs> pairs_table( _self );
+
+      auto pair_id = pairs_table.get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
       fees fees_tbl(_self, _self);
       auto idx_fees = fees_tbl.template get_index<N(idxkey)>();
       auto idxkey   = (uint128_t(exc_acc) << 64) | pair_id;

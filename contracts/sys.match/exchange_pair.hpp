@@ -25,6 +25,9 @@ namespace exchange {
          , sym( sym )
          , typ( ( typ.name() << 8 ) | sym.precision() ) {}
 
+      ex_symbol_type( const name& chain, const symbol_type& sym )
+         : chain( chain ), sym( sym ), typ( sym ) {}
+
       ex_symbol_type( const ex_symbol_type& ) = default;
       ~ex_symbol_type() = default;
 
@@ -79,6 +82,12 @@ namespace exchange {
 
       inline uint32_t get_pair_id( const ex_symbol_type& base, const ex_symbol_type& quote ) const {
          return get( base, quote ).id;
+      }
+
+      inline uint32_t get_pair_id( const name& base_chain, const symbol_type& base_sym, 
+                                   const name& quote_chain, const symbol_type& quote_sym ) const {
+         return get( ex_symbol_type{ base_chain, base_sym }, 
+                     ex_symbol_type{ quote_chain, quote_sym } ).id;
       }
 
       inline symbol_type get_pair_base( const uint32_t pair_id ) const {

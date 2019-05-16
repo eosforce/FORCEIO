@@ -161,8 +161,6 @@ namespace exchange {
 
       inline symbol_type get_pair_quote( uint32_t pair_id ) const;
 
-      inline uint32_t get_pair_id( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const;
-
       inline asset get_avg_price( uint32_t block_height,
                                   name base_chain,
                                   symbol_type base_sym,
@@ -304,28 +302,6 @@ namespace exchange {
       //static asset convert( symbol_type expected_symbol, const asset& a );
    };
 
-   uint32_t exchange::get_pair_id( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const {
-      trading_pairs pairs_table(_self, _self);
-
-      auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower     = pairs_table.lower_bound(lower_key);
-      auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper     = pairs_table.upper_bound(upper_key);
-
-      for( auto itr = lower; itr != upper; ++itr ) {
-         if(    itr->base_chain       == base_chain 
-             && itr->base_sym.name()  == base_sym.name() 
-             && itr->quote_chain      == quote_chain 
-             && itr->quote_sym.name() == quote_sym.name() ) {
-            return itr->id;
-         }
-      }
-
-      eosio_assert(false, "pair does not exist");
-
-      return 0;
-   }
-
    symbol_type exchange::get_pair_base( uint32_t pair_id ) const {
       trading_pairs trading_pairs_table(_self, _self);
 
@@ -444,7 +420,9 @@ namespace exchange {
    void exchange::upd_mark( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, asset sum, asset vol ) {
       deals deals_table(_self, _self);
 
-      auto pair_id   = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
+      trading_pairs_t<trading_pairs> pairs_table( _self );
+
+      auto pair_id   = pairs_table.get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
       auto lower_key = ((uint64_t) pair_id << 32) | 0;
       auto idx_deals = deals_table.template get_index<N(idxkey)>();
       auto itr1      = idx_deals.lower_bound(lower_key);
