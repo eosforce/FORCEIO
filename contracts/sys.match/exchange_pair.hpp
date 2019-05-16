@@ -69,6 +69,11 @@ namespace exchange {
          return _table.end();
       }
 
+      inline const_iterator find( const name& base_chain, const symbol_type& base_sym, 
+                                  const name& quote_chain, const symbol_type& quote_sym ) const {
+         return find( ex_symbol_type{ base_chain, base_sym }, ex_symbol_type{ quote_chain, quote_sym } );
+      }
+
       inline const item_type& get( const uint32_t id, const char *msg = "unable to find pair by key"  ) const {
          return _table.get(id, msg);
       }
@@ -96,6 +101,11 @@ namespace exchange {
 
       inline symbol_type get_pair_quote( const uint32_t pair_id ) const {
          return get( pair_id ).quote;
+      }
+
+      inline bool empty() const {
+         return _table.lower_bound(std::numeric_limits<uint64_t>::lowest()) 
+             == _table.upper_bound(std::numeric_limits<uint64_t>::max());
       }
 
       table_t _table;

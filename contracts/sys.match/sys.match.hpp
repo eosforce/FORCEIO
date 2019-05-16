@@ -305,33 +305,15 @@ namespace exchange {
       deals deals_table(_self, _self);
       asset avg_price = asset(0, quote_sym);
 
-      uint32_t pair_id = 0xFFFFFFFF;
-
-      trading_pairs pairs_table(_self, _self);
-
-      auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower     = pairs_table.lower_bound(lower_key);
-      auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper     = pairs_table.upper_bound(upper_key);
-      auto itr       = lower;
-
-      for( itr = lower; itr != upper; ++itr ) {
-         if(    itr->base_chain       == base_chain 
-             && itr->base_sym.name()  == base_sym.name() 
-             && itr->quote_chain      == quote_chain 
-             && itr->quote_sym.name() == quote_sym.name() ) {
-            //print("\n exchange::get_avg_price -- pair: id=", itr->id, "\n");
-            pair_id = itr->id;
-            break;
-         }
-      }
-
-      if( itr == upper ) {
-         //print("\n exchange::get_avg_price: trading pair not exist! base_chain=", base_chain.to_string().c_str(), ", base_sym=", base_sym, ", quote_chain", quote_chain.to_string().c_str(), ", quote_sym=", quote_sym, "\n");
+      trading_pairs_t<trading_pairs> pairs_table( _self );
+      const auto pair = pairs_table.find( base_chain, base_sym, quote_chain, quote_sym );
+      if( pair == pairs_table.end() ) {
          return avg_price;
       }
 
-      lower_key = ((uint64_t) pair_id << 32) | 0;
+      const auto pair_id = pair->id;
+
+      auto lower_key = ((uint64_t) pair_id << 32) | 0;
       auto idx_deals = deals_table.template get_index<N(idxkey)>();
       auto itr1 = idx_deals.lower_bound(lower_key);
       if( !(itr1 != idx_deals.end() && itr1->pair_id == pair_id) ) {
