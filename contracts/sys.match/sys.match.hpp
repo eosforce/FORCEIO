@@ -12,8 +12,11 @@
 #include <eosiolib/privileged.hpp>
 #include <eosiolib/singleton.hpp>
 #include <eosiolib/eosio.hpp>
+
 #include <force.token/force.token.hpp>
 #include <relay.token/relay.token.hpp>
+
+#include "exchange_pair.hpp"
 
 #include <string>
 
@@ -33,34 +36,6 @@ namespace exchange {
    const account_name escrow          = N(sys.match);
    const account_name relay_token_acc = N(relay.token);
    const uint32_t INTERVAL_BLOCKS     = /*172800*/ 24 * 3600 * 1000 / config::block_interval_ms;
-
-   inline int64_t precision( uint64_t decimals ) {
-      const uint64_t res_size = 16;
-      const static int64_t res[res_size] = 
-         {  1, 10, 100, 1000, 10000, 
-            100000, 
-            1000000, 
-            10000000,
-            100000000,
-            1000000000,
-            10000000000,
-            100000000000,
-            1000000000000,
-            10000000000000,
-            100000000000000,
-            1000000000000000 };
-
-      if( decimals < res_size ){
-         return res[decimals];
-      } else {
-         auto p10 = res[res_size - 1];
-         for( auto p = static_cast<int64_t>(decimals - res_size + 1); 
-              p > 0; --p ) {
-            p10 *= 10;
-         }
-         return p10;
-      }
-   }
 
    class exchange : public contract {
    public:
@@ -181,20 +156,6 @@ namespace exchange {
                               string memo );
 
       void inline_match( account_name from, asset quantity, string memo );
-
-      inline void get_pair( uint32_t pair_id,
-                            name& base_chain,
-                            symbol_type& base_sym,
-                            name& quote_chain,
-                            symbol_type& quote_sym ) const;
-
-      inline symbol_type get_pair_base( uint32_t pair_id ) const;
-
-      inline symbol_type get_pair_quote( uint32_t pair_id ) const;
-
-      inline void check_pair( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym );
-
-      inline uint32_t get_pair_id( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const;
 
       inline asset get_avg_price( uint32_t block_height,
                                   name base_chain,
@@ -337,120 +298,6 @@ namespace exchange {
       //static asset convert( symbol_type expected_symbol, const asset& a );
    };
 
-   void exchange::check_pair( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) {
-      trading_pairs pairs_table(_self, _self);
-
-      auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower     = pairs_table.lower_bound(lower_key);
-      auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper     = pairs_table.upper_bound(upper_key);
-
-      for( auto itr = lower; itr != upper; ++itr ) {
-         if(    itr->base_chain       == base_chain 
-             && itr->base_sym.name()  == base_sym.name() 
-             && itr->quote_chain      == quote_chain 
-             && itr->quote_sym.name() == quote_sym.name() ) {
-            eosio_assert(false, "trading pair already exist");
-            return;
-         }
-      }
-   }
-
-   uint32_t exchange::get_pair_id( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const {
-      trading_pairs pairs_table(_self, _self);
-
-      auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower     = pairs_table.lower_bound(lower_key);
-      auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper     = pairs_table.upper_bound(upper_key);
-
-      for( auto itr = lower; itr != upper; ++itr ) {
-         if(    itr->base_chain       == base_chain 
-             && itr->base_sym.name()  == base_sym.name() 
-             && itr->quote_chain      == quote_chain 
-             && itr->quote_sym.name() == quote_sym.name() ) {
-            return itr->id;
-         }
-      }
-
-      eosio_assert(false, "pair does not exist");
-
-      return 0;
-   }
-
-   void exchange::get_pair( uint32_t pair_id, name& base_chain, symbol_type& base_sym, name& quote_chain, symbol_type& quote_sym ) const {
-      trading_pairs pairs_table(_self, _self);
-
-      const auto pair = pairs_table.get(pair_id, "pair does not exist");
-
-      base_chain  = pair.base_chain;
-      base_sym    = pair.base_sym;
-      quote_chain = pair.quote_chain;
-      quote_sym   = pair.quote_sym;
-   }
-
-   symbol_type exchange::get_pair_base( uint32_t pair_id ) const {
-      trading_pairs trading_pairs_table(_self, _self);
-
-      // auto itr1 = trading_pairs_table.find(pair_id);
-      // eosio_assert(itr1 != trading_pairs_table.end(), "trading pair does not exist");
-
-      auto walk_table_range = [&]( auto itr, auto end_itr ) {
-         print("\n ---------------- begin to trading_pairs table: ----------------");
-         for( ; itr != end_itr; ++itr ) {
-            print("\n pair: id=", itr->id);
-         }
-         print("\n -------------------- walk through trading_pairs table ends ----------------:");
-      };
-      //auto lower_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::lowest();
-      auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower     = trading_pairs_table.lower_bound(lower_key);
-      //auto upper_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::max();
-      auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper     = trading_pairs_table.upper_bound(upper_key);
-      //walk_table_range(lower, upper);
-
-      for( auto itr = lower; itr != upper; ++itr ) {
-         //print("\n pair: id=", itr->id);
-         if( itr->id == pair_id ) return itr->base;
-      }
-
-      eosio_assert(false, "trading pair does not exist");
-
-      return 0;
-   }
-
-   symbol_type exchange::get_pair_quote( uint32_t pair_id ) const {
-      trading_pairs trading_pairs_table(_self, _self);
-
-      //auto itr1 = trading_pairs_table.find(pair_id);
-      // eosio_assert(itr1 != trading_pairs_table.end(), "trading pair does not exist");
-
-      auto walk_table_range = [&]( auto itr, auto end_itr ) {
-         print("\n ---------------- begin to trading_pairs table: ----------------");
-         for( ; itr != end_itr; ++itr ) {
-            print("\n pair: id=", itr->id);
-         }
-         print("\n -------------------- walk through trading_pairs table ends ----------------:");
-      };
-      //auto lower_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::lowest();
-      auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower     = trading_pairs_table.lower_bound(lower_key);
-      //auto upper_key = (uint128_t(itr1->id) << 96) | ((uint128_t)(bid_or_ask ? 0 : 1)) << 64 | std::numeric_limits<uint64_t>::max();
-      auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper     = trading_pairs_table.upper_bound(upper_key);
-      //walk_table_range(lower, upper);
-
-      for( auto itr = lower; itr != upper; ++itr ) {
-         //print("\n pair: id=", itr->id);
-         if( itr->id == pair_id ) return itr->quote;
-      }
-
-      eosio_assert(false, "trading pair does not exist");
-
-      return 0;
-   }
-
    /*
    block_height: end block height
    */
@@ -458,33 +305,15 @@ namespace exchange {
       deals deals_table(_self, _self);
       asset avg_price = asset(0, quote_sym);
 
-      uint32_t pair_id = 0xFFFFFFFF;
-
-      trading_pairs pairs_table(_self, _self);
-
-      auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower     = pairs_table.lower_bound(lower_key);
-      auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper     = pairs_table.upper_bound(upper_key);
-      auto itr       = lower;
-
-      for( itr = lower; itr != upper; ++itr ) {
-         if(    itr->base_chain       == base_chain 
-             && itr->base_sym.name()  == base_sym.name() 
-             && itr->quote_chain      == quote_chain 
-             && itr->quote_sym.name() == quote_sym.name() ) {
-            //print("\n exchange::get_avg_price -- pair: id=", itr->id, "\n");
-            pair_id = itr->id;
-            break;
-         }
-      }
-
-      if( itr == upper ) {
-         //print("\n exchange::get_avg_price: trading pair not exist! base_chain=", base_chain.to_string().c_str(), ", base_sym=", base_sym, ", quote_chain", quote_chain.to_string().c_str(), ", quote_sym=", quote_sym, "\n");
+      trading_pairs_t<trading_pairs> pairs_table( _self );
+      const auto pair = pairs_table.find( base_chain, base_sym, quote_chain, quote_sym );
+      if( pair == pairs_table.end() ) {
          return avg_price;
       }
 
-      lower_key = ((uint64_t) pair_id << 32) | 0;
+      const auto pair_id = pair->id;
+
+      auto lower_key = ((uint64_t) pair_id << 32) | 0;
       auto idx_deals = deals_table.template get_index<N(idxkey)>();
       auto itr1 = idx_deals.lower_bound(lower_key);
       if( !(itr1 != idx_deals.end() && itr1->pair_id == pair_id) ) {
@@ -507,7 +336,9 @@ namespace exchange {
    void exchange::upd_mark( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, asset sum, asset vol ) {
       deals deals_table(_self, _self);
 
-      auto pair_id   = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
+      trading_pairs_t<trading_pairs> pairs_table( _self );
+
+      auto pair_id   = pairs_table.get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
       auto lower_key = ((uint64_t) pair_id << 32) | 0;
       auto idx_deals = deals_table.template get_index<N(idxkey)>();
       auto itr1      = idx_deals.lower_bound(lower_key);

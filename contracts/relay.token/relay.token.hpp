@@ -9,7 +9,6 @@
 
 #include <eosiolib/eosio.hpp>
 #include "force.relay/force.relay.hpp"
-#include "sys.match/sys.match.hpp"
 
 
 namespace relay {
@@ -42,12 +41,14 @@ using std::string;
 
    const account_name SYS_BRIDGE = N(sys.bridge);
    const account_name SYS_MATCH = N(sys.match);
+
 #ifdef BEFORE_ONLINE_TEST  
 static constexpr uint32_t UPDATE_CYCLE = 126;
 #else
 static constexpr uint32_t UPDATE_CYCLE = 315;
 #endif
 static constexpr uint64_t OTHER_COIN_WEIGHT = 500;
+
 class token : public eosio::contract {
 public:
    using contract::contract;
