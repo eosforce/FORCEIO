@@ -104,19 +104,24 @@ namespace exchange {
       eosio_assert(exc_tbl.find(exc_acc) != exc_tbl.end(), 
                    "exchange account has not been registered!");
 
-      trading_pairs trading_pairs_table(_self, _self);
+      const auto exc_base  = ex_symbol_type{ base_chain, base, base_sym };
+      const auto exc_quote = ex_symbol_type{ quote_chain, quote, quote_sym };
 
-      check_pair(base_chain, base_sym, quote_chain, quote_sym);
+      trading_pairs_t<trading_pairs> pairs_table( _self );
+
+      eosio_assert( pairs_table.find( exc_base, exc_quote ) == pairs_table.end(), 
+                    "trading pair already exist" );
+
       // TODO `idxkey` maybe err
       const auto idxkey = compute_pair_index(base, quote);
       //print("\n base=", base, ", base_chain=", base_chain,", base_sym=", base_sym, "quote=", quote, ", quote_chain=", quote_chain, ", quote_sym=", quote_sym, "\n");
 
-      auto idx = trading_pairs_table.template get_index<N(idxkey)>();
+      auto idx = pairs_table._table.template get_index<N(idxkey)>();
 
       eosio_assert(idx.find(idxkey) == idx.end(), "trading pair already created");
 
-      const auto pk = trading_pairs_table.available_primary_key();
-      trading_pairs_table.emplace(exc_acc, [&]( auto& p ) {
+      const auto pk = pairs_table._table.available_primary_key();
+      pairs_table._table.emplace(exc_acc, [&]( auto& p ) {
          p.id          = static_cast<uint32_t>(pk);
          p.base_chain  = base_chain;
          p.base_sym    = get_symbol_in_chain( base_chain, base_sym );

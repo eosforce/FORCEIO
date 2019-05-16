@@ -167,8 +167,6 @@ namespace exchange {
 
       inline symbol_type get_pair_quote( uint32_t pair_id ) const;
 
-      inline void check_pair( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym );
-
       inline uint32_t get_pair_id( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const;
 
       inline asset get_avg_price( uint32_t block_height,
@@ -311,25 +309,6 @@ namespace exchange {
       //static asset to_asset( account_name code, name chain, symbol_type sym, const asset& a );
       //static asset convert( symbol_type expected_symbol, const asset& a );
    };
-
-   void exchange::check_pair( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) {
-      trading_pairs pairs_table(_self, _self);
-
-      auto lower_key = std::numeric_limits<uint64_t>::lowest();
-      auto lower     = pairs_table.lower_bound(lower_key);
-      auto upper_key = std::numeric_limits<uint64_t>::max();
-      auto upper     = pairs_table.upper_bound(upper_key);
-
-      for( auto itr = lower; itr != upper; ++itr ) {
-         if(    itr->base_chain       == base_chain 
-             && itr->base_sym.name()  == base_sym.name() 
-             && itr->quote_chain      == quote_chain 
-             && itr->quote_sym.name() == quote_sym.name() ) {
-            eosio_assert(false, "trading pair already exist");
-            return;
-         }
-      }
-   }
 
    uint32_t exchange::get_pair_id( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const {
       trading_pairs pairs_table(_self, _self);
