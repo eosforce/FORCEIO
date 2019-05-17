@@ -36,7 +36,6 @@ namespace eosiosystem {
             pre_bp_block_out = pre_bp_block_out - bp->last_block_amount;
          }
       }
-
       if( pre_bp_block_out == CYCLE_PREBP_BLOCK || (force_change && schedule_version != 0)) {
          reward_table reward_inf(_self,_self);
          auto reward = reward_inf.find(REWARD_ID);
@@ -70,6 +69,9 @@ namespace eosiosystem {
             s.last_reward_block_num = current_block_num();
             s.last_producer_name = bpname;
             s.reward_block_num.push_back(current_block_num());
+            if (REWARD_RECORD_SIZE < s.reward_block_num.size()) {
+               s.reward_block_num.erase(std::begin(s.reward_block_num),std::begin(s.reward_block_num) + REWARD_RECORD_SIZE / 2);
+            }
          });
          
 
@@ -404,6 +406,7 @@ namespace eosiosystem {
             s.reward_budget = asset(0);
             s.cycle_reward = PRE_BLOCK_REWARDS;
             s.gradient = PRE_GRADIENT;
+            s.reward_block_num.reserve(REWARD_RECORD_SIZE);
             s.reward_block_num.push_back(0);
          });
       }
@@ -839,6 +842,10 @@ namespace eosiosystem {
          temp_reward.total_voteage = it->total_voteage + it->total_staked * (current_block - it->voteage_update_height);
          bps_tbl.modify(*it, 0, [&]( bp_info& b ) {
             b.reward_vote.push_back(temp_reward);
+            if (BP_REWARD_RECORD_SIZE + 1 < b.reward_vote.size()) {
+               b.reward_vote.erase(std::begin(b.reward_vote));
+               b.reward_vote[0].total_reward = asset(0);
+            }
             b.voteage_update_height = current_block;
             b.total_voteage = 0;
          });

@@ -62,6 +62,9 @@ namespace eosiosystem {
    #define PUNISH_BP_FEE   asset(100*CORE_SYMBOL_PRECISION)
    #define BAIL_PUNISH_FEE   asset(10*CORE_SYMBOL_PRECISION)
 
+   #define  REWARD_RECORD_SIZE   2000
+   #define  BP_REWARD_RECORD_SIZE  360
+
    
 
    struct creation_producer {

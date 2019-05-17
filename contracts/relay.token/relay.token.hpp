@@ -48,6 +48,7 @@ static constexpr uint32_t UPDATE_CYCLE = 126;
 static constexpr uint32_t UPDATE_CYCLE = 315;
 #endif
 static constexpr uint64_t OTHER_COIN_WEIGHT = 500;
+#define COIN_REWARD_RECORD_SIZE  360
 class token : public eosio::contract {
 public:
    using contract::contract;

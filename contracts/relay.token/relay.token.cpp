@@ -367,6 +367,10 @@ void token::settlemine(account_name system_account) {
          temp_remind.reward_block_num = current_block;
          statstable.modify(*existing, 0, [&]( auto& s ) {
             s.reward_mine.push_back(temp_remind);
+            if (COIN_REWARD_RECORD_SIZE + 1 < s.reward_mine.size()) {
+               s.reward_mine.erase(std::begin(s.reward_mine));
+               s.reward_mine[0].reward_pool = asset(0);
+            }
             s.total_mineage = 0;
             s.total_mineage_update_height = current_block;
          });
