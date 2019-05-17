@@ -280,6 +280,14 @@ namespace exchange {
 
       using accounts = eosio::multi_index<N(accounts), account_info>;
 
+      template<typename Index>
+      auto get_deal_by_num( Index& deals_idx, 
+                            const uint32_t pair_id, 
+                            const uint32_t block_num ) const {
+         const auto lower_key = ( static_cast<uint64_t>( pair_id ) << 32) | static_cast<uint64_t>( block_num );
+         return deals_idx.lower_bound(lower_key);
+      }
+
       const asset REG_STAKE = asset(1000'0000);
       const asset OPEN_PAIR_STAKE = asset(1000'0000);
 
@@ -303,6 +311,8 @@ namespace exchange {
    */
    asset exchange::get_avg_price( uint32_t block_height, name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym ) const {
       deals deals_table(_self, _self);
+      const auto idx_deals = deals_table.template get_index<N(idxkey)>();
+
       asset avg_price = asset(0, quote_sym);
 
       trading_pairs_t<trading_pairs> pairs_table( _self );
@@ -310,23 +320,22 @@ namespace exchange {
       if( pair == pairs_table.end() ) {
          return avg_price;
       }
-
       const auto pair_id = pair->id;
 
-      auto lower_key = ((uint64_t) pair_id << 32) | 0;
-      auto idx_deals = deals_table.template get_index<N(idxkey)>();
-      auto itr1 = idx_deals.lower_bound(lower_key);
-      if( !(itr1 != idx_deals.end() && itr1->pair_id == pair_id) ) {
+      auto itr1 = get_deal_by_num( idx_deals, pair_id, 0 );
+      if( itr1 == idx_deals.end() || itr1->pair_id != pair_id ) {
          //print("exchange::get_avg_price: trading pair not marked!\n");
          return avg_price;
       }
 
-      lower_key = ((uint64_t) pair_id << 32) | block_height;
-      itr1 = idx_deals.lower_bound(lower_key);
-      if( itr1 == idx_deals.cend() ) itr1--;
+      itr1 = get_deal_by_num( idx_deals, pair_id, block_height );
+      if( itr1 == idx_deals.end() ) {
+         --itr1;
+      }
 
-      if( itr1->vol.amount > 0 && block_height >= itr1->reset_block_height )
+      if( itr1->vol.amount > 0 && block_height >= itr1->reset_block_height ) {
          avg_price = itr1->sum * precision(itr1->vol.symbol.precision()) / itr1->vol.amount;
+      }
       /*print("exchange::get_avg_price pair_id=", itr1->pair_id, ", block_height=", block_height,
          ", reset_block_height=", itr1->reset_block_height, ", block_height_end=", itr1->block_height_end,
          ", sum=", itr1->sum, ", vol=", itr1->vol, ", avg_price=", avg_price,"\n");*/

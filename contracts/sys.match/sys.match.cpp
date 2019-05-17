@@ -938,22 +938,21 @@ namespace exchange {
       require_auth(_self);
 
       trading_pairs_t<trading_pairs> pairs_table( _self );
-
       deals deals_table(_self, _self);
-      auto pair_id   = pairs_table.get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
-      auto lower_key = ((uint64_t) pair_id << 32) | 0;
       auto idx_deals = deals_table.template get_index<N(idxkey)>();
-      auto itr1      = idx_deals.lower_bound(lower_key);
 
-      eosio_assert(!(itr1 != idx_deals.end() && itr1->pair_id == pair_id), "trading pair already marked");
+      const auto pair_id   = pairs_table.get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
+      const auto deal_itr = get_deal_by_num( idx_deals, pair_id, 0 );
+      
+      eosio_assert( deal_itr == idx_deals.cend() || deal_itr->pair_id != pair_id, "trading pair already marked");
 
-      auto start_block = (current_block_num() - 1) / INTERVAL_BLOCKS * INTERVAL_BLOCKS + 1;
-      auto pk = deals_table.available_primary_key();
+      const auto start_block = (current_block_num() - 1) / INTERVAL_BLOCKS * INTERVAL_BLOCKS + 1;
+      const auto pk = deals_table.available_primary_key();
       deals_table.emplace(_self, [&]( auto& d ) {
-         d.id                 = (uint32_t) pk;
+         d.id                 = static_cast<uint32_t>( pk );
          d.pair_id            = pair_id;
-         d.sum                = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym));
-         d.vol                = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym));
+         d.sum                = asset_exchange{ quote_chain, quote_sym }.data();
+         d.vol                = asset_exchange{ base_chain, base_sym }.data();
          d.reset_block_height = start_block;
          d.block_height_end   = start_block + INTERVAL_BLOCKS - 1;
       });
