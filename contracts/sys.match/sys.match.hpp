@@ -344,30 +344,31 @@ namespace exchange {
 
    void exchange::upd_mark( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, asset sum, asset vol ) {
       deals deals_table(_self, _self);
+      auto idx_deals = deals_table.template get_index<N(idxkey)>();
 
       trading_pairs_t<trading_pairs> pairs_table( _self );
+      const auto pair_id = pairs_table.get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
 
-      auto pair_id   = pairs_table.get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
-      auto lower_key = ((uint64_t) pair_id << 32) | 0;
-      auto idx_deals = deals_table.template get_index<N(idxkey)>();
-      auto itr1      = idx_deals.lower_bound(lower_key);
-      if( !(itr1 != idx_deals.end() && itr1->pair_id == pair_id) ) {
+      auto itr1 = get_deal_by_num( idx_deals, pair_id, 0 );
+      if( itr1 == idx_deals.end() || itr1->pair_id != pair_id ) {
          //print("exchange::upd_mark trading pair not marked!\n");
          return;
       }
 
-      uint32_t curr_block = current_block_num();
-      lower_key = ((uint64_t) pair_id << 32) | curr_block;
-      itr1 = idx_deals.lower_bound(lower_key);
-      if( itr1 == idx_deals.cend() ) itr1--;
+      const auto curr_block = current_block_num();
+      itr1 = get_deal_by_num( idx_deals, pair_id, curr_block );
+      if( itr1 == idx_deals.cend() ) {
+         --itr1;
+      }
+
       if( curr_block <= itr1->block_height_end ) {
          idx_deals.modify(itr1, _self, [&]( auto& d ) {
             d.sum += sum;
             d.vol += vol;
          });
       } else {
-         auto start_block = itr1->reset_block_height + (curr_block - itr1->reset_block_height) / INTERVAL_BLOCKS * INTERVAL_BLOCKS;
-         auto pk = deals_table.available_primary_key();
+         const auto start_block = itr1->reset_block_height + (curr_block - itr1->reset_block_height) / INTERVAL_BLOCKS * INTERVAL_BLOCKS;
+         const auto pk = deals_table.available_primary_key();
          deals_table.emplace(_self, [&]( auto& d ) {
             d.id                 = (uint32_t) pk;
             d.pair_id            = pair_id;
