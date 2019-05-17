@@ -121,9 +121,9 @@ namespace exchange {
 
       void withdraw( account_name to, asset quantity );
 
-      asset calcfee( asset quant, uint64_t fee_rate );
-
-      asset charge_fee( uint32_t pair_id, account_name payer, asset quantity, account_name exc_acc, uint32_t fee_type );
+      // fee funcs
+      asset calcfee( const asset& quant, const uint64_t fee_rate ) const;
+      asset charge_fee( uint32_t pair_id, const account_name& payer, const asset& quantity, const account_name& exc_acc, uint32_t fee_type );
 
       void sub_balance( account_name owner, asset value );
 
