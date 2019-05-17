@@ -3,7 +3,7 @@
 #include "eosiolib/transaction.hpp"
 #include "force.system/force.system.hpp"
 #include <boost/algorithm/string.hpp>
-#include "asset_exchange.hpp"
+#include "exchange_asset.hpp"
 
 // TODO by CODEREVIEW need unity force.token and relay.token
 

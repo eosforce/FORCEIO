@@ -7,7 +7,7 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/types.h>
 
-#include "asset_exchange.hpp"
+#include "exchange_asset.hpp"
 
 #include <string>
 
