@@ -252,7 +252,7 @@ int64_t precision(uint64_t decimals)
    }
    return p10;
 }
-   }
+
 void token::trade( account_name from,
                   account_name to,
                   name chain,
