@@ -21,6 +21,7 @@ namespace eosiosystem {
    using eosio::permission_level;
    using std::vector;
 
+   #define CORE_SYMBOL_PRECISION 10000
    static constexpr uint32_t FROZEN_DELAY = CONTRACT_FROZEN_DELAY; // 3 * 24 * 60 * 20; //3*24*60*20*3s;
    static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
 #ifdef BEFORE_ONLINE_TEST 
@@ -28,16 +29,16 @@ namespace eosiosystem {
    static constexpr uint32_t CYCLE_PREBP_BLOCK = 3;
    static constexpr uint32_t CYCLE_PREDAY = 5;//5;//275;
    static constexpr uint32_t STABLE_DAY = 10;//2;//60;
-   static constexpr uint64_t PRE_BLOCK_REWARDS = 58.6*10000;
-   static constexpr uint64_t STABLE_BLOCK_REWARDS = 126*10000;
+   static constexpr uint64_t PRE_BLOCK_REWARDS = 58.6*CORE_SYMBOL_PRECISION;
+   static constexpr uint64_t STABLE_BLOCK_REWARDS = 126*CORE_SYMBOL_PRECISION;
 #else
    static constexpr uint32_t CYCLE_PREHOUR = 12;
    static constexpr uint32_t CYCLE_PREBP_BLOCK = 15;
    
    static constexpr uint32_t CYCLE_PREDAY = 275;//5;//275;
    static constexpr uint32_t STABLE_DAY = 60;//2;//60;
-   static constexpr uint64_t STABLE_BLOCK_REWARDS = 630*10000;
-   static constexpr uint64_t PRE_BLOCK_REWARDS = 143*10000;
+   static constexpr uint64_t STABLE_BLOCK_REWARDS = 630*CORE_SYMBOL_PRECISION;
+   static constexpr uint64_t PRE_BLOCK_REWARDS = 143*CORE_SYMBOL_PRECISION;
 #endif
    //static constexpr uint32_t STABLE_BLOCK_HEIGHT = UPDATE_CYCLE * CYCLE_PREDAY * STABLE_DAY;
    static constexpr uint32_t PRE_GRADIENT = 10250;
@@ -49,16 +50,19 @@ namespace eosiosystem {
    static constexpr uint64_t BLOCK_OUT_WEIGHT = 1000;
    static constexpr uint64_t MORTGAGE = 8228;
 
+   #define REWARD_RATIO_PRECISION 10000
    static constexpr uint32_t REWARD_DEVELOP = 900;
    static constexpr uint32_t REWARD_BP = 300;
    static constexpr uint32_t REWARD_FUND = 100;
-   static constexpr uint32_t REWARD_MINE = 10000 - REWARD_DEVELOP - REWARD_BP;
+   static constexpr uint32_t REWARD_MINE = REWARD_RATIO_PRECISION - REWARD_DEVELOP - REWARD_BP;
 
    static constexpr uint64_t OTHER_COIN_WEIGHT = 500;
 
    #define LACKMORTGAGE_FREEZE UPDATE_CYCLE * CYCLE_PREHOUR
-   #define PUNISH_BP_FEE   asset(100*10000)
-   #define BAIL_PUNISH_FEE   asset(10*10000)
+   #define PUNISH_BP_FEE   asset(100*CORE_SYMBOL_PRECISION)
+   #define BAIL_PUNISH_FEE   asset(10*CORE_SYMBOL_PRECISION)
+
+   
 
    struct creation_producer {
       account_name bp_name;
@@ -67,32 +71,32 @@ namespace eosiosystem {
    };
 
    static constexpr creation_producer CREATION_BP[26] = {
-      {N(biosbpa),400000,40000*10000},
-      {N(biosbpb),400000,40000*10000},
-      {N(biosbpc),400000,40000*10000},
-      {N(biosbpd),400000,40000*10000},
-      {N(biosbpe),600000,40000*10000},
-      {N(biosbpf),600000,40000*10000},
-      {N(biosbpg),600000,40000*10000},
-      {N(biosbph),600000,40000*10000},
-      {N(biosbpi),1300000,40000*10000},
-      {N(biosbpj),1300000,40000*10000},
-      {N(biosbpk),1300000,40000*10000},
-      {N(biosbpl),2100000,40000*10000},
-      {N(biosbpm),2100000,40000*10000},
-      {N(biosbpn),10000000,40000*10000},
-      {N(biosbpo),10000000,40000*10000},
-      {N(biosbpp),10000000,40000*10000},
-      {N(biosbpq),10000000,40000*10000},
-      {N(biosbpr),10000000,40000*10000},
-      {N(biosbps),10000000,40000*10000},
-      {N(biosbpt),10000000,40000*10000},
-      {N(biosbpu),10000000,40000*10000},
-      {N(biosbpv),100000,40000*10000},
-      {N(biosbpw),100000,40000*10000},
-      {N(biosbpx),100000,40000*10000},
-      {N(biosbpy),100000,40000*10000},
-      {N(biosbpz),100000,40000*10000}
+      {N(biosbpa),400000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpb),400000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpc),400000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpd),400000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpe),600000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpf),600000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpg),600000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbph),600000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpi),1300000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpj),1300000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpk),1300000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpl),2100000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpm),2100000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpn),10000000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpo),10000000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpp),10000000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpq),10000000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpr),10000000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbps),10000000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpt),10000000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpu),10000000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpv),100000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpw),100000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpx),100000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpy),100000,40000*CORE_SYMBOL_PRECISION},
+      {N(biosbpz),100000,40000*CORE_SYMBOL_PRECISION}
    };
    
 
@@ -184,7 +188,7 @@ namespace eosiosystem {
       struct bp_info {
          account_name name;
          public_key   block_signing_key;
-         uint32_t     commission_rate = 0; // 0 - 10000 for 0% - 100%
+         uint32_t     commission_rate = 0; // 0 - CORE_SYMBOL_PRECISION for 0% - 100%
          int64_t      total_staked    = 0;
          asset        rewards_pool    = asset(0);
          asset        rewards_block   = asset(0);
@@ -349,10 +353,10 @@ namespace eosiosystem {
       void init_creation_bp();
       void update_elected_bps();
 
-      void reward_bps(const uint64_t reward_amount);
-      void reward_block(const uint32_t schedule_version,const uint64_t reward_amount,bool force_change);
-      void reward_mines(const uint64_t reward_amount);
-      void reward_develop(const uint64_t reward_amount);
+      void reward_bps(const int64_t reward_amount);
+      void reward_block(const uint32_t schedule_version,const int64_t reward_amount,bool force_change);
+      void reward_mines(const int64_t reward_amount);
+      void reward_develop(const int64_t reward_amount);
 
       bool is_super_bp( account_name block_producers[], account_name name );
 

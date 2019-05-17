@@ -57,7 +57,7 @@ namespace eosiosystem {
          else if(reward_times % CYCLE_PREDAY == 0) {
             reward_update = true;
             reward_inf.modify(reward, 0, [&]( reward_info& s ) {
-               s.cycle_reward = static_cast<int64_t>(s.cycle_reward * s.gradient / 10000);
+               s.cycle_reward = static_cast<int64_t>(s.cycle_reward * s.gradient / REWARD_RATIO_PRECISION);
             });
          }
 
@@ -73,14 +73,13 @@ namespace eosiosystem {
          });
          
 
-         reward_develop(block_rewards * REWARD_DEVELOP / 10000);
-         reward_block(reward_block_version,block_rewards * REWARD_BP / 10000,force_change);
+         reward_develop(block_rewards * REWARD_DEVELOP / REWARD_RATIO_PRECISION);
+         reward_block(reward_block_version,block_rewards * REWARD_BP / REWARD_RATIO_PRECISION,force_change);
    
          if (reward_update) {
-            cycle_block_out = current_block_num() - reward->reward_block_num[reward->reward_block_num.size() - 2];
-            block_rewards = reward->cycle_reward * cycle_block_out / UPDATE_CYCLE;
+            cycle_block_out = current_block_num() - reward->reward_block_num[reward->reward_block_num.size() - 1 - CYCLE_PREDAY];
+            block_rewards = reward->cycle_reward * cycle_block_out / UPDATE_CYCLE * REWARD_MINE / REWARD_RATIO_PRECISION ;
             settlebpvote();
-
             INLINE_ACTION_SENDER(relay::token, settlemine)( ::config::relay_token_account_name, {{::config::system_account_name,N(active)}},
                                     { ::config::system_account_name} );
 
@@ -89,6 +88,7 @@ namespace eosiosystem {
 
             INLINE_ACTION_SENDER(relay::token, activemine)( ::config::relay_token_account_name, {{::config::system_account_name,N(active)}},
                         { ::config::system_account_name} );
+
          }
 
          // print("logs:",block_rewards,"---",block_rewards * REWARD_DEVELOP / 10000,"---",block_rewards * REWARD_BP / 10000,"---",(block_rewards * REWARD_MINE / 10000) * coin_power / total_power,"---",
@@ -128,8 +128,9 @@ namespace eosiosystem {
       uint64_t  coin_power = get_coin_power();
       uint64_t total_power = vote_power + coin_power;
       if (total_power != 0) {
-         reward_mines(static_cast<int64_t>((reward_num * REWARD_MINE / 10000) * coin_power / total_power));
-         reward_bps(static_cast<int64_t>((reward_num * REWARD_MINE / 10000) * vote_power / total_power));
+         int64_t reward_bp = static_cast<int64_t>(static_cast<int128_t>(reward_num) * vote_power / total_power);
+         reward_mines(reward_num - reward_bp);
+         reward_bps(reward_bp);
       }
    }
 
@@ -137,7 +138,7 @@ namespace eosiosystem {
                                    const uint32_t commission_rate, const std::string& url ) {
       require_auth(bpname);
       eosio_assert(url.size() < 64, "url too long");
-      eosio_assert(1 <= commission_rate && commission_rate <= 10000, "need 1 <= commission rate <= 10000");
+      eosio_assert(1 <= commission_rate && commission_rate <= REWARD_RATIO_PRECISION, "need 1 <= commission rate <= 10000");
 
       bps_table bps_tbl(_self, _self);
       auto bp = bps_tbl.find(bpname);
@@ -244,7 +245,7 @@ namespace eosiosystem {
       set_proposed_producers(packed_schedule.data(), packed_schedule.size());
    }
 
-   void system_contract::reward_mines(const uint64_t reward_amount) {
+   void system_contract::reward_mines(const int64_t reward_amount) {
       eosio::action(
          vector<eosio::permission_level>{{_self,N(active)}},
          N(relay.token),
@@ -255,7 +256,7 @@ namespace eosiosystem {
       ).send();
    }
 
-   void system_contract::reward_develop(const uint64_t reward_amount) {
+   void system_contract::reward_develop(const int64_t reward_amount) {
       reward_table reward_inf(_self,_self);
       auto reward = reward_inf.find(REWARD_ID);
       if(reward == reward_inf.end()) {
@@ -270,7 +271,7 @@ namespace eosiosystem {
 
    // TODO it need change if no bonus to accounts
 
-   void system_contract::reward_block(const uint32_t schedule_version,const uint64_t reward_amount,bool force_change) {
+   void system_contract::reward_block(const uint32_t schedule_version,const int64_t reward_amount,bool force_change) {
       schedules_table schs_tbl(_self, _self);
       bps_table bps_tbl(_self, _self);
       auto sch = schs_tbl.find(uint64_t(schedule_version));
@@ -350,7 +351,7 @@ namespace eosiosystem {
       });
    }
 
-   void system_contract::reward_bps(const uint64_t reward_amount) {
+   void system_contract::reward_bps(const int64_t reward_amount) {
       bps_table bps_tbl(_self, _self);
       int64_t staked_all_bps = 0;
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
@@ -363,7 +364,7 @@ namespace eosiosystem {
       auto budget_reward = asset{0,CORE_SYMBOL};
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
          if( it->reward_vote[it->reward_vote.size() - 1].total_voteage <= rewarding_bp_staked_threshold || it->commission_rate < 1 ||
-             it->commission_rate > 10000 ) {
+             it->commission_rate > REWARD_RATIO_PRECISION ) {
             continue;
          }
 
@@ -376,8 +377,8 @@ namespace eosiosystem {
          const auto& bp = bps_tbl.get(it->name, "bpname is not registered");
          auto ireward_index = bp.reward_vote.size() - 1;
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-            b.reward_vote[ireward_index].total_reward += asset(vote_reward * (10000 - b.commission_rate) / 10000);
-            b.rewards_block += asset(vote_reward * b.commission_rate / 10000);
+            b.reward_vote[ireward_index].total_reward += asset(vote_reward * (REWARD_RATIO_PRECISION - b.commission_rate) / REWARD_RATIO_PRECISION);
+            b.rewards_block += asset(vote_reward * b.commission_rate / REWARD_RATIO_PRECISION);
          });
       }
       reward_table reward_inf(_self,_self);
@@ -430,6 +431,16 @@ namespace eosiosystem {
       }
    }
    
+   int64_t precision(int64_t decimals)
+   {
+      int64_t p10 = 1;
+      int64_t p = decimals;
+      while( p > 0  ) {
+         p10 *= 10; --p;
+      }
+      return p10;
+   }
+
    int128_t system_contract::get_coin_power() {
 
       int128_t total_power = 0;
@@ -442,7 +453,12 @@ namespace eosiosystem {
          eosio_assert(existing != statstable.end(), "token with symbol already exists");
          auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
          auto today_index = existing->reward_mine.size() - 1;
-         auto power = existing->reward_mine[today_index].total_mineage * OTHER_COIN_WEIGHT / 10000 * price / 10000;
+         int128_t power = existing->reward_mine[today_index].total_mineage;
+         power = power * (int128_t)OTHER_COIN_WEIGHT;
+         power = power / (int128_t)REWARD_RATIO_PRECISION;
+         power = power * (int128_t)price;
+         power = power / (int128_t)precision(existing->supply.symbol.precision());
+
          total_power += power;
       }
       return total_power;
@@ -456,7 +472,7 @@ namespace eosiosystem {
          auto today_index = it->reward_vote.size() - 1;
          staked_all_bps += it->reward_vote[today_index].total_voteage;
       }
-      return static_cast<int128_t>(staked_all_bps)* 10000;
+      return static_cast<int128_t>(staked_all_bps)* CORE_SYMBOL_PRECISION;
    }
 
    void system_contract::addmortgage(const account_name bpname,const account_name payer,asset quantity) {
@@ -844,7 +860,7 @@ namespace eosiosystem {
       bool cross_day = false;
       for (int i=0;i!=imaxsize; ++i) {
          if (last_voteage_update_height < bp.reward_vote[i].reward_block_num) {
-            auto day_voteage = last_voteage + vts->vote.amount / 10000 * (bp.reward_vote[i].reward_block_num - last_voteage_update_height);
+            auto day_voteage = last_voteage + vts->vote.amount / CORE_SYMBOL_PRECISION * (bp.reward_vote[i].reward_block_num - last_voteage_update_height);
             auto reward = bp.reward_vote[i].total_reward * day_voteage / bp.reward_vote[i].total_voteage;
             total_reward += reward;
             last_voteage_update_height = bp.reward_vote[i].reward_block_num;
@@ -860,10 +876,10 @@ namespace eosiosystem {
       votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
          v.total_reward += total_reward;
          if (cross_day) {
-            v.voteage = v.vote.amount / 10000 * (current_block - last_voteage_update_height);
+            v.voteage = v.vote.amount / CORE_SYMBOL_PRECISION * (current_block - last_voteage_update_height);
          }
          else {
-            v.voteage += v.vote.amount / 10000 * (current_block - last_voteage_update_height);
+            v.voteage += v.vote.amount / CORE_SYMBOL_PRECISION * (current_block - last_voteage_update_height);
          }
          
          v.voteage_update_height = current_block;

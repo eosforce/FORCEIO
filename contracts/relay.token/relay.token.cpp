@@ -245,38 +245,6 @@ void token::add_balance( account_name owner, name chain, asset value, account_na
    }
 }
 
-
-void token::settlemine(account_name system_account) {
-   require_auth(::config::system_account_name);
-   rewards rewardtable(_self, _self);
-   auto current_block = current_block_num();
-   for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
-      stats statstable(_self, it->chain);
-      auto existing = statstable.find(it->supply.symbol.name());
-      if (existing != statstable.end()) {
-         reward_mine_info temp_remind;
-         temp_remind.total_mineage = existing->total_mineage + static_cast<int128_t>(existing->supply.amount) * (current_block - existing->total_mineage_update_height);
-         temp_remind.reward_block_num = current_block;
-         statstable.modify(*existing, 0, [&]( auto& s ) {
-            s.reward_mine.push_back(temp_remind);
-            s.total_mineage = 0;
-            s.total_mineage_update_height = current_block;
-         });
-      }
-   }
-}
-
-void token::activemine(account_name system_account) {
-   require_auth(::config::system_account_name);
-   rewards rewardtable(_self, _self);
-   for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
-      rewardtable.modify(*it, 0, [&]( auto& s ) {
-         s.reward_now = true;
-      });
-   }
-}
-
-
 int64_t precision(uint64_t decimals)
 {
    int64_t p10 = 1;
@@ -359,16 +327,6 @@ void token::addreward(name chain,asset supply,int32_t reward_now) {
    auto existing = statstable.find(supply.symbol.name());
    eosio_assert(existing != statstable.end(), "token with symbol do not exists");
 
-   // if (reward_now == 1) {
-   //    statstable.modify(*existing, 0, [&]( auto& s ) {
-   //       reward_mine_info temp_remind;
-   //       temp_remind.total_mineage = 0;
-   //       temp_remind.reward_block_num = 0;
-   //       temp_remind.reward_pool = asset(0);
-   //       s.reward_mine.push_back(temp_remind);
-   //    });
-   // }
-
    rewards rewardtable(_self, _self);
    auto idx = rewardtable.get_index<N(bychain)>();
    auto con = idx.find(get_account_idx(chain, supply));
@@ -398,7 +356,7 @@ void token::rewardmine(asset quantity) {
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol already exists");
       auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
-      total_power += existing->reward_mine[existing->reward_mine.size() - 1].total_mineage*price ;
+      total_power += existing->reward_mine[existing->reward_mine.size() - 1].total_mineage * price / precision(existing->supply.symbol.precision()) ;
    }
 
    if (total_power == 0) return ;
@@ -407,12 +365,43 @@ void token::rewardmine(asset quantity) {
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol do not exists");
       auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
-      uint128_t devide_amount =  existing->reward_mine[existing->reward_mine.size() - 1].total_mineage * price * quantity.amount  / total_power;
+      uint128_t devide_amount =  existing->reward_mine[existing->reward_mine.size() - 1].total_mineage * price / precision(existing->supply.symbol.precision())* quantity.amount  / total_power;
       statstable.modify(*existing, 0, [&]( auto& s ) {
-         s.reward_mine[s.reward_mine.size() - 1].reward_pool = asset(devide_amount);
+         s.reward_mine[existing->reward_mine.size() - 1].reward_pool = asset(devide_amount);
       });
    }
 }
+
+void token::settlemine(account_name system_account) {
+   require_auth(::config::system_account_name);
+   rewards rewardtable(_self, _self);
+   auto current_block = current_block_num();
+   for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
+      stats statstable(_self, it->chain);
+      auto existing = statstable.find(it->supply.symbol.name());
+      if (existing != statstable.end()) {
+         reward_mine_info temp_remind;
+         temp_remind.total_mineage = existing->total_mineage + static_cast<int128_t>(existing->supply.amount) * (current_block - existing->total_mineage_update_height);
+         temp_remind.reward_block_num = current_block;
+         statstable.modify(*existing, 0, [&]( auto& s ) {
+            s.reward_mine.push_back(temp_remind);
+            s.total_mineage = 0;
+            s.total_mineage_update_height = current_block;
+         });
+      }
+   }
+}
+
+void token::activemine(account_name system_account) {
+   require_auth(::config::system_account_name);
+   rewards rewardtable(_self, _self);
+   for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
+      rewardtable.modify(*it, 0, [&]( auto& s ) {
+         s.reward_now = true;
+      });
+   }
+}
+
 
 //todo
 void token::claim(name chain,asset quantity,account_name receiver) {
