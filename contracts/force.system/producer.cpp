@@ -77,10 +77,9 @@ namespace eosiosystem {
          reward_block(reward_block_version,block_rewards * REWARD_BP / REWARD_RATIO_PRECISION,force_change);
    
          if (reward_update) {
-            cycle_block_out = current_block_num() - reward->reward_block_num[reward->reward_block_num.size() - 2];
-            block_rewards = reward->cycle_reward * cycle_block_out / UPDATE_CYCLE;
+            cycle_block_out = current_block_num() - reward->reward_block_num[reward->reward_block_num.size() - 1 - CYCLE_PREDAY];
+            block_rewards = reward->cycle_reward * cycle_block_out / UPDATE_CYCLE * REWARD_MINE / REWARD_RATIO_PRECISION ;
             settlebpvote();
-
             INLINE_ACTION_SENDER(relay::token, settlemine)( ::config::relay_token_account_name, {{::config::system_account_name,N(active)}},
                                     { ::config::system_account_name} );
 
@@ -89,6 +88,7 @@ namespace eosiosystem {
 
             INLINE_ACTION_SENDER(relay::token, activemine)( ::config::relay_token_account_name, {{::config::system_account_name,N(active)}},
                         { ::config::system_account_name} );
+
          }
 
          // print("logs:",block_rewards,"---",block_rewards * REWARD_DEVELOP / 10000,"---",block_rewards * REWARD_BP / 10000,"---",(block_rewards * REWARD_MINE / 10000) * coin_power / total_power,"---",
@@ -128,7 +128,7 @@ namespace eosiosystem {
       uint64_t  coin_power = get_coin_power();
       uint64_t total_power = vote_power + coin_power;
       if (total_power != 0) {
-         int64_t reward_bp = static_cast<int64_t>(static_cast<int128_t>(reward_num * REWARD_MINE / REWARD_RATIO_PRECISION) * vote_power / total_power);
+         int64_t reward_bp = static_cast<int64_t>(static_cast<int128_t>(reward_num) * vote_power / total_power);
          reward_mines(reward_num - reward_bp);
          reward_bps(reward_bp);
       }
@@ -452,8 +452,6 @@ namespace eosiosystem {
          auto existing = statstable.find(it->supply.symbol.name());
          eosio_assert(existing != statstable.end(), "token with symbol already exists");
          auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
-
-         //除以自己的精度就可以了
          auto today_index = existing->reward_mine.size() - 1;
          int128_t power = existing->reward_mine[today_index].total_mineage;
          power = power * (int128_t)OTHER_COIN_WEIGHT;

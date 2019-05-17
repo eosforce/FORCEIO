@@ -390,16 +390,6 @@ void token::addreward(name chain,asset supply,int32_t reward_now) {
    auto existing = statstable.find(supply.symbol.name());
    eosio_assert(existing != statstable.end(), "token with symbol do not exists");
 
-   // if (reward_now == 1) {
-   //    statstable.modify(*existing, 0, [&]( auto& s ) {
-   //       reward_mine_info temp_remind;
-   //       temp_remind.total_mineage = 0;
-   //       temp_remind.reward_block_num = 0;
-   //       temp_remind.reward_pool = asset(0);
-   //       s.reward_mine.push_back(temp_remind);
-   //    });
-   // }
-
    rewards rewardtable(_self, _self);
    auto idx = rewardtable.get_index<N(bychain)>();
    auto con = idx.find(get_account_idx(chain, supply));
@@ -428,7 +418,6 @@ void token::rewardmine(asset quantity) {
       stats statstable(_self, it->chain);
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol already exists");
-
       auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
       total_power += existing->reward_mine[existing->reward_mine.size() - 1].total_mineage * price / precision(existing->supply.symbol.precision()) ;
    }
@@ -438,11 +427,7 @@ void token::rewardmine(asset quantity) {
       stats statstable(_self, it->chain);
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol do not exists");
-
-      auto price_core_symbol = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol);
-      int64_t precision_poor =existing->supply.symbol.precision() - price_core_symbol.symbol.precision();
-      auto price = static_cast<int64_t>(price_core_symbol.amount * pow(10,precision_poor));
-      //auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
+      auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
       uint128_t devide_amount =  existing->reward_mine[existing->reward_mine.size() - 1].total_mineage * price / precision(existing->supply.symbol.precision())* quantity.amount  / total_power;
       statstable.modify(*existing, 0, [&]( auto& s ) {
          s.reward_mine[existing->reward_mine.size() - 1].reward_pool = asset(devide_amount);
