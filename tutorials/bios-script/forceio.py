@@ -106,7 +106,7 @@ def getRAM(account, ram):
     cleos("push action force vote4ram '{\"voter\":\"%s\",\"bpname\":\"biosbpa\",\"stake\":\"%s\"}' -p %s" % (account, intToCurrency(ram), account))
 
 def setContract(account):
-    getRAM(account, 10000 * 10000)
+    getRAM(account, 50000 * 10000)
     cleos('set contract %s %s/%s/' % (account, datas.config_dir, account))
 
 def parserArgsAndRun(parser, commands):
