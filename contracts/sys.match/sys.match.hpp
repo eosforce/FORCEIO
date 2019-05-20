@@ -29,7 +29,7 @@ namespace exchange {
 
    typedef double real_type;
    
-   inline   int64_t precision(uint64_t decimals)
+   inline int64_t precision(uint64_t decimals)
    {
       int64_t p10 = 1;
       int64_t p = (int64_t)decimals;
@@ -75,6 +75,8 @@ namespace exchange {
       void setfee(account_name exc_acc, uint32_t pair_id, uint32_t rate);
       
       void enpoints(account_name exc_acc, uint32_t pair_id, symbol_type points_sym);
+      
+      void setminordqty(account_name exc_acc, uint32_t pair_id, asset min_qty);
       
       void withdraw(account_name to, asset quantity);
          
@@ -141,10 +143,7 @@ namespace exchange {
           name        quote_chain;
           symbol_type quote_sym;
           
-          //uint32_t    fee_rate;
           account_name exc_acc;
-          //asset       fees_base;
-          //asset       fees_quote;
           uint32_t    frozen;
           
           uint32_t primary_key() const { return id; }
@@ -199,6 +198,8 @@ namespace exchange {
          
          bool        points_enabled;
          asset       points;
+         
+         asset       min_qty;
          
          uint64_t primary_key() const { return id; }
          uint128_t by_exc_and_pair() const {
