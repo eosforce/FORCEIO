@@ -29,7 +29,15 @@ namespace exchange {
 
    typedef double real_type;
    
-   int64_t precision(uint64_t decimals);
+   inline   int64_t precision(uint64_t decimals)
+   {
+      int64_t p10 = 1;
+      int64_t p = (int64_t)decimals;
+      while( p > 0  ) {
+         p10 *= 10; --p;
+      }
+      return p10;
+   }
 
    class exchange : public contract  {
 
