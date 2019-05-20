@@ -77,7 +77,7 @@ min_qty:    minimum base trading quantity
 11. trade (located in relay.token contract)
 void trade(account_name from, account_name to, name chain, asset quantity, trade_type type, string memo);   
 from: 	transfer orginating account    
-to:      escrow account
+to:      escrow account, now must be 'sys.match'
 chain: 	from which chain  
 quantity: transfer token amount
 type:    trade type (1 is matching trading)

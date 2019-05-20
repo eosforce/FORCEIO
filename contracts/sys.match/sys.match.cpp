@@ -221,17 +221,22 @@ namespace exchange {
       auto lower = orders.lower_bound( lower_key );
       auto upper_key = std::numeric_limits<uint64_t>::max();
       auto upper = orders.lower_bound( upper_key );
+      name        base_chain;
+      symbol_type base_sym;
+      name        quote_chain;
+      symbol_type quote_sym;
       
       for ( ; lower != upper; lower++ ) {
          if (to != lower->maker) {
             continue;
          }
          
-         if ( lower->base.symbol.name() == quantity.symbol.name() || lower->price.symbol.name() == quantity.symbol.name() ) {
+         get_pair(lower->pair_id, base_chain, base_sym, quote_chain, quote_sym);
+         if ( base_sym.name() == quantity.symbol.name() || quote_sym.name() == quantity.symbol.name() ) {
             eosio_assert(false, "have pending orders, can not withdraw!");
          }
       }
-      quantity = to_asset(relay_token_acc, eosio::name{.value=0}, quantity.symbol, quantity);
+      quantity = to_asset(relay_token_acc, name{}, quantity.symbol, quantity);
       
       inline_transfer( escrow, to, eosio::name{.value=0}, quantity, "" );
       
@@ -336,9 +341,9 @@ namespace exchange {
          if (fee.amount > 0) {
             if (points.amount > 0 && points_price.amount > 0) {
                points_as_fee = fee * points_price.amount / precision(points_price.symbol.precision());
-               points_as_fee = to_asset(relay_token_acc, eosio::name{.value=0}, points.symbol, points_as_fee);
-               
-               if (points >= points_as_fee) {
+               points_as_fee = to_asset(relay_token_acc, name{}, points.symbol, points_as_fee);
+
+               if( points >= points_as_fee ) {
                   // deduct points_as_fee
                   sub_balance(payer, points_as_fee);
                   idx_fees.modify(itr_fee_taker, exc_acc, [&]( auto& f ) {
@@ -389,7 +394,14 @@ namespace exchange {
       return need_fee;
    }
 
-   void exchange::match_for_bid( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, account_name exc_acc, string referer, uint32_t fee_type) {
+   void exchange::match_for_bid( uint32_t pair_id,
+                                 account_name payer,
+                                 account_name receiver,
+                                 asset quantity,
+                                 asset price,
+                                 account_name exc_acc,
+                                  string referer,
+                                  uint32_t fee_type ) {
       trading_pairs  trading_pairs_table(_self,_self);
       orderbook      orders(_self,_self);
       asset          quant_after_fee;
