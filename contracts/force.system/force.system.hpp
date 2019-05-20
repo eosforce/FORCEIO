@@ -26,8 +26,8 @@ namespace eosiosystem {
    static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
 #ifdef BEFORE_ONLINE_TEST 
    static constexpr uint32_t CYCLE_PREHOUR = 10;
-   static constexpr uint32_t CYCLE_PREBP_BLOCK = 3;
-   static constexpr uint32_t CYCLE_PREDAY = 5;//5;//275;
+   static constexpr uint32_t CYCLE_PREBP_BLOCK = 6;
+   static constexpr uint32_t CYCLE_PREDAY = 50;//5;//275;
    static constexpr uint32_t STABLE_DAY = 10;//2;//60;
    static constexpr uint64_t PRE_BLOCK_REWARDS = 58.6*CORE_SYMBOL_PRECISION;
    static constexpr uint64_t STABLE_BLOCK_REWARDS = 126*CORE_SYMBOL_PRECISION;
