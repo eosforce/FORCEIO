@@ -36,15 +36,7 @@ namespace exchange {
       }
    }
    
-   int64_t precision(uint64_t decimals)
-   {
-      int64_t p10 = 1;
-      int64_t p = (int64_t)decimals;
-      while( p > 0  ) {
-         p10 *= 10; --p;
-      }
-      return p10;
-   }
+
    
    /*
    convert a to expected_symbol, including symbol name and symbol precision
@@ -315,6 +307,8 @@ namespace exchange {
    
       return itr->balance;
    }
+   
+   
    
    asset exchange::charge_fee(uint32_t pair_id, account_name payer, asset quantity, account_name exc_acc, uint32_t fee_type) {
       trading_pairs  trading_pairs_table(_self,_self);
