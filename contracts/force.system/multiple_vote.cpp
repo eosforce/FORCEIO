@@ -85,7 +85,7 @@ namespace eosiosystem {
          } else {
             eosio_assert((vts->vote + change) >= asset{}, "canot change vote < 0");
             votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
-               v.voteage += (v.vote.amount / 10000) * (curr_block_num - v.voteage_update_height);
+               v.voteage += (v.vote.amount / CORE_SYMBOL_PRECISION) * (curr_block_num - v.voteage_update_height);
                v.voteage_update_height = curr_block_num;
                v.vote += change;
             });
@@ -96,7 +96,7 @@ namespace eosiosystem {
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
             b.total_voteage += b.total_staked * (curr_block_num - b.voteage_update_height);
             b.voteage_update_height = curr_block_num;
-            b.total_staked += (change.amount / 10000);
+            b.total_staked += (change.amount / CORE_SYMBOL_PRECISION);
          });
       }
    }
