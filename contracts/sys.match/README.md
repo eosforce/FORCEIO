@@ -68,6 +68,12 @@ exc_acc:    exchange account
 pair_id:    pair id
 points_sym: exchange token symbol
 
+11. set minimum trading quantity
+void setminordqty(account_name exc_acc, uint32_t pair_id, asset min_qty);
+exc_acc:    exchange account
+pair_id:    pair id
+min_qty:    minimum base trading quantity
+
 11. trade (located in relay.token contract)
 void trade(account_name from, account_name to, name chain, asset quantity, trade_type type, string memo);   
 from: 	transfer orginating account    
@@ -150,19 +156,22 @@ efc push action sys.match open '["btc1", "4,CBTC", "usdt1", "2,CUSDT", "biosbpa"
 8、set exchange trading fees
 efc push action sys.match setfee '["biosbpa", "1", "10"]' -p biosbpa
 
-9. enable exchange tokens
+9、set minimum trading quantity
+efc push action sys.match setminordqty '["biosbpa", "1", "10.0 CBTC"]' -p biosbpa
+
+10. enable exchange tokens
 efc push action sys.match enpoints '["biosbpa", "1", "4,CDX"]' -p biosbpa
 
-10. close trading pairs
+11. close trading pairs
 efc push action sys.match close '["btc1", "4,CBTC", "usdt1", "2,CUSDT", "biosbpa"]'
 
-11、freeze the trading pair
+12、freeze the trading pair
 efc push action sys.match freeze '["0"]' -p biosbpa
 
-12、unfreeze the trading pair
+13、unfreeze the trading pair
 efc push action sys.match unfreeze '["0"]' -p biosbpa
 
-13、view orderbook:     
+14、view orderbook:     
 efc get table sys.match sys.match orderbook       
 
 {
@@ -185,10 +194,10 @@ efc get table sys.match sys.match orderbook
   "more": false
 }
 
-14、mark the trading pair
+15、mark the trading pair
 efc push action sys.match mark '["eosforce", "4,EOS", "", "2,SYS"]' -p sys.match
 
-15、claim fees
+16、claim fees
 efc push action sys.match claim '["btc1", "4,CBTC", "usdt1", "2,CUSDT", "biosbpa", "biosbpb"]' -p biosbpa
 
 ##

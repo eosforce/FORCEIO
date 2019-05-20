@@ -36,8 +36,6 @@ namespace exchange {
       }
    }
    
-
-   
    /*
    convert a to expected_symbol, including symbol name and symbol precision
    */
@@ -48,11 +46,9 @@ namespace exchange {
       if (expected_symbol.precision() >= a.symbol.precision()) {
          factor = precision( expected_symbol.precision() ) / precision( a.symbol.precision() );
          b = asset( a.amount * factor, expected_symbol );
-      }
-      else {
+      } else {
          factor =  precision( a.symbol.precision() ) / precision( expected_symbol.precision() );
          b = asset( a.amount / factor, expected_symbol );
-         
       }
       return b;
    }
@@ -162,6 +158,7 @@ namespace exchange {
          f.fees_base       = to_asset(relay_token_acc, base_chain, base_sym, asset(0, base_sym));
          f.fees_quote      = to_asset(relay_token_acc, quote_chain, quote_sym, asset(0, quote_sym));
          f.points_enabled  = false;
+         f.min_qty         =  f.fees_base;
       });
    }
    
@@ -234,10 +231,11 @@ namespace exchange {
             eosio_assert(false, "have pending orders, can not withdraw!");
          }
       }
+      quantity = to_asset(relay_token_acc, eosio::name{.value=0}, quantity.symbol, quantity);
       
       inline_transfer( escrow, to, eosio::name{.value=0}, quantity, "" );
       
-      sub_balance( to, to_asset(relay_token_acc, eosio::name{.value=0}, quantity.symbol, quantity) );
+      sub_balance( to, quantity );
    }
    
    void exchange::insert_order(
@@ -414,6 +412,7 @@ namespace exchange {
       auto itr_fee_maker = idx_fees.find(idxkey_taker);
 
       base    = convert(itr1->base, base);
+      eosio_assert(to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, base) >=  itr_fee_taker->min_qty, "trade qty must be greater than or equal to minimum quantity");
       price   = convert(itr1->quote, price);
       
       if (price.symbol.precision() >= base.symbol.precision())
@@ -602,6 +601,7 @@ namespace exchange {
       auto itr_fee_maker = idx_fees.find(idxkey_taker);
 
       base    = convert(itr1->base, base);
+      eosio_assert(to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, base) >=  itr_fee_taker->min_qty, "trade qty must be greater than or equal to minimum quantity");
       price   = convert(itr1->quote, price);
       
       //print("after convert: base=",base,",price=",price);
@@ -871,6 +871,7 @@ namespace exchange {
             //print("bid step2: quant_after_fee=",quant_after_fee);
             inline_transfer(escrow, itr->maker, itr1->base_chain, quant_after_fee, "");
          }
+         sub_balance(itr->maker, quant_after_fee);
          
          orders.erase(itr);
       } else {
@@ -909,11 +910,11 @@ namespace exchange {
                //print("bid step2: quant_after_fee=",quant_after_fee);
                inline_transfer(escrow, itr->maker, itr1->quote_chain, quant_after_fee, "");
             } else {
-               //quant_after_fee = convert_asset(itr1->base_sym, itr->base);
                quant_after_fee = to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, itr->base);
                //print("bid step2: quant_after_fee=",quant_after_fee);
                inline_transfer(escrow, itr->maker, itr1->base_chain, quant_after_fee, "");
             }
+            sub_balance(itr->maker, quant_after_fee);
             
             orders.erase(itr);
          }
@@ -1071,6 +1072,22 @@ namespace exchange {
       idx_fee.modify(itr, exc_acc, [&]( auto& f ) {
          f.points_enabled  = true;
          f.points          = to_asset(relay_token_acc, eosio::name{.value=0}, points_sym, asset(0, points_sym));
+      });
+   }
+   
+   void exchange::setminordqty(account_name exc_acc, uint32_t pair_id, asset min_qty) {
+      require_auth(exc_acc);
+      
+      fees   fees_tbl(_self, _self);
+      
+      auto idx_fee = fees_tbl.template get_index<N(idxkey)>();
+      
+      auto idxkey = (uint128_t(exc_acc) << 64) | pair_id;
+      auto itr = idx_fee.find(idxkey);
+      eosio_assert(itr != idx_fee.cend(), "trading pair for exchange has not been opened");
+      
+      idx_fee.modify(itr, exc_acc, [&]( auto& f ) {
+         f.min_qty = convert(f.min_qty.symbol, min_qty);
       });
    }
    
@@ -1249,4 +1266,4 @@ extern "C" { \
    } \
 } \
 
-EOSIO_ABI_EX( exchange::exchange, (regex)(create)(open)(close)(cancel)(match)(done)(mark)(claim)(freeze)(unfreeze)(setfee)(enpoints)(withdraw))
+EOSIO_ABI_EX( exchange::exchange, (regex)(create)(open)(close)(cancel)(match)(done)(mark)(claim)(freeze)(unfreeze)(setfee)(enpoints)(withdraw)(setminordqty))

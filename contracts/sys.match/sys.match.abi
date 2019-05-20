@@ -182,7 +182,8 @@
         {"name": "fees_base","type": "asset"},
         {"name": "fees_quote","type": "asset"},
         {"name": "points_enabled","type": "bool"}
-        {"name": "points","type": "asset"}
+        {"name": "points","type": "asset"},
+        {"name": "min_qty","type": "asset"}
        ]
      },{
        "name": "account_info",
@@ -197,6 +198,14 @@
         {"name": "exc_acc","type": "account_name"},
         {"name": "pair_id","type": "uint32"},
         {"name": "points_sym","type": "symbol_type"}
+       ]
+     },{
+       "name": "setminordqty",
+       "base": "",
+       "fields": [
+        {"name": "exc_acc","type": "account_name"},
+        {"name": "pair_id","type": "uint32"},
+        {"name": "min_qty","type": "asset"}
        ]
      },{
        "name": "withdraw",
@@ -262,6 +271,10 @@
     },{
       "name": "withdraw",
       "type": "withdraw",
+      "ricardian_contract": ""
+    },{
+      "name": "setminordqty",
+      "type": "setminordqty",
       "ricardian_contract": ""
     }
   ],
