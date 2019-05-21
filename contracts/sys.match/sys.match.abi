@@ -160,7 +160,8 @@
        "name": "exc",
        "base": "",
        "fields": [
-        {"name": "exc","type": "account_name"}
+        {"name": "exc","type": "account_name"},
+        {"name": "frozen","type": "bool"}
        ]
      },{
        "name": "setfee",
@@ -213,6 +214,25 @@
        "fields": [
         {"name": "to","type": "account_name"},
         {"name": "quantity","type": "asset"}
+       ]
+     },{
+       "name": "unfreeze4",
+       "base": "",
+       "fields": [
+        {"name": "exc_acc","type": "account_name"},
+        {"name": "action","type": "name"},
+        {"name": "pair_id","type": "uint32"},
+        {"name": "staked","type": "asset"}
+       ]
+     },{
+       "name": "freeze_info",
+       "base": "",
+       "fields": [
+        {"name": "id","type": "uint32"},
+        {"name": "exc_acc","type": "account_name"},
+        {"name": "action","type": "name"},
+        {"name": "pair_id","type": "uint32"},
+        {"name": "staked","type": "asset"}
        ]
      }
   ],
@@ -276,6 +296,10 @@
       "name": "setminordqty",
       "type": "setminordqty",
       "ricardian_contract": ""
+    },{
+      "name": "unfreeze4",
+      "type": "unfreeze4",
+      "ricardian_contract": ""
     }
   ],
   "tables": [{
@@ -305,6 +329,10 @@
     },{
       "name": "accounts",
       "type": "account_info",
+      "index_type": "i64"
+    },{
+      "name": "freezed",
+      "type": "freeze_info",
       "index_type": "i64"
     }
   ],

@@ -74,9 +74,10 @@ namespace exchange {
    void exchange::regex(account_name exc_acc) {
       require_auth( exc_acc );
 
+      //print("\n regex: frozen_asset=", get_frozen_asset(exc_acc, name{.value = N(regex)}, 0) , ", REG_STAKE=", REG_STAKE, "\n");
+
       // check if exc_acc has freezed 1000 SYS
-      eosiosystem::system_contract sys_contract(config::system_account_name);
-      eosio_assert(sys_contract.get_freezed(exc_acc) >= REG_STAKE, "must freeze 1000 or more CDX!");
+      eosio_assert(get_frozen_asset(exc_acc, name{.value = N(regex)}, 0) >= REG_STAKE, "exchange has not freeze asset for regex!");
       
       exchanges exc_tbl(_self,_self);
       auto itr = exc_tbl.find(exc_acc);
@@ -85,6 +86,43 @@ namespace exchange {
       exc_tbl.emplace( exc_acc, [&]( auto& e ) {
          e.exc_acc      = exc_acc;
       });
+   }
+   
+   void exchange::freeze_exc(account_name exc_acc) {
+      exchanges exc_tbl(_self,_self);
+      auto itr = exc_tbl.find(exc_acc);
+      eosio_assert(itr != exc_tbl.cend(), "exchange has not been registered!");
+      
+      exc_tbl.modify( itr, 0, [&]( auto& e ) {
+         e.frozen      = true;
+      });
+   }
+   
+   void exchange::unfreeze_exc(account_name exc_acc) {
+      exchanges exc_tbl(_self,_self);
+      auto itr = exc_tbl.find(exc_acc);
+      eosio_assert(itr != exc_tbl.cend(), "unfreeze_exc: exchange has not been registered!");
+      
+      exc_tbl.modify( itr, 0, [&]( auto& e ) {
+         e.frozen      = false;
+      });
+   }
+   
+   bool exchange::is_exc_registered(account_name exc_acc) {
+      exchanges exc_tbl(_self,_self);
+      auto itr = exc_tbl.find(exc_acc);
+      return itr != exc_tbl.cend();
+   }
+   
+   bool exchange::is_exc_frozen(account_name exc_acc) {
+      exchanges exc_tbl(_self,_self);
+      auto itr = exc_tbl.find(exc_acc);
+      
+      if (itr != exc_tbl.cend()) {
+         return itr->frozen;
+      }
+      
+      return true;
    }
    
    /*  create trade pair
@@ -98,10 +136,7 @@ namespace exchange {
 
       eosio_assert(base.is_valid(), "invalid base symbol");
       eosio_assert(quote.is_valid(), "invalid quote symbol");
-      
-      exchanges exc_tbl(_self,_self);
-      auto itr1 = exc_tbl.find(exc_acc);
-      eosio_assert(itr1 != exc_tbl.end(), "exchange account has not been registered!");
+      eosio_assert(is_exc_frozen(exc_acc) == false, "exchange account has not been registered or be frozen!");
       
       trading_pairs trading_pairs_table(_self,_self);
 
@@ -134,17 +169,15 @@ namespace exchange {
    void exchange::open(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc) {
       require_auth( exc_acc );
       
-      exchanges exc_tbl(_self,_self);
-      auto itr1 = exc_tbl.find(exc_acc);
-      eosio_assert(itr1 != exc_tbl.end(), "exchange account has not been registered!");
+      eosio_assert(is_exc_frozen(exc_acc) == false, "exchange account has not been registered or be frozen!");
+      
+      auto pair_id   = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
       
       // check if exc_acc has freezed enough CDX
-      eosiosystem::system_contract sys_contract(config::system_account_name);
-      eosio_assert(sys_contract.get_freezed(exc_acc) >= REG_STAKE + OPEN__PAIR_STAKE, "must freeze 2000 or more CDX!");
+      eosio_assert(get_frozen_asset(exc_acc, name{.value = N(open)}, pair_id) >= OPEN__PAIR_STAKE, "must freeze 1000 CDX or more!");
       
       fees fees_tbl(_self,_self);
       auto idx_fees  = fees_tbl.template get_index<N(idxkey)>();
-      auto pair_id   = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
       auto idxkey    = (uint128_t(exc_acc) << 64) | pair_id;
       auto itr = idx_fees.find(idxkey);
       eosio_assert(itr == idx_fees.cend(), "trading_pair has been opened, can not be opened again!");
@@ -165,12 +198,16 @@ namespace exchange {
    void exchange::close(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc) {
       require_auth( exc_acc );
       
+      eosio_assert(is_exc_frozen(exc_acc) == false, "exchange account has not been registered or be frozen!");
+      
       fees fees_tbl(_self,_self);
       auto idx_fees  = fees_tbl.template get_index<N(idxkey)>();
       auto pair_id   = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
       auto idxkey    = (uint128_t(exc_acc) << 64) | pair_id;
       auto itr1 = idx_fees.find(idxkey);
       eosio_assert(itr1 != idx_fees.cend(), "trading_pair has not been opened, can not be closed!");
+      eosio_assert(itr1->fees_base.amount == 0 && itr1->fees_quote.amount == 0 && 
+         (itr1->points_enabled == false || itr1->points.amount == 0), "must first claim the fees!");
       
       // refund
       orderbook orders(_self,_self);
@@ -548,6 +585,7 @@ namespace exchange {
                   quant_after_fee = deal_base * diff.amount / precision(diff.symbol.precision());
                //print("\n bid step1: quant_after_fee=",quant_after_fee);
                quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, quant_after_fee);
+               sub_balance(payer, quant_after_fee);
                //print("\n bid step2: quant_after_fee=",quant_after_fee);
                cumulated_refund_quote += quant_after_fee;
                if (full_match)
@@ -617,7 +655,7 @@ namespace exchange {
       price   = convert(itr1->quote, price);
       
       //print("after convert: base=",base,",price=",price);
-      print("\n---exchange::match_for_ask: base=", itr1->base, ", base_chain=", itr1->base_sym,", base_sym=", itr1->base_sym, ", quote=", itr1->quote,", quote_chain=", itr1->quote_chain,", quote_sym=", itr1->quote_sym,"\n");
+      //print("\n---exchange::match_for_ask: base=", itr1->base, ", base_chain=", itr1->base_sym,", base_sym=", itr1->base_sym, ", quote=", itr1->quote,", quote_chain=", itr1->quote_chain,", quote_sym=", itr1->quote_sym,"\n");
       
       auto idx_orderbook = orders.template get_index<N(idxkey)>();
       auto lookup_key = compute_orderbook_lookupkey(itr1->id, bid_or_ask, (uint32_t)price.amount);
@@ -712,18 +750,6 @@ namespace exchange {
             quant_after_fee -= fee;*/
             quant_after_fee -= charge_fee(pair_id, end_itr->maker, quant_after_fee, end_itr->exc_acc, end_itr->fee_type);
             inline_transfer(escrow, end_itr->receiver, itr1->base_chain, quant_after_fee, "");
-            // transfer fee to exchange
-            /*if (fee.amount > 0) {
-               if (itr->exc_acc == exc_acc) {
-                  idx_fees.modify(itr_fee_taker, exc_acc, [&]( auto& f ) {
-                     f.fees_base += fee;
-                  });
-               } else if (itr_fee_maker != idx_fees.cend()) {
-                  idx_fees.modify(itr_fee_maker, itr->exc_acc, [&]( auto& f ) {
-                     f.fees_base += fee;
-                  });
-               }
-            }*/
 
             // refund the difference
             if ( end_itr->price > price) {
@@ -736,6 +762,7 @@ namespace exchange {
                quant_after_fee = to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, quant_after_fee);
                //print("bid step2: quant_after_fee=",quant_after_fee);
                inline_transfer(escrow, end_itr->maker, itr1->quote_chain, quant_after_fee, "");
+               sub_balance(itr->maker, quant_after_fee);
             }
             if (full_match) {
                if( deal_base < end_itr->base ) {
@@ -790,17 +817,13 @@ namespace exchange {
    void exchange::match( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, uint32_t bid_or_ask, account_name exc_acc, string referer, uint32_t fee_type) {
       require_auth( _self );
       
-      print("\n--------------enter exchange::match: pair_id=", pair_id, ", payer=", eosio::name{.value = payer}, ", receiver=", eosio::name{.value = receiver},", quantity=", quantity, ", price=", price,", bid_or_ask=", bid_or_ask,"\n");
+      eosio_assert(is_exc_frozen(exc_acc) == false, "exchange account has not been registered or be frozen!");
 
-      // check if exc_acc has freezed enough CDX
-      eosiosystem::system_contract sys_contract(config::system_account_name);
-      eosio_assert(sys_contract.get_freezed(exc_acc) >= REG_STAKE + OPEN__PAIR_STAKE, "must freeze 2000 or more CDX!");
-      
       fees fees_tbl(_self,_self);
       auto idx_fees  = fees_tbl.template get_index<N(idxkey)>();
       auto idxkey    = (uint128_t(exc_acc) << 64) | pair_id;
       auto itr1 = idx_fees.find(idxkey);
-      eosio_assert(itr1 != idx_fees.cend(), "trading_pair has not been opened for exchange, can not be traded!");
+      eosio_assert(itr1 != idx_fees.cend() && itr1->frozen == false, "trading_pair has not been opened for exchange or be frozen, can not be traded!");
 
       if (bid_or_ask) {
          match_for_bid(pair_id, payer, receiver, quantity, price, exc_acc, referer, fee_type);
@@ -865,7 +888,7 @@ namespace exchange {
          
          auto idx_pair = trading_pairs_table.template get_index<N(idxkey)>();
          auto itr1 = idx_pair.find(idxkey);
-         eosio_assert(itr1 != idx_pair.end(), "trading pair does not exist");
+         eosio_assert(itr1 != idx_pair.end() && itr1->frozen == false, "trading pair does not exist or be frozen");
          
          // refund the escrow
          if (itr->bid_or_ask) {
@@ -911,6 +934,8 @@ namespace exchange {
             auto itr = lower++;
             uint128_t idxkey = compute_pair_index(itr->base.symbol, itr->price.symbol);
             auto itr1 = idx_pair.find(idxkey);
+            eosio_assert(itr1 != idx_pair.end() && itr1->frozen == false, "trading pair does not exist or be frozen");
+
             // refund the escrow
             if (itr->bid_or_ask) {
                if (itr->price.symbol.precision() >= itr->base.symbol.precision())
@@ -961,12 +986,14 @@ namespace exchange {
    void exchange::claim(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc, account_name fee_acc) {
       require_auth(exc_acc);
       
+      eosio_assert(is_exc_frozen(exc_acc) == false, "exchange account has not been registered or be frozen!");
+
       auto pair_id = get_pair_id(base_chain, base_sym, quote_chain, quote_sym);
       fees fees_tbl(_self,_self);
       auto idx_fees = fees_tbl.template get_index<N(idxkey)>();
       auto idxkey = (uint128_t(exc_acc) << 64) | pair_id;
       auto itr = idx_fees.find(idxkey);
-      eosio_assert(itr != idx_fees.cend(), "no fees in fees table");
+      eosio_assert(itr != idx_fees.cend() && itr->frozen == false, "trading pair frozen or no fees in fees table");
 
       bool claimed = false;
      
@@ -1005,11 +1032,13 @@ namespace exchange {
    void exchange::freeze(account_name exc_acc, uint32_t pair_id) {
       require_auth(exc_acc);
 
+      eosio_assert(is_exc_frozen(exc_acc) == false, "exchange account has not been registered or be frozen!");
+
       fees fees_tbl(_self,_self);
       auto idx_fees  = fees_tbl.template get_index<N(idxkey)>();
       auto idxkey    = (uint128_t(exc_acc) << 64) | pair_id;
       auto itr = idx_fees.find(idxkey);
-      eosio_assert(itr != idx_fees.cend(), "trading_pair has been opened, no need to open again!");
+      eosio_assert(itr != idx_fees.cend(), "freeze: trading_pair has not been opened!");
       idx_fees.modify(itr, _self, [&]( auto& f ) {
         f.frozen = 1;
       });
@@ -1018,14 +1047,30 @@ namespace exchange {
    void exchange::unfreeze(account_name exc_acc, uint32_t pair_id) {
       require_auth(exc_acc);
 
+      eosio_assert(is_exc_frozen(exc_acc) == false, "exchange account has not been registered or be frozen, can not unfreeze trading pair!");
+      eosio_assert(get_frozen_asset(exc_acc, name{.value = N(open)}, pair_id) >= OPEN__PAIR_STAKE, "must freeze 1000 CDX or more!");
+
       fees fees_tbl(_self,_self);
       auto idx_fees  = fees_tbl.template get_index<N(idxkey)>();
       auto idxkey    = (uint128_t(exc_acc) << 64) | pair_id;
       auto itr = idx_fees.find(idxkey);
-      eosio_assert(itr != idx_fees.cend(), "trading_pair has been opened, no need to open again!");
+      eosio_assert(itr != idx_fees.cend(), "unfreeze: trading_pair has not been opened!");
+      
       idx_fees.modify(itr, _self, [&]( auto& f ) {
-        f.frozen = 0;
+         f.frozen = 0;
       });
+   }
+   
+   bool exchange::is_pair_opened(account_name exc_acc, uint32_t pair_id) {
+      require_auth(exc_acc);
+
+
+      fees fees_tbl(_self,_self);
+      auto idx_fees  = fees_tbl.template get_index<N(idxkey)>();
+      auto idxkey    = (uint128_t(exc_acc) << 64) | pair_id;
+      auto itr = idx_fees.find(idxkey);
+      
+      return itr != idx_fees.cend();
    }
 
    /*void exchange::freezeall(uint32_t id) {
@@ -1057,6 +1102,8 @@ namespace exchange {
    void exchange::setfee(account_name exc_acc, uint32_t pair_id, uint32_t rate) {
       require_auth(exc_acc);
       
+      eosio_assert(is_exc_frozen(exc_acc) == false, "exchange account has not been registered or be frozen!");
+
       fees   fees_tbl(_self, _self);
       
       auto idx_fee = fees_tbl.template get_index<N(idxkey)>();
@@ -1073,6 +1120,8 @@ namespace exchange {
    void exchange::enpoints(account_name exc_acc, uint32_t pair_id, symbol_type points_sym) {
       require_auth(exc_acc);
       
+      eosio_assert(is_exc_frozen(exc_acc) == false, "exchange account has not been registered or be frozen!");
+
       fees   fees_tbl(_self, _self);
       
       auto idx_fee = fees_tbl.template get_index<N(idxkey)>();
@@ -1090,6 +1139,8 @@ namespace exchange {
    void exchange::setminordqty(account_name exc_acc, uint32_t pair_id, asset min_qty) {
       require_auth(exc_acc);
       
+      eosio_assert(is_exc_frozen(exc_acc) == false, "exchange account has not been registered or be frozen!");
+
       fees   fees_tbl(_self, _self);
       
       auto idx_fee = fees_tbl.template get_index<N(idxkey)>();
@@ -1101,6 +1152,98 @@ namespace exchange {
       idx_fee.modify(itr, exc_acc, [&]( auto& f ) {
          f.min_qty = convert(f.min_qty.symbol, min_qty);
       });
+   }
+   
+   void exchange::freeze4(account_name exc_acc, name action, uint32_t pair_id, asset quantity) {
+      require_auth(exc_acc);
+      
+      //print("freeze4: account_name=", name{.value=exc_acc}, ", action=", action, ", pair_id=", pair_id, ", quantity=", quantity, "\n");
+      
+      auto unfreeze_exchange = false;
+      auto unfreeze_pair = false;
+      
+      freeze_table freeze_tbl(_self, exc_acc);
+      auto idx_freeze = freeze_tbl.template get_index<N(idxkey)>();
+      auto idxkey = (uint128_t(action.value) << 64) | pair_id;
+      auto itr = idx_freeze.find(idxkey);
+      if (itr == idx_freeze.cend()) {
+         auto pk = freeze_tbl.available_primary_key();
+         freeze_tbl.emplace( exc_acc, [&]( auto& f ) {
+            f.id        = (uint32_t)pk;
+            f.exc_acc   = exc_acc;
+            f.action    = action;
+            f.pair_id   = pair_id;
+            f.staked    = quantity;
+            if (action == N(regex) && f.staked >= REG_STAKE)
+               unfreeze_exchange = true;
+            else if (action == N(open) && f.staked >= OPEN__PAIR_STAKE)
+               unfreeze_pair = true;
+            });
+      } else {
+         idx_freeze.modify(itr, exc_acc, [&]( auto& f ) {
+            f.staked += quantity;
+         });
+      }
+      add_balance( exc_acc, to_asset(relay_token_acc, name{}, quantity.symbol, quantity) , exc_acc );
+      
+      if (unfreeze_exchange && is_exc_registered(exc_acc))
+         unfreeze_exc(exc_acc);
+
+      if (unfreeze_pair && is_pair_opened(exc_acc, pair_id))
+         unfreeze(exc_acc, pair_id);
+   }
+   
+   void exchange::unfreeze4(account_name exc_acc, name action, uint32_t pair_id, asset quantity) {
+      require_auth(exc_acc);
+      
+      eosio_assert(is_exc_frozen(exc_acc) == false, "exchange account has not been registered or be frozen!");
+
+      quantity = to_asset(relay_token_acc, name{}, quantity.symbol, quantity);
+      
+      freeze_table freeze_tbl(_self, exc_acc);
+      auto idx_freeze = freeze_tbl.template get_index<N(idxkey)>();
+      auto idxkey = (uint128_t(action.value) << 64) | pair_id;
+      auto itr = idx_freeze.find(idxkey);
+      eosio_assert(itr != idx_freeze.cend() && itr->staked >= quantity, "unfreeze4 asset must be less than or be equal to frozen asset");
+
+      bool freeze_exchange = false;
+      bool freeze_pair = false;
+      if( itr->staked.amount == quantity.amount ) {
+         idx_freeze.erase( itr );
+         if (action == N(regex))
+            freeze_exchange = true;
+         else if (action == N(open))
+            freeze_pair = true;
+      } else {
+         idx_freeze.modify( itr, 0, [&]( auto& f ) {
+            f.staked -= quantity;
+            if (action == N(regex) && f.staked < REG_STAKE) {
+               freeze_exchange = true;
+            } else if (action == N(open) && f.staked < OPEN__PAIR_STAKE) {
+               freeze_pair = true;
+            }
+         });
+      }
+      
+      sub_balance(exc_acc, quantity);
+      
+      inline_transfer(escrow, exc_acc, name{}, quantity, "");
+
+      if (freeze_exchange && is_exc_registered(exc_acc))
+         freeze_exc(exc_acc);
+      if (freeze_pair && is_pair_opened(exc_acc, pair_id)) 
+         freeze(exc_acc, pair_id);
+   }
+   
+   asset exchange::get_frozen_asset(account_name exc_acc, name action, uint32_t pair_id) {
+      freeze_table freeze_tbl(_self, exc_acc);
+      auto idx_freeze = freeze_tbl.template get_index<N(idxkey)>();
+      auto idxkey = (uint128_t(action.value) << 64) | pair_id;
+      auto itr = idx_freeze.find(idxkey);
+      if (itr != idx_freeze.cend())
+         return itr->staked;
+      
+      return asset(0);
    }
    
    asset exchange::calcfee(asset quant, uint64_t fee_rate) {
@@ -1176,6 +1319,7 @@ namespace exchange {
       account_name exc_acc;
       std::string referer;
       uint32_t fee_type;   
+      name action;
       void parse(const string memo);
    };
  
@@ -1190,28 +1334,37 @@ namespace exchange {
       if (memoParts[0].compare("trade") == 0) {
          transfer_type = 1;
          eosio_assert(memoParts.size() == 8,"memo is not adapted with sys_match_match");
+
+         receiver    = ::eosio::string_to_name(memoParts[1].c_str());
+         pair_id     = (uint32_t)atoi(memoParts[2].c_str());
+         price       = asset_from_string(memoParts[3]);
+         bid_or_ask  = (uint32_t)atoi(memoParts[4].c_str());
+         exc_acc     = ::eosio::string_to_name(memoParts[5].c_str());
+         referer     = memoParts[6];
+         fee_type    = (uint32_t)atoi(memoParts[7].c_str());
+         eosio_assert(bid_or_ask == 0 || bid_or_ask == 1,"type is not adapted with sys_match_match");
+         //print("-------sys_match_match::parse receiver=", ::eosio::name{.value=receiver}, ", pair_id=", pair_id, ", price=", price, " bid_or_ask=", bid_or_ask, " exc_acc=", ::eosio::name{.value=exc_acc}, " referer=", referer, "\n");
       }
       else if (memoParts[0].compare("points") == 0) {
          transfer_type = 2;
          return;
+      } else if (memoParts[0].compare("freeze") == 0) {
+         transfer_type = 3;
+         eosio_assert(memoParts.size() == 3,"memo is not adapted with sys_match_match");
+         
+         action.value   = ::eosio::string_to_name(memoParts[1].c_str());
+         eosio_assert(action == N(regex) || action == N(open), "memo is not adapted with sys_match_match");
+         pair_id        = (uint32_t)atoi(memoParts[2].c_str());
+         //print("parse: account_name=", name{.value=exc_acc}, ", action=", action, ", pair_id=", pair_id, "\n");
+         return;
       } else
          eosio_assert(false,"memo is invalid");
-      
-      receiver    = ::eosio::string_to_name(memoParts[1].c_str());
-      pair_id     = (uint32_t)atoi(memoParts[2].c_str());
-      price       = asset_from_string(memoParts[3]);
-      bid_or_ask  = (uint32_t)atoi(memoParts[4].c_str());
-      exc_acc     = ::eosio::string_to_name(memoParts[5].c_str());
-      referer     = memoParts[6];
-      fee_type    = (uint32_t)atoi(memoParts[7].c_str());
-      eosio_assert(bid_or_ask == 0 || bid_or_ask == 1,"type is not adapted with sys_match_match");
-      //print("-------sys_match_match::parse receiver=", ::eosio::name{.value=receiver}, ", pair_id=", pair_id, ", price=", price, " bid_or_ask=", bid_or_ask, " exc_acc=", ::eosio::name{.value=exc_acc}, " referer=", referer, "\n");
    }
    
    void exchange::inline_match(account_name from, asset quantity, string memo) {
       sys_match_match smm;
       smm.parse(memo);
-      
+
       // trade
       if (smm.transfer_type == 1) {
          eosio::action(
@@ -1219,8 +1372,10 @@ namespace exchange {
                  N(sys.match), N(match),
                  std::make_tuple(smm.pair_id, from, smm.receiver, quantity, smm.price, smm.bid_or_ask, smm.exc_acc, smm.referer, smm.fee_type)
          ).send();
-      } else { // points
-         add_balance( from, to_asset(relay_token_acc, eosio::name{.value=0}, quantity.symbol, quantity) , from );
+      } else if (smm.transfer_type == 2) { // points
+         add_balance( from, to_asset(relay_token_acc, name{}, quantity.symbol, quantity) , from );
+      } else {
+         freeze4(from, smm.action, smm.pair_id, to_asset(relay_token_acc, name{}, quantity.symbol, quantity));
       }
    }
    
@@ -1278,4 +1433,4 @@ extern "C" { \
    } \
 } \
 
-EOSIO_ABI_EX( exchange::exchange, (regex)(create)(open)(close)(cancel)(match)(done)(mark)(claim)(freeze)(unfreeze)(setfee)(enpoints)(withdraw)(setminordqty))
+EOSIO_ABI_EX( exchange::exchange, (regex)(create)(open)(close)(cancel)(match)(done)(mark)(claim)(freeze)(unfreeze)(setfee)(enpoints)(withdraw)(setminordqty)(unfreeze4))
