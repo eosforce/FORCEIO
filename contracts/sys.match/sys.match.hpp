@@ -72,6 +72,8 @@ namespace exchange {
       
       void unfreeze(account_name exc_acc, uint32_t pair_id);
       
+      bool is_pair_opened(account_name exc_acc, uint32_t pair_id);
+      
       void setfee(account_name exc_acc, uint32_t pair_id, uint32_t rate);
       
       void enpoints(account_name exc_acc, uint32_t pair_id, symbol_type points_sym);
@@ -79,8 +81,22 @@ namespace exchange {
       void setminordqty(account_name exc_acc, uint32_t pair_id, asset min_qty);
       
       void withdraw(account_name to, asset quantity);
+      
+      void freeze4(account_name exc_acc, name action, uint32_t pair_id, asset quantity);
+         
+      void unfreeze4(account_name exc_acc, name action, uint32_t pair_id, asset quantity);
          
       asset calcfee(asset quant, uint64_t fee_rate);
+      
+      void freeze_exc(account_name exc_acc);
+      
+      void unfreeze_exc(account_name exc_acc);
+      
+      bool is_exc_registered(account_name exc_acc);
+      
+      bool is_exc_frozen(account_name exc_acc);
+      
+      asset get_frozen_asset(account_name exc_acc, name action, uint32_t pair_id);
       
       asset charge_fee(uint32_t pair_id, account_name payer, asset quantity, account_name exc_acc, uint32_t fee_type);
       
@@ -127,6 +143,7 @@ namespace exchange {
 
       struct exc {
          account_name exc_acc;
+         bool frozen = false;
          
          account_name primary_key() const { return exc_acc; }
       };
@@ -212,6 +229,19 @@ namespace exchange {
 
          uint64_t primary_key()const { return balance.symbol.name(); }
       };
+      
+      struct freeze_info {
+         uint32_t     id;
+         account_name exc_acc        = 0;
+         name         action;
+         uint32_t     pair_id        = 0;
+         asset        staked         = asset{0};
+
+         uint64_t primary_key() const { return id; }
+         uint128_t by_act_and_pair() const {
+            return (uint128_t(action.value) << 64) | pair_id;
+         }
+      };
 
       typedef eosio::multi_index<N(exchanges), exc> exchanges;
       typedef eosio::multi_index<N(pairs), trading_pair,
@@ -227,6 +257,9 @@ namespace exchange {
          indexed_by< N(idxkey), const_mem_fun<fee_info, uint128_t, &fee_info::by_exc_and_pair>>
       > fees;
       typedef eosio::multi_index<N(accounts), account_info> accounts;
+      typedef eosio::multi_index<N(freezed), freeze_info,
+         indexed_by< N(idxkey), const_mem_fun<freeze_info, uint128_t, &freeze_info::by_act_and_pair>>
+         > freeze_table;
       
       const asset REG_STAKE         = asset(1000'0000);
       const asset OPEN__PAIR_STAKE  = asset(1000'0000);
