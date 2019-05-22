@@ -49,7 +49,7 @@ namespace eosiosystem {
          auto reward_times = reward->total_reward_time + 1;
          bool reward_update = false;
 
-         if(reward_times % (reward_times * STABLE_DAY) == 0) {
+         if(reward_times == CYCLE_PREDAY * STABLE_DAY) {
             reward_update = true;
             update_reward_stable();
          }
@@ -879,7 +879,7 @@ namespace eosiosystem {
             cross_day = true;
          }
       }
-      //modify 如果在同一天调用这个函数,是否会出错?
+      //modify 
       votes_tbl.modify(vts, 0, [&]( vote_info& v ) {
          v.total_reward += total_reward;
          if (cross_day) {
