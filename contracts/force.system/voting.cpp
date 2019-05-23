@@ -55,9 +55,6 @@ namespace eosiosystem {
       creation_producer creation_bp_tbl(_self,_self);
       auto create_bp = creation_bp_tbl.find(bpname);
       eosio_assert(create_bp == creation_bp_tbl.end(),"creation bp can not to be voted");
-      
-      bps_table bps_tbl(_self, _self);
-      const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
 
       eosio_assert(stake.symbol == CORE_SYMBOL, "only support CORE SYMBOL token");
       eosio_assert(0 <= stake.amount && stake.amount % CORE_SYMBOL_PRECISION == 0,
@@ -101,7 +98,8 @@ namespace eosiosystem {
             }
          });
       }
-
+      bps_table bps_tbl(_self, _self);
+      const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
       eosio_assert(bp.isactive() || (!bp.isactive() && change < asset{0}), "bp is not active");
 
       if( change > asset{} ) {
