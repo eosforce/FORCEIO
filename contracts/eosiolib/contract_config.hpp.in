@@ -28,8 +28,8 @@ namespace config {
    const static uint64_t fee_account_name         = N(${ROOT_ACCOUNT}.fee);
    const static uint64_t reward_account_name      = N(${ROOT_ACCOUNT}.reward);  //xuyapeng add 
    const static uint64_t relay_account_name       = N(${ROOT_ACCOUNT}.relay);
-   const static uint64_t match_account_name       = N(sys.match);
-   const static uint64_t bridge_account_name      = N(sys.bridge);
+   const static uint64_t match_account_name       = N(${ROOT_ACCOUNT}.match);
+   const static uint64_t bridge_account_name      = N(${ROOT_ACCOUNT}.bridge);
    const static uint64_t relay_token_account_name = N(relay.token);
 
    const static int      block_interval_ms = ${BLOCK_INTERVAL_MS};

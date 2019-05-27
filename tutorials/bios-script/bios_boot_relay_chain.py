@@ -165,8 +165,8 @@ def stepSetFuncs():
         pubKeys[a['name']] = str(a['key'])
 
     setContractByPath(relay_token_name, 'relay.token')
-    setContract('sys.bridge')
-    setContract('sys.match')
+    setContractByPath(bridge_account_name, 'sys.bridge')
+    setContractByPath(match_account_name, 'sys.match')
 
     getRAM('eosforce', 10000 * 10000)
     getRAM('testa', 10000 * 10000)

@@ -14,6 +14,8 @@ def system_account(sub_name):
 relay_account_name = system_account("relay")
 token_account_name = system_account("token")
 code_account_name = system_account("code")
+match_account_name = system_account("match")
+bridge_account_name = system_account("bridge")
 relay_token_name = "relay.token"
 
 
