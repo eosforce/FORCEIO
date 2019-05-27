@@ -90,7 +90,7 @@ void token::castcoin( account_name from,
                       account_name to,
                       asset        quantity)
 {
-   eosio_assert( from == ::config::reward_account_name, "only the account force.reward can cast coin to others" );
+   eosio_assert( from == ::config::reward_account_name, "only the account reward can cast coin to others" );
    require_auth( from );
 
    eosio_assert( is_account( to ), "to account does not exist");
@@ -170,8 +170,6 @@ void token::closecast(account_name to,int32_t finish_block) {
 }
 
 void token::fee( account_name payer, asset quantity ){
-   const auto fee_account = N(force.fee);
-
    require_auth( payer );
 
    auto sym = quantity.symbol.name();
@@ -183,7 +181,7 @@ void token::fee( account_name payer, asset quantity ){
    eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
 
    sub_balance( payer, quantity );
-   add_balance( fee_account, quantity, payer );
+   add_balance( config::fee_account_name, quantity, payer );
 }
 
 void token::sub_balance( account_name owner, asset value ) {

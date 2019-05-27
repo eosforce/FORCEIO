@@ -1415,10 +1415,10 @@ extern "C" { \
          eosio_assert(code == ::config::system_account_name, "onerror action's are only valid from the \"eosio\" system account"); \
       } else if (action == N(transfer)) { \
          TYPE thiscontract( self ); \
-         eosio_assert(code == ::config::token_account_name || code == N(relay.token), "must call force.token and relay.token transfer"); \
+         eosio_assert(code == ::config::token_account_name || code == config::relay_token_account_name, "must call token or relay.token transfer"); \
          if (code == ::config::token_account_name) { \
             eosio::execute_action( &thiscontract, &exchange::exchange::force_token_transfer ); \
-         } else if (code == N(relay.token)) { \
+         } else if (code == config::relay_token_account_name) { \
             eosio::execute_action( &thiscontract, &exchange::exchange::relay_token_transfer ); \
          } \
          return; \

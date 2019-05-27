@@ -14,7 +14,7 @@ namespace relay {
 
 // just a test version by contract
 void token::on( name chain, const checksum256 block_id, const force::relay::action& act ) {
-   require_auth(N(force.relay)); // TODO use config
+   require_auth(config::relay_account_name); // TODO use config
 
    // TODO this ACTION should no err
 
@@ -420,9 +420,9 @@ void token::claim(name chain,asset quantity,account_name receiver) {
 
    eosio_assert(total_reward > asset(100000),"claim amount must > 10");
    eosio::action(
-           permission_level{ ::config::reward_account_name, N(active) },
-           N(force.token), N(castcoin),
-           std::make_tuple(::config::reward_account_name, receiver,total_reward)
+           permission_level{ config::reward_account_name, N(active) },
+           config::token_account_name, N(castcoin),
+           std::make_tuple(config::reward_account_name, receiver,total_reward)
    ).send();
 }
 
