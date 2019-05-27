@@ -5,7 +5,18 @@ import subprocess
 import sys
 import time
 import copy
-    
+
+root_account = "codex"
+
+def system_account(sub_name):
+    return root_account + "." + sub_name
+
+relay_account_name = system_account("relay")
+token_account_name = system_account("token")
+code_account_name = system_account("code")
+relay_token_name = "relay.token"
+
+
 class dataSet(object):
    """data for forceio script"""
    def __init__(self):
@@ -91,8 +102,8 @@ def pushAction(account, action, auth, data ):
     cleos("push action %s %s '%s' -p %s" % (account, action, data, auth))
 
 def setFuncStartBlock(func_typ, num):
-    pushAction("force", "setconfig", "force.config", 
-        '{"typ":"%s","num":%s,"key":"","fee":"%s"}' % (func_typ, num, intToCurrency(0)))
+    pushAction(root_account, "setconfig", "codex.config", 
+        '{"typ":"%s","num":%s,"key":"","fee":"%s"}' % ( func_typ, num, intToCurrency(0)))
 
 def setFee(account, act, fee, cpu, net, ram):
     cleos(
@@ -102,12 +113,16 @@ def setFee(account, act, fee, cpu, net, ram):
         ('%d %d %d' % (cpu, net, ram)))
 
 def getRAM(account, ram):
-    cleos("push action force freeze '{\"voter\":\"%s\", \"stake\":\"%s\"}' -p %s" % (account, intToCurrency(ram), account))
-    cleos("push action force vote4ram '{\"voter\":\"%s\",\"bpname\":\"biosbpa\",\"stake\":\"%s\"}' -p %s" % (account, intToCurrency(ram), account))
+    cleos("push action %s freeze '{\"voter\":\"%s\", \"stake\":\"%s\"}' -p %s" % (root_account, account, intToCurrency(ram), account))
+    cleos("push action %s vote4ram '{\"voter\":\"%s\",\"bpname\":\"biosbpa\",\"stake\":\"%s\"}' -p %s" % (root_account, account, intToCurrency(ram), account))
 
 def setContract(account):
     getRAM(account, 50000 * 10000)
     cleos('set contract %s %s/%s/' % (account, datas.config_dir, account))
+
+def setContractByPath(account, path):
+    getRAM(account, 50000 * 10000)
+    cleos('set contract %s %s/%s/' % (account, datas.config_dir, path))
 
 def parserArgsAndRun(parser, commands):
     parser.add_argument('--root', metavar='', help="Eosforce root dir from git", default='../../')
