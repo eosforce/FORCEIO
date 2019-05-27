@@ -250,7 +250,7 @@ namespace eosiosystem {
    void system_contract::reward_mines(const int64_t reward_amount) {
       eosio::action(
          vector<eosio::permission_level>{{_self,N(active)}},
-         N(relay.token),
+         config::relay_token_account_name,
          N(rewardmine),
          std::make_tuple(
             asset(reward_amount)
@@ -447,7 +447,7 @@ namespace eosiosystem {
    int128_t system_contract::get_coin_power() {
 
       int128_t total_power = 0;
-      rewards coin_reward(N(relay.token),N(relay.token));
+      rewards coin_reward(config::relay_token_account_name, config::relay_token_account_name);
       exchange::exchange t(SYS_MATCH);
       for( auto it = coin_reward.cbegin(); it != coin_reward.cend(); ++it ) {
          if (!it->reward_now) continue;
