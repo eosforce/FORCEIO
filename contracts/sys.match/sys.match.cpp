@@ -7,7 +7,7 @@
 namespace exchange {
    using namespace eosio;
    const int64_t max_fee_rate = 10000;
-   const account_name escrow = N(sys.match);
+   const account_name escrow = config::match_account_name;
 
    uint128_t compute_pair_index(symbol_type base, symbol_type quote)
    {
@@ -838,14 +838,14 @@ namespace exchange {
       auto timestamp = time_point_sec(uint32_t(current_time() / 1000000ll));
       action(
             permission_level{ taker_exc_acc, N(active) },
-            N(sys.match), N(done),
+            config::match_account_name, N(done),
             std::make_tuple(taker_exc_acc, maker_exc_acc, quote_chain, price, base_chain, quantity, bid_or_ask, timestamp)
       ).send();
       /*transaction trx;
       
       trx.actions.emplace_back(action(
             permission_level{ exc_acc, N(active) },
-            N(sys.match), N(done),
+            config::match_account_name, N(done),
             std::make_tuple(exc_acc, quote_chain, price, base_chain, quantity, bid_or_ask, timestamp)
       ));
       trx.send(current_time(), exc_acc);*/
@@ -1368,8 +1368,9 @@ namespace exchange {
       // trade
       if (smm.transfer_type == 1) {
          eosio::action(
-                 {permission_level{ smm.exc_acc, N(active) }, permission_level{ N(sys.match), N(active) }},
-                 N(sys.match), N(match),
+                 {permission_level{ smm.exc_acc, N(active) }, 
+                 permission_level{ config::match_account_name, N(active) }},
+                 config::match_account_name, N(match),
                  std::make_tuple(smm.pair_id, from, smm.receiver, quantity, smm.price, smm.bid_or_ask, smm.exc_acc, smm.referer, smm.fee_type)
          ).send();
       } else if (smm.transfer_type == 2) { // points

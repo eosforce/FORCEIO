@@ -18,16 +18,19 @@
 #define IS_ACTIVE_BONUS_TO_VOTE ${IS_ACTIVE_BONUS_TO_VOTE}
 
 namespace config {
-   const static uint64_t system_account_name    = N(${ROOT_ACCOUNT});
-   const static uint64_t null_account_name      = N(${ROOT_ACCOUNT}.null);
-   const static uint64_t producers_account_name = N(${ROOT_ACCOUNT}.prods);
-   const static uint64_t chain_config_name      = N(${ROOT_ACCOUNT}.config);
-   const static uint64_t token_account_name     = N(${ROOT_ACCOUNT}.token);
-   const static uint64_t msig_account_name      = N(${ROOT_ACCOUNT}.msig);
-   const static uint64_t bios_account_name      = N(${ROOT_ACCOUNT}.bios);
-   const static uint64_t fee_account_name       = N(${ROOT_ACCOUNT}.fee);
-   const static uint64_t reward_account_name    = N(${ROOT_ACCOUNT}.reward); //xuyapeng add 
-   const static uint64_t relay_account_name     = N(${ROOT_ACCOUNT}.relay);
+   const static uint64_t system_account_name      = N(${ROOT_ACCOUNT});
+   const static uint64_t null_account_name        = N(${ROOT_ACCOUNT}.null);
+   const static uint64_t producers_account_name   = N(${ROOT_ACCOUNT}.prods);
+   const static uint64_t chain_config_name        = N(${ROOT_ACCOUNT}.config);
+   const static uint64_t token_account_name       = N(${ROOT_ACCOUNT}.token);
+   const static uint64_t msig_account_name        = N(${ROOT_ACCOUNT}.msig);
+   const static uint64_t bios_account_name        = N(${ROOT_ACCOUNT}.bios);
+   const static uint64_t fee_account_name         = N(${ROOT_ACCOUNT}.fee);
+   const static uint64_t reward_account_name      = N(${ROOT_ACCOUNT}.reward);  //xuyapeng add 
+   const static uint64_t relay_account_name       = N(${ROOT_ACCOUNT}.relay);
+   const static uint64_t match_account_name       = N(sys.match);
+   const static uint64_t bridge_account_name      = N(sys.bridge);
    const static uint64_t relay_token_account_name = N(relay.token);
+
    const static int      block_interval_ms = ${BLOCK_INTERVAL_MS};
 }

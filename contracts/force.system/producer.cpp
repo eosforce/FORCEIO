@@ -4,8 +4,6 @@
 #include <cmath>
 
 namespace eosiosystem {
-    const account_name SYS_MATCH = N(sys.match);
-    
     void system_contract::onblock( const block_timestamp, const account_name bpname, const uint16_t, const block_id_type,
                                   const checksum256, const checksum256, const uint32_t schedule_version ) {
       bps_table bps_tbl(_self, _self);
@@ -448,7 +446,7 @@ namespace eosiosystem {
 
       int128_t total_power = 0;
       rewards coin_reward(config::relay_token_account_name, config::relay_token_account_name);
-      exchange::exchange t(SYS_MATCH);
+      exchange::exchange t(config::match_account_name);
       for( auto it = coin_reward.cbegin(); it != coin_reward.cend(); ++it ) {
          if (!it->reward_now) continue;
          stats statstable(::config::relay_token_account_name, it->chain);
