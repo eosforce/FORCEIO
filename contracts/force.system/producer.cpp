@@ -64,7 +64,9 @@ namespace eosiosystem {
                                              { ::config::reward_account_name, 
                                              asset(block_rewards), 
                                              "issue tokens for producer pay"} );
-         reward_inf.modify(reward, 0, [&]( reward_info& s ) {
+         reward_table reward_info_temp(_self,_self);
+         auto reward_temp = reward_info_temp.find(REWARD_ID);
+         reward_info_temp.modify(reward_temp, 0, [&]( reward_info& s ) {
             s.total_reward_time +=1;
             s.last_reward_block_num = current_block_num();
             s.last_producer_name = bpname;
