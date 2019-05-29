@@ -26,8 +26,8 @@ namespace eosiosystem {
    static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
 #ifdef BEFORE_ONLINE_TEST 
    static constexpr uint32_t CYCLE_PREHOUR = 10;
-   static constexpr uint32_t CYCLE_PREBP_BLOCK = 6;
-   static constexpr uint32_t CYCLE_PREDAY = 50;//5;//275;
+   static constexpr uint32_t CYCLE_PREBP_BLOCK = 3;
+   static constexpr uint32_t CYCLE_PREDAY = 5;//5;//275;
    static constexpr uint32_t STABLE_DAY = 10;//2;//60;
    static constexpr uint64_t PRE_BLOCK_REWARDS = 58.6*CORE_SYMBOL_PRECISION;
    static constexpr uint64_t STABLE_BLOCK_REWARDS = 126*CORE_SYMBOL_PRECISION;
@@ -186,6 +186,7 @@ namespace eosiosystem {
          int64_t total_voteage;
          asset total_reward = asset(0);
          int32_t  reward_block_num;
+         uint64_t primary_key() const { return reward_block_num; }
       };
 
       struct bp_info {
@@ -209,7 +210,7 @@ namespace eosiosystem {
          int32_t     total_drain_block = 0;
          asset       remain_punish = asset(0);
          int32_t     active_change_block_num = 0;
-         vector<vote_reward_info> reward_vote;
+         //vector<vote_reward_info> reward_vote;
 
          uint64_t primary_key() const { return name; }
 
@@ -225,7 +226,7 @@ namespace eosiosystem {
          }
          EOSLIB_SERIALIZE(bp_info, ( name )(block_signing_key)(commission_rate)(total_staked)
                (rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(active_type)
-               (block_age)(last_block_amount)(block_weight)(mortgage)(total_drain_block)(remain_punish)(active_change_block_num)(reward_vote))
+               (block_age)(last_block_amount)(block_weight)(mortgage)(total_drain_block)(remain_punish)(active_change_block_num))
       };
 
       struct producer {
@@ -349,6 +350,7 @@ namespace eosiosystem {
       typedef eosio::multi_index<N(lastdrainbp),   last_drain_block> last_drain_bp;
       typedef eosio::multi_index<N(punishbps),   punish_bp_info> punish_bps;
       typedef eosio::multi_index<N(apppunishbps),   approve_punish_bp> approve_punish_bps;
+      typedef eosio::multi_index<N(votereward),   vote_reward_info> bp_vote_reward;
 
       mvotes_table _voters;
 

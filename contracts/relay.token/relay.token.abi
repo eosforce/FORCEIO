@@ -348,10 +348,9 @@
                "name":"side_action",
                "type":"action_name"
             },
-            {"name":"rewards_pool",         "type":"asset"},
             {"name":"total_mineage",        "type":"int128"},
             {"name":"total_mineage_update_height","type":"uint32"},
-            {"name":"reward_mine",        "type":"reward_mine_info[]"},
+            {"name":"reward_scope",        "type":"uint64"}
          ]
       },
       {
@@ -540,6 +539,17 @@
          "index_type":"i64",
          "key_names":[
             "currency"
+         ],
+         "key_types":[
+            "uint64"
+         ]
+      },
+      {
+         "name":"minereward",
+         "type":"reward_mine_info",
+         "index_type":"i64",
+         "key_names":[
+            "blocknum"
          ],
          "key_types":[
             "uint64"

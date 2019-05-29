@@ -116,8 +116,7 @@
         {"name":"bp_mortgageage",               "type":"asset"},
         {"name":"total_drain_block",             "type":"int32"},
         {"name":"remain_punish",             "type":"asset"},
-        {"name":"active_change_block_num",             "type":"int32"},
-        {"name":"reward_vote",             "type":"vote_reward_info[]"}
+        {"name":"active_change_block_num",             "type":"int32"}
       ]
     },{
       "name": "setemergency",
@@ -712,6 +711,12 @@
             "type": "approve_punish_bp",
             "index_type": "i64",
             "key_names" : ["bpname"],
+            "key_types" : ["uint64"]
+       },{
+            "name": "votereward",
+            "type": "vote_reward_info",
+            "index_type": "i64",
+            "key_names" : ["blocknum"],
             "key_types" : ["uint64"]
        }
   ],

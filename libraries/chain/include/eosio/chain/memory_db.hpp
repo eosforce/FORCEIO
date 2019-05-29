@@ -141,7 +141,6 @@ public:
       int32_t     total_drain_block = 0;
       asset       remain_punish = asset(0);
       int32_t     active_change_block_num = 0;
-      vector<vote_reward_info> reward_vote;
 
       bp_info() : commission_rate(0) {
       }
@@ -297,7 +296,7 @@ public:
 FC_REFLECT(eosio::chain::memory_db::vote_reward_info,(total_voteage)(total_reward)(reward_block_num))
 FC_REFLECT(eosio::chain::memory_db::bp_info, (name)(producer_key)
             (commission_rate)(total_staked)(rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(active_type)
-            (block_age)(last_block_amount)(block_weight)(mortgage)(total_drain_block)(remain_punish)(active_change_block_num)(reward_vote))
+            (block_age)(last_block_amount)(block_weight)(mortgage)(total_drain_block)(remain_punish)(active_change_block_num))
 FC_REFLECT(eosio::chain::memory_db::token_account, (balance))
 FC_REFLECT(eosio::chain::memory_db::eoslock_account, (owner)(balance))
 FC_REFLECT(eosio::chain::memory_db::chain_status, (name)(emergency))
