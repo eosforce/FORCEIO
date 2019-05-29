@@ -305,6 +305,7 @@ namespace eosiosystem {
          int128_t total_mineage = 0;
          asset    reward_pool = asset(0);
          int32_t  reward_block_num = 0;
+         uint64_t primary_key() const { return reward_block_num; }
       };
 
       struct currency_stats {
@@ -316,10 +317,10 @@ namespace eosiosystem {
          account_name side_account;
          action_name  side_action;
 
-         asset        reward_pool;
          int128_t     total_mineage               = 0; // asset.amount * block height
          uint32_t     total_mineage_update_height = 0;
-         vector<reward_mine_info>   reward_mine;
+         uint64_t     reward_scope;
+         //vector<reward_mine_info>   reward_mine;
 
          uint64_t primary_key() const { return supply.symbol.name(); }
       };
@@ -337,6 +338,7 @@ namespace eosiosystem {
       typedef eosio::multi_index<N(reward), reward_currency,
          eosio::indexed_by< N(bychain),
                      eosio::const_mem_fun<reward_currency, uint128_t, &reward_currency::get_index_i128 >>> rewards;
+      typedef eosio::multi_index<N(minereward), reward_mine_info> reward_mine ;
       /** from relay.token end*/
       typedef eosio::multi_index<N(freezed),     freeze_info>   freeze_table;
       typedef eosio::multi_index<N(votes),       vote_info>     votes_table;
@@ -480,6 +482,9 @@ namespace eosiosystem {
       void bailpunish(const account_name bpname);
       // @abi action
       void rewardmine(int64_t reward_num);
+
+      void testreward(const account_name system);
+
 
    };
    

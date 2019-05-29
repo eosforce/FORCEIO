@@ -349,6 +349,7 @@ void token::addreward(name chain,asset supply,int32_t reward_now) {
 }
 
 void token::rewardmine(asset quantity) {
+   print("reward mine \n");
    require_auth(::config::system_account_name);
    rewards rewardtable(_self, _self);
    exchange::exchange t(SYS_MATCH);
@@ -377,9 +378,11 @@ void token::rewardmine(asset quantity) {
          s.reward_pool = asset(devide_amount);
       });
    }
+   print("reward mine end \n");
 }
 
 void token::settlemine(account_name system_account) {
+   print("settlt mine \n");
    require_auth(::config::system_account_name);
    rewards rewardtable(_self, _self);
    auto current_block = current_block_num();
@@ -402,6 +405,7 @@ void token::settlemine(account_name system_account) {
          });
       }
    }
+   print("settlt mine end \n");
 }
 
 void token::activemine(account_name system_account) {

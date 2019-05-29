@@ -36,7 +36,7 @@ namespace eosiosystem {
             pre_bp_block_out = pre_bp_block_out - bp->last_block_amount;
          }
       }
-      print("onblock \n");
+   
       if( pre_bp_block_out == CYCLE_PREBP_BLOCK || (force_change && schedule_version != 0)) {
          reward_table reward_inf(_self,_self);
          auto reward = reward_inf.find(REWARD_ID);
@@ -98,9 +98,8 @@ namespace eosiosystem {
 
          // print("logs:",block_rewards,"---",block_rewards * REWARD_DEVELOP / 10000,"---",block_rewards * REWARD_BP / 10000,"---",(block_rewards * REWARD_MINE / 10000) * coin_power / total_power,"---",
          // (block_rewards * REWARD_MINE / 10000) * vote_power / total_power,"\n");
-         if (!force_change)   update_elected_bps();
-
-
+         //全部都搞成内联调用
+          if (!force_change)      update_elected_bps();
       }
 
       if( sch == schs_tbl.end()) {
@@ -127,12 +126,26 @@ namespace eosiosystem {
       
    }
 
-   void system_contract::rewardmine(int64_t reward_num) {
-      print("reward mine \n");
+   void system_contract::testreward(const account_name system) {
       require_auth(::config::system_account_name);
-      uint64_t  vote_power = get_vote_power();
-      uint64_t  coin_power = get_coin_power();
-      uint64_t total_power = vote_power + coin_power;
+      settlebpvote();
+      auto block_reward = 10000;
+      INLINE_ACTION_SENDER(relay::token, settlemine)( ::config::relay_token_account_name, {{::config::system_account_name,N(active)}},
+                              { ::config::system_account_name} );
+
+      INLINE_ACTION_SENDER(eosiosystem::system_contract, rewardmine)( ::config::system_account_name, {{::config::system_account_name,N(active)}},
+                  { block_reward} );
+
+      INLINE_ACTION_SENDER(relay::token, activemine)( ::config::relay_token_account_name, {{::config::system_account_name,N(active)}},
+                  { ::config::system_account_name} );
+   }
+
+   void system_contract::rewardmine(int64_t reward_num) {
+      require_auth(::config::system_account_name);
+      int128_t  vote_power = get_vote_power();
+      int128_t  coin_power = get_coin_power();
+      int128_t total_power = vote_power + coin_power;
+      print(reward_num,"---",vote_power,"---",coin_power,"---",total_power,"\n");
       if (total_power != 0) {
          int64_t reward_bp = static_cast<int64_t>(static_cast<int128_t>(reward_num) * vote_power / total_power);
          reward_mines(reward_num - reward_bp);
@@ -360,8 +373,10 @@ namespace eosiosystem {
    void system_contract::reward_bps(const int64_t reward_amount) {
       bps_table bps_tbl(_self, _self);
       int64_t staked_all_bps = 0;
+      auto current_block = current_block_num();
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
          bp_vote_reward bpvote_reward(_self,it->name);
+         print(it->name,"---",current_block,"emplace bpvote \n");
          auto reward_bp = bpvote_reward.get(current_block_num(),"reward info can not find");
          staked_all_bps += reward_bp.total_voteage;
       }
@@ -461,6 +476,7 @@ namespace eosiosystem {
       int128_t total_power = 0;
       rewards coin_reward(N(relay.token),N(relay.token));
       exchange::exchange t(SYS_MATCH);
+      auto current_block = current_block_num();
       for( auto it = coin_reward.cbegin(); it != coin_reward.cend(); ++it ) {
          if (!it->reward_now) continue;
          stats statstable(::config::relay_token_account_name, it->chain);
@@ -468,8 +484,14 @@ namespace eosiosystem {
          eosio_assert(existing != statstable.end(), "token with symbol already exists");
          auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
          price = 10000;
-         auto today_index = existing->reward_mine.size() - 1;
-         int128_t power = existing->reward_mine[today_index].total_mineage;
+         reward_mine rewardmine(::config::relay_token_account_name,existing->reward_scope);
+         auto rewardinfo = rewardmine.find(current_block);
+         if (rewardinfo == rewardmine.end()) {
+            print("reward mine is not exist");
+            continue;
+         }
+        
+         int128_t power = rewardinfo->total_mineage;
          power = power * (int128_t)OTHER_COIN_WEIGHT;
          power = power / (int128_t)REWARD_RATIO_PRECISION;
          power = power * (int128_t)price;
@@ -854,12 +876,13 @@ namespace eosiosystem {
          bp_vote_reward bpvote_reward(_self,it->name);
          auto reward_bp = bpvote_reward.find(current_block);
          if (reward_bp == bpvote_reward.end()) {
+            print(it->name,"---",current_block,"emplace bpvote \n");
             bpvote_reward.emplace(_self, [&]( vote_reward_info& s ) {
                s.reward_block_num = current_block;
                s.total_voteage = it->total_voteage + it->total_staked * (current_block - it->voteage_update_height);
             });
          }
-         print("settle bp \n");
+        // print(it->name,"---",current_block,"settle bp \n");
          bps_tbl.modify(*it, 0, [&]( bp_info& b ) {
             b.voteage_update_height = current_block;
             b.total_voteage = 0;
