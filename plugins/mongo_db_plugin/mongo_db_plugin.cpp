@@ -1285,7 +1285,7 @@ mongo_db_plugin_impl::add_trade( const chain::transaction_trace_ptr& t )
          else if ( (atrace.act.account == N(relay.token) || atrace.act.account == N(force.token)) && atrace.act.name == N(trade))
             add_match( atrace, t );
       } catch(...) {
-         handle_mongo_exception("add action traces", __LINE__);
+         handle_mongo_exception("add_trade", __LINE__);
       }
    }
 }
