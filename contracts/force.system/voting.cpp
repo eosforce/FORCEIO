@@ -78,7 +78,6 @@ namespace eosiosystem {
          settlevoter(voter,bpname);
          votes_table votes_tbl_temp(_self, voter);
          auto vts_temp = votes_tbl_temp.find(bpname);
-         print("81 \n");
          change -= vts_temp->vote;
          votes_tbl_temp.modify(*vts_temp, 0, [&]( vote_info& v ) {
             v.vote = stake;

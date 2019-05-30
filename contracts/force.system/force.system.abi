@@ -487,12 +487,6 @@
          "fields": [
             {"name":"reward_num",                "type":"int64"}
          ]
-       },{
-         "name": "testreward",
-         "base": "",
-         "fields": [
-            {"name":"system",                "type":"account_name"}
-         ]
        }
   ],
   "actions": [{
@@ -630,10 +624,6 @@
       },{
          "name": "rewardmine",
          "type": "rewardmine",
-         "ricardian_contract": ""
-      },{
-         "name": "testreward",
-         "type": "testreward",
          "ricardian_contract": ""
       }
   ],

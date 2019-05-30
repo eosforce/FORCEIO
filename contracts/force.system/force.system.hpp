@@ -63,7 +63,7 @@ namespace eosiosystem {
    #define BAIL_PUNISH_FEE   asset(10*CORE_SYMBOL_PRECISION)
 
    #define  REWARD_RECORD_SIZE   2000
-   #define  BP_REWARD_RECORD_SIZE  5
+   #define  BP_REWARD_RECORD_SIZE  360
 
    
 
@@ -483,8 +483,6 @@ namespace eosiosystem {
       void bailpunish(const account_name bpname);
       // @abi action
       void rewardmine(int64_t reward_num);
-
-      void testreward(const account_name system);
 
 
    };

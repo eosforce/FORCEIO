@@ -48,7 +48,7 @@ static constexpr uint32_t UPDATE_CYCLE = 126;
 static constexpr uint32_t UPDATE_CYCLE = 315;
 #endif
 static constexpr uint64_t OTHER_COIN_WEIGHT = 500;
-#define COIN_REWARD_RECORD_SIZE  5
+#define COIN_REWARD_RECORD_SIZE  360
 class token : public eosio::contract {
 public:
    using contract::contract;
@@ -106,8 +106,6 @@ public:
    void settlemine(account_name system_account);
    /// @abi action
    void activemine(account_name system_account);
-
-   void testmine(account_name test_name);
 
 private:
    inline static uint128_t get_account_idx(const name& chain, const asset& a) {

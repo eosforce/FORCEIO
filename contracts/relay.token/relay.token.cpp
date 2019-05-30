@@ -85,11 +85,6 @@ void token::create( account_name issuer,
       s.total_mineage_update_height = current_block_num();
       s.reward_scope = asset::max_amount;
       s.reward_size = 0;
-      // reward_mine_info temp_remind;
-      // temp_remind.total_mineage = 0;
-      // temp_remind.reward_block_num = current_block_num();
-      // temp_remind.reward_pool = asset(0);
-      // s.reward_mine.push_back(temp_remind);
    });
 
 
@@ -351,7 +346,6 @@ void token::addreward(name chain,asset supply,int32_t reward_now) {
 }
 
 void token::rewardmine(asset quantity) {
-   print("reward mine \n");
    require_auth(::config::system_account_name);
    rewards rewardtable(_self, _self);
    exchange::exchange t(SYS_MATCH);
@@ -382,11 +376,9 @@ void token::rewardmine(asset quantity) {
          s.reward_pool = asset(devide_amount);
       });
    }
-   print("reward mine end \n");
 }
 
 void token::settlemine(account_name system_account) {
-   print("settlt mine \n");
    require_auth(::config::system_account_name);
    rewards rewardtable(_self, _self);
    auto current_block = current_block_num();
@@ -426,7 +418,6 @@ void token::settlemine(account_name system_account) {
          
       }
    }
-   print("settlt mine end \n");
 }
 
 void token::activemine(account_name system_account) {
@@ -438,27 +429,6 @@ void token::activemine(account_name system_account) {
       });
    }
 }
-
-void token::testmine(account_name test_name) {
-   require_auth(::config::system_account_name);
-   rewards rewardtable(_self, _self);
-   for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
-      stats statstable(_self, it->chain);
-      auto existing = statstable.find(it->supply.symbol.name());
-      if (existing != statstable.end()) {
-         reward_mine reward_inf(_self,existing->reward_scope);
-         int32_t temp_size = 0;
-         for (auto it_temp = reward_inf.begin();it_temp != reward_inf.end();++it_temp) {
-            print(it_temp->reward_block_num,"---",it_temp->total_mineage,"---",it_temp->reward_pool,"\n");
-            temp_size++;
-         }
-         print(temp_size,"----\n");
-         print("--------------------\n");
-      }
-   }
-
-}
-
 
 //todo
 void token::claim(name chain,asset quantity,account_name receiver) {
@@ -522,7 +492,6 @@ void token::settle_user(account_name owner, name chain, asset value) {
             s.total_mineage -= mineage;
             s.reward_pool -= reward;
          });
-         print("check:",it->reward_pool,"---",reward,"\n");
          last_update_height = it->reward_block_num;
          last_mineage = 0;
          cross_day = true;
@@ -579,4 +548,4 @@ void sys_bridge_exchange::parse(const string memo) {
 
 };
 
-EOSIO_ABI(relay::token, (on)(create)(issue)(destroy)(transfer)(trade)(rewardmine)(addreward)(claim)(settlemine)(activemine)(testmine))
+EOSIO_ABI(relay::token, (on)(create)(issue)(destroy)(transfer)(trade)(rewardmine)(addreward)(claim)(settlemine)(activemine))

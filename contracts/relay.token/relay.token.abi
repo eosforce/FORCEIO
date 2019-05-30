@@ -441,16 +441,6 @@
                "type":"account_name"
             }
          ]
-      },
-      {
-         "name":"testmine",
-         "base":"",
-         "fields":[
-            {
-               "name":"test_name",
-               "type":"account_name"
-            }
-         ]
       }
    ],
    "actions":[
@@ -507,11 +497,6 @@
       {
          "name":"activemine",
          "type":"activemine",
-         "ricardian_contract":""
-      },
-      {
-         "name":"testmine",
-         "type":"testmine",
          "ricardian_contract":""
       }
    ],
