@@ -356,7 +356,6 @@ void token::rewardmine(asset quantity) {
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol already exists");
       auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
-      price = 10000;
       reward_mine reward_inf(_self,existing->reward_scope);
       auto reward_info = reward_inf.find(current_block);
       total_power += reward_info->total_mineage * price / precision(existing->supply.symbol.precision()) ;
@@ -368,7 +367,6 @@ void token::rewardmine(asset quantity) {
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol do not exists");
       auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
-      price = 10000;
       reward_mine reward_inf(_self,existing->reward_scope);
       auto reward_info = reward_inf.find(current_block);
       uint128_t devide_amount =  reward_info->total_mineage * price / precision(existing->supply.symbol.precision())* quantity.amount  / total_power;
