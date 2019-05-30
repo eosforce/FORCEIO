@@ -321,6 +321,7 @@ namespace eosiosystem {
          int128_t     total_mineage               = 0; // asset.amount * block height
          uint32_t     total_mineage_update_height = 0;
          uint64_t     reward_scope;
+         int32_t      reward_size = 0;
          //vector<reward_mine_info>   reward_mine;
 
          uint64_t primary_key() const { return supply.symbol.name(); }

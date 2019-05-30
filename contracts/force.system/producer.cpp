@@ -35,7 +35,6 @@ namespace eosiosystem {
          else {
             pre_bp_block_out = pre_bp_block_out - bp->last_block_amount;
          }
-        // print(pre_bp_block_out,"---",bp->last_block_amount,"---","39 \n");
       }
 
       if( pre_bp_block_out == CYCLE_PREBP_BLOCK || (force_change && schedule_version != 0)) {
@@ -98,7 +97,6 @@ namespace eosiosystem {
 
          // print("logs:",block_rewards,"---",block_rewards * REWARD_DEVELOP / 10000,"---",block_rewards * REWARD_BP / 10000,"---",(block_rewards * REWARD_MINE / 10000) * coin_power / total_power,"---",
          // (block_rewards * REWARD_MINE / 10000) * vote_power / total_power,"\n");
-         //全部都搞成内联调用
           if (!force_change)      update_elected_bps();
       }
 
@@ -127,7 +125,6 @@ namespace eosiosystem {
    }
 
    void system_contract::rewardmine(int64_t reward_num) {
-     // return ;
       require_auth(::config::system_account_name);
       int128_t  vote_power = get_vote_power();
       int128_t  coin_power = get_coin_power();
@@ -386,14 +383,11 @@ namespace eosiosystem {
          }
          
          const auto& bp = bps_tbl.get(it->name, "bpname is not registered");
-         //auto ireward_index = bp.reward_vote.size() - 1;
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-            //b.reward_vote[ireward_index].total_reward += asset(vote_reward * (REWARD_RATIO_PRECISION - b.commission_rate) / REWARD_RATIO_PRECISION);
             b.rewards_block += asset(vote_reward * b.commission_rate / REWARD_RATIO_PRECISION);
          });
 
          bpvote_reward.modify(reward_bp,_self,[&]( auto& b ) {
-            //b.total_reward += asset(10000);
             b.total_reward += asset(vote_reward * (REWARD_RATIO_PRECISION - bp.commission_rate) / REWARD_RATIO_PRECISION);
          });
       }
@@ -899,7 +893,6 @@ namespace eosiosystem {
       eosio_assert(vts != votes_tbl.end(),"settlevoter wrong");
 
       bp_vote_reward bpvote_reward(_self,bpname);
-     // auto reward_bp = bpvote_reward.find(current_block);
   
       auto last_voteage = vts->voteage;
       auto last_voteage_update_height = vts->voteage_update_height;
