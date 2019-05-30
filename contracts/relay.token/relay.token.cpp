@@ -84,6 +84,7 @@ void token::create( account_name issuer,
       s.total_mineage = 0;
       s.total_mineage_update_height = current_block_num();
       s.reward_scope = asset::max_amount;
+      s.reward_size = 0;
       // reward_mine_info temp_remind;
       // temp_remind.total_mineage = 0;
       // temp_remind.reward_block_num = current_block_num();
@@ -332,6 +333,7 @@ void token::addreward(name chain,asset supply,int32_t reward_now) {
 
    statstable.modify(*existing,0,[&]( auto& s ){
       s.reward_scope = reward_id;
+      s.reward_size = 1;
    }); 
 
    auto current_block = current_block_num();
@@ -360,6 +362,7 @@ void token::rewardmine(asset quantity) {
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol already exists");
       auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
+      price = 10000;
       reward_mine reward_inf(_self,existing->reward_scope);
       auto reward_info = reward_inf.find(current_block);
       total_power += reward_info->total_mineage * price / precision(existing->supply.symbol.precision()) ;
@@ -371,6 +374,7 @@ void token::rewardmine(asset quantity) {
       auto existing = statstable.find(it->supply.symbol.name());
       eosio_assert(existing != statstable.end(), "token with symbol do not exists");
       auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
+      price = 10000;
       reward_mine reward_inf(_self,existing->reward_scope);
       auto reward_info = reward_inf.find(current_block);
       uint128_t devide_amount =  reward_info->total_mineage * price / precision(existing->supply.symbol.precision())* quantity.amount  / total_power;
@@ -399,10 +403,27 @@ void token::settlemine(account_name system_account) {
             s.reward_block_num = current_block;
          });
 
+         if (existing->reward_size == COIN_REWARD_RECORD_SIZE) {
+            auto reward_begin = reward_inf.begin();
+            auto reward_second = ++reward_begin;
+            reward_inf.modify(*reward_second,0,[&](auto &s){
+               s.reward_pool = asset(0);
+            });
+
+            reward_begin = reward_inf.begin();
+            reward_inf.erase(reward_begin);
+         }
+
          statstable.modify(*existing, 0, [&]( auto& s ) {
             s.total_mineage = 0;
             s.total_mineage_update_height = current_block;
+            if (s.reward_size != COIN_REWARD_RECORD_SIZE) {
+               s.reward_size += 1;
+            }
+
          });
+
+         
       }
    }
    print("settlt mine end \n");
@@ -416,6 +437,26 @@ void token::activemine(account_name system_account) {
          s.reward_now = true;
       });
    }
+}
+
+void token::testmine(account_name test_name) {
+   require_auth(::config::system_account_name);
+   rewards rewardtable(_self, _self);
+   for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
+      stats statstable(_self, it->chain);
+      auto existing = statstable.find(it->supply.symbol.name());
+      if (existing != statstable.end()) {
+         reward_mine reward_inf(_self,existing->reward_scope);
+         int32_t temp_size = 0;
+         for (auto it_temp = reward_inf.begin();it_temp != reward_inf.end();++it_temp) {
+            print(it_temp->reward_block_num,"---",it_temp->total_mineage,"---",it_temp->reward_pool,"\n");
+            temp_size++;
+         }
+         print(temp_size,"----\n");
+         print("--------------------\n");
+      }
+   }
+
 }
 
 
@@ -481,6 +522,7 @@ void token::settle_user(account_name owner, name chain, asset value) {
             s.total_mineage -= mineage;
             s.reward_pool -= reward;
          });
+         print("check:",it->reward_pool,"---",reward,"\n");
          last_update_height = it->reward_block_num;
          last_mineage = 0;
          cross_day = true;
@@ -537,4 +579,4 @@ void sys_bridge_exchange::parse(const string memo) {
 
 };
 
-EOSIO_ABI(relay::token, (on)(create)(issue)(destroy)(transfer)(trade)(rewardmine)(addreward)(claim)(settlemine)(activemine))
+EOSIO_ABI(relay::token, (on)(create)(issue)(destroy)(transfer)(trade)(rewardmine)(addreward)(claim)(settlemine)(activemine)(testmine))

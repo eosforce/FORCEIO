@@ -63,7 +63,7 @@ namespace eosiosystem {
    #define BAIL_PUNISH_FEE   asset(10*CORE_SYMBOL_PRECISION)
 
    #define  REWARD_RECORD_SIZE   2000
-   #define  BP_REWARD_RECORD_SIZE  360
+   #define  BP_REWARD_RECORD_SIZE  5
 
    
 
@@ -194,7 +194,7 @@ namespace eosiosystem {
          public_key   block_signing_key;
          uint32_t     commission_rate = 0; // 0 - CORE_SYMBOL_PRECISION for 0% - 100%
          int64_t      total_staked    = 0;
-         asset        rewards_pool    = asset(0);
+     //    asset        rewards_pool    = asset(0);
          asset        rewards_block   = asset(0);
          int64_t      total_voteage   = 0; // asset.amount * block height
          uint32_t     voteage_update_height = current_block_num();
@@ -210,7 +210,8 @@ namespace eosiosystem {
          int32_t     total_drain_block = 0;
          asset       remain_punish = asset(0);
          int32_t     active_change_block_num = 0;
-         //vector<vote_reward_info> reward_vote;
+         int32_t     reward_size = 0;
+       //  vector<vote_reward_info> reward_vote    ;
 
          uint64_t primary_key() const { return name; }
 
@@ -225,8 +226,8 @@ namespace eosiosystem {
             return true;
          }
          EOSLIB_SERIALIZE(bp_info, ( name )(block_signing_key)(commission_rate)(total_staked)
-               (rewards_pool)(rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(active_type)
-               (block_age)(last_block_amount)(block_weight)(mortgage)(total_drain_block)(remain_punish)(active_change_block_num))
+               (rewards_block)(total_voteage)(voteage_update_height)(url)(emergency)(active_type)
+               (block_age)(last_block_amount)(block_weight)(mortgage)(total_drain_block)(remain_punish)(active_change_block_num)(reward_size))
       };
 
       struct producer {

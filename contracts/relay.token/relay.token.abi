@@ -350,7 +350,8 @@
             },
             {"name":"total_mineage",        "type":"int128"},
             {"name":"total_mineage_update_height","type":"uint32"},
-            {"name":"reward_scope",        "type":"uint64"}
+            {"name":"reward_scope",        "type":"uint64"},
+            {"name":"reward_size",        "type":"int32"}
          ]
       },
       {
@@ -440,6 +441,16 @@
                "type":"account_name"
             }
          ]
+      },
+      {
+         "name":"testmine",
+         "base":"",
+         "fields":[
+            {
+               "name":"test_name",
+               "type":"account_name"
+            }
+         ]
       }
    ],
    "actions":[
@@ -496,6 +507,11 @@
       {
          "name":"activemine",
          "type":"activemine",
+         "ricardian_contract":""
+      },
+      {
+         "name":"testmine",
+         "type":"testmine",
          "ricardian_contract":""
       }
    ],

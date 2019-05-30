@@ -103,7 +103,6 @@
         {"name":"block_signing_key",    "type":"public_key"},
         {"name":"commission_rate",      "type":"uint32"},
         {"name":"total_staked",         "type":"int64"},
-        {"name":"rewards_pool",         "type":"asset"},
         {"name":"rewards_block",         "type":"asset"},
         {"name":"total_voteage",        "type":"int64"},
         {"name":"voteage_update_height","type":"uint32"},
@@ -116,7 +115,8 @@
         {"name":"bp_mortgageage",               "type":"asset"},
         {"name":"total_drain_block",             "type":"int32"},
         {"name":"remain_punish",             "type":"asset"},
-        {"name":"active_change_block_num",             "type":"int32"}
+        {"name":"active_change_block_num",             "type":"int32"},
+        {"name":"reward_size",             "type":"int32"}
       ]
     },{
       "name": "setemergency",

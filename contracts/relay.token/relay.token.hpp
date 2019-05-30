@@ -48,7 +48,7 @@ static constexpr uint32_t UPDATE_CYCLE = 126;
 static constexpr uint32_t UPDATE_CYCLE = 315;
 #endif
 static constexpr uint64_t OTHER_COIN_WEIGHT = 500;
-#define COIN_REWARD_RECORD_SIZE  360
+#define COIN_REWARD_RECORD_SIZE  5
 class token : public eosio::contract {
 public:
    using contract::contract;
@@ -107,6 +107,8 @@ public:
    /// @abi action
    void activemine(account_name system_account);
 
+   void testmine(account_name test_name);
+
 private:
    inline static uint128_t get_account_idx(const name& chain, const asset& a) {
       return (uint128_t(uint64_t(chain)) << 64) + uint128_t(a.symbol.name());
@@ -151,6 +153,7 @@ private:
       int128_t     total_mineage               = 0; // asset.amount * block height
       uint32_t     total_mineage_update_height = 0;
       uint64_t     reward_scope;
+      int32_t      reward_size = 0;
      // vector<reward_mine_info>   reward_mine;
 
       uint64_t primary_key() const { return supply.symbol.name(); }
