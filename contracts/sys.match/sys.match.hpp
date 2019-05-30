@@ -51,14 +51,53 @@ namespace exchange {
       void open(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc);
       
       void close(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, account_name exc_acc);
+      
+      void close2(uint32_t pair_id, account_name exc_acc);
 
       void match( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, uint32_t bid_or_ask, account_name exc_acc, string referer, uint32_t fee_type );
       
       void cancel(account_name maker, uint32_t type, uint64_t order_or_pair_id);
       
-      void done(account_name taker_exc_acc, account_name maker_exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t bid_or_ask, time_point_sec timestamp);
+      void done(uint64_t id, account_name taker_exc_acc, account_name maker_exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t pair_id, 
+         uint64_t buy_order_id, asset buy_fee, uint64_t sell_order_id, asset sell_fee, uint32_t bid_or_ask, time_point_sec timestamp);
       
-      void done_helper(account_name taker_exc_acc, account_name maker_exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t bid_or_ask);
+      void done_helper(account_name taker_exc_acc, account_name maker_exc_acc, name quote_chain, asset price, 
+                              name base_chain, asset quantity, uint32_t pair_id, 
+                              uint64_t buy_order_id, asset buy_fee, uint64_t sell_order_id, asset sell_fee, 
+                              uint32_t bid_or_ask, time_point_sec timestamp);
+      
+      void morder(
+                              uint64_t id,
+                              account_name payer, 
+                              account_name to, 
+                              name chain,
+                              asset totalQty,
+                              uint32_t type,
+                              account_name receiver,
+                              asset price, 
+                              uint32_t pair_id,
+                              uint32_t bid_or_ask,
+                              account_name taker_exc_acc,
+                              string referer, 
+                              asset matchedQty, 
+                              uint32_t feeType,
+                              time_point_sec timestamp,
+                              uint32_t status) ;                       
+                              
+      void morder_helper(
+                              uint64_t order_id, 
+                              account_name payer, 
+                              name chain,
+                              asset quantity,
+                              account_name receiver,
+                              asset price, 
+                              uint32_t pair_id,
+                              uint32_t direction,
+                              account_name taker_exc_acc,
+                              string referer, 
+                              asset totalQty, 
+                              uint32_t feeType,
+                              time_point_sec timestamp);
       
       void match_for_bid( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, account_name exc_acc, string referer, uint32_t fee_type);
       
@@ -98,7 +137,7 @@ namespace exchange {
       
       asset get_frozen_asset(account_name exc_acc, name action, uint32_t pair_id);
       
-      asset charge_fee(uint32_t pair_id, account_name payer, asset quantity, account_name exc_acc, uint32_t fee_type);
+      int charge_fee(uint32_t pair_id, account_name payer, asset quantity, account_name exc_acc, uint32_t fee_type, asset& deducted_fee);
       
       void sub_balance( account_name owner, asset value );
 
@@ -140,6 +179,14 @@ namespace exchange {
       inline asset get_avg_price( uint32_t block_height, name base_chain, symbol_type base_sym, name quote_chain = {0}, symbol_type quote_sym = CORE_SYMBOL ) const;
       
       inline void upd_mark( name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym, asset sum, asset vol );
+      
+      mutable uint64_t _next_primary_key;
+      enum next_primary_key_tags : uint64_t {
+         no_available_primary_key = static_cast<uint64_t>(-2), // Must be the smallest uint64_t value compared to all other tags
+         unset_next_primary_key = static_cast<uint64_t>(-1)
+      };
+      
+      inline uint64_t available_primary_key(name table_name);
 
       struct exc {
          account_name exc_acc;
@@ -242,6 +289,13 @@ namespace exchange {
             return (uint128_t(action.value) << 64) | pair_id;
          }
       };
+      
+      struct id_info {
+         name     table_name;
+         uint64_t id;
+         
+         uint64_t primary_key() const { return table_name; }
+      };
 
       typedef eosio::multi_index<N(exchanges), exc> exchanges;
       typedef eosio::multi_index<N(pairs), trading_pair,
@@ -260,20 +314,23 @@ namespace exchange {
       typedef eosio::multi_index<N(freezed), freeze_info,
          indexed_by< N(idxkey), const_mem_fun<freeze_info, uint128_t, &freeze_info::by_act_and_pair>>
          > freeze_table;
+      typedef eosio::multi_index<N(ids), id_info> ids;
       
       const asset REG_STAKE         = asset(1000'0000);
       const asset OPEN__PAIR_STAKE  = asset(1000'0000);
 
       void insert_order(
-                       orderbook &orders, 
-                       uint32_t pair_id, 
-                       account_name exc_acc,
-                       uint32_t bid_or_ask, 
-                       asset base, 
-                       asset price, 
-                       account_name payer, 
-                       account_name receiver,
-                       uint32_t fee_type);
+                              orderbook &orders, 
+                              uint64_t order_id,
+                              uint32_t pair_id, 
+                              account_name exc_acc,
+                              uint32_t bid_or_ask, 
+                              asset base, 
+                              asset price, 
+                              account_name payer, 
+                              account_name receiver,
+                              uint32_t fee_type,
+                              time_point_sec timestamp);
 
       //static asset to_asset( account_name code, name chain, symbol_type sym, const asset& a );
       //static asset convert( symbol_type expected_symbol, const asset& a );
@@ -495,6 +552,28 @@ namespace exchange {
       }*/
       
       return ;
+   }
+   
+   uint64_t exchange::available_primary_key(name table_name) {
+      ids id_tbl(_self, table_name.value);
+      auto itr = id_tbl.find(table_name);
+      
+      uint64_t _next_primary_key = 0;
+      
+      if (itr == id_tbl.end()) {
+         id_tbl.emplace( _self, [&]( auto& i ) {
+            i.table_name = table_name;
+            i.id = _next_primary_key;
+         });  
+      } else {
+         _next_primary_key = itr->id + 1;
+         id_tbl.modify( itr, _self, [&]( auto& i ) {
+            i.id = _next_primary_key;
+         });
+      }
+
+      eosio_assert( _next_primary_key < no_available_primary_key, "next primary key in table is at autoincrement limit");
+      return _next_primary_key;
    }
 }
 #endif //EOSIO_EXCHANGE_H

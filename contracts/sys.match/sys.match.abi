@@ -48,6 +48,13 @@
       {"name": "exc_acc","type": "account_name"}
       ]
     },{
+      "name": "close2",
+      "base": "",
+      "fields": [
+      {"name": "pair_id","type": "uint32"},
+      {"name": "exc_acc","type": "account_name"}
+      ]
+    },{
        "name": "trade",
        "base": "",
        "fields": [
@@ -73,12 +80,18 @@
        "name": "done",
        "base": "",
        "fields": [
+        {"name": "id","type": "uint64"},
         {"name": "taker_exc_acc","type": "account_name"},
         {"name": "maker_exc_acc","type": "account_name"},
         {"name": "quote_chain","type": "name"},
         {"name": "price","type": "asset"},
         {"name": "base_chain","type": "name"},
         {"name": "quantity","type": "asset"},
+        {"name": "pair_id","type": "uint32"},
+        {"name": "buy_order_id","type": "uint64"},
+        {"name": "buy_fee","type": "asset"},
+        {"name": "sell_order_id","type": "uint64"},
+        {"name": "sell_fee","type": "asset"},
         {"name": "bid_or_ask","type": "uint32"},
         {"name": "timestamp","type": "time_point_sec"}
        ]
@@ -234,6 +247,34 @@
         {"name": "pair_id","type": "uint32"},
         {"name": "staked","type": "asset"}
        ]
+     },{
+       "name": "morder",
+       "base": "",
+       "fields": [
+        {"name": "id","type": "uint64"},
+        {"name": "from","type": "account_name"},
+        {"name": "to","type": "account_name"},
+        {"name": "chain","type": "name"},
+        {"name": "totalQty","type": "asset"},
+        {"name": "type","type": "uint32"},
+        {"name": "receiver","type": "account_name"},
+        {"name": "price","type": "asset"},
+        {"name": "pairId","type": "uint32"},
+        {"name": "direction","type": "uint32"},
+        {"name": "dexAccount","type": "account_name"},
+        {"name": "referer","type": "string"},
+        {"name": "feeType","type": "uint32"},
+        {"name": "matchedQty","type": "asset"},
+        {"name": "dataTime","type": "time_point_sec"},
+        {"name": "status","type": "uint32"}
+       ]
+     },{
+       "name": "id_info",
+       "base": "",
+       "fields": [
+        {"name": "table_name","type": "name"},
+        {"name": "id","type": "uint64"}
+       ]
      }
   ],
   "actions": [{
@@ -273,6 +314,10 @@
       "type": "close",
       "ricardian_contract": ""
     },{
+      "name": "close2",
+      "type": "close2",
+      "ricardian_contract": ""
+    },{
       "name": "freeze",
       "type": "freeze",
       "ricardian_contract": ""
@@ -299,6 +344,10 @@
     },{
       "name": "unfreeze4",
       "type": "unfreeze4",
+      "ricardian_contract": ""
+    },{
+      "name": "morder",
+      "type": "morder",
       "ricardian_contract": ""
     }
   ],
@@ -334,8 +383,12 @@
       "name": "freezed",
       "type": "freeze_info",
       "index_type": "i64"
+    },{
+      "name": "ids",
+      "type": "id_info",
+      "index_type": "i64"
     }
   ],
   "ricardian_clauses": [],
-  "abi_extensions": { "datas": [] }
+  "abi_extensions": []
 }
