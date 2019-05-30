@@ -10,7 +10,7 @@ namespace eosiosystem {
                                   const checksum256, const checksum256, const uint32_t schedule_version ) {
       bps_table bps_tbl(_self, _self);
       schedules_table schs_tbl(_self, _self);
-
+   
       account_name block_producers[NUM_OF_TOP_BPS] = {};
       get_active_producers(block_producers, sizeof(account_name) * NUM_OF_TOP_BPS);
       auto sch = schs_tbl.find(uint64_t(schedule_version));
@@ -35,7 +35,9 @@ namespace eosiosystem {
          else {
             pre_bp_block_out = pre_bp_block_out - bp->last_block_amount;
          }
+        // print(pre_bp_block_out,"---",bp->last_block_amount,"---","39 \n");
       }
+
       if( pre_bp_block_out == CYCLE_PREBP_BLOCK || (force_change && schedule_version != 0)) {
          reward_table reward_inf(_self,_self);
          auto reward = reward_inf.find(REWARD_ID);
@@ -43,7 +45,7 @@ namespace eosiosystem {
             init_reward_info();
             reward = reward_inf.find(REWARD_ID);
          }
-         
+
          auto cycle_block_out = current_block_num() - reward->last_reward_block_num;
          int64_t block_rewards = reward->cycle_reward * cycle_block_out / UPDATE_CYCLE;
          auto reward_times = reward->total_reward_time + 1;
@@ -76,12 +78,11 @@ namespace eosiosystem {
             }
          });
          
-
          reward_develop(block_rewards * REWARD_DEVELOP / REWARD_RATIO_PRECISION);
          reward_block(reward_block_version,block_rewards * REWARD_BP / REWARD_RATIO_PRECISION,force_change);
-   
+
          if (reward_update) {
-            cycle_block_out = current_block_num() - reward->reward_block_num[reward->reward_block_num.size() - 1 - CYCLE_PREDAY];
+            cycle_block_out = current_block_num() - reward->reward_block_num[reward->reward_block_num.size() - CYCLE_PREDAY];
             block_rewards = reward->cycle_reward * cycle_block_out / UPDATE_CYCLE * REWARD_MINE / REWARD_RATIO_PRECISION ;
             settlebpvote();
             INLINE_ACTION_SENDER(relay::token, settlemine)( ::config::relay_token_account_name, {{::config::system_account_name,N(active)}},
@@ -97,9 +98,8 @@ namespace eosiosystem {
 
          // print("logs:",block_rewards,"---",block_rewards * REWARD_DEVELOP / 10000,"---",block_rewards * REWARD_BP / 10000,"---",(block_rewards * REWARD_MINE / 10000) * coin_power / total_power,"---",
          // (block_rewards * REWARD_MINE / 10000) * vote_power / total_power,"\n");
-         if (!force_change)   update_elected_bps();
-
-
+         //全部都搞成内联调用
+          if (!force_change)      update_elected_bps();
       }
 
       if( sch == schs_tbl.end()) {
@@ -127,10 +127,11 @@ namespace eosiosystem {
    }
 
    void system_contract::rewardmine(int64_t reward_num) {
+     // return ;
       require_auth(::config::system_account_name);
-      uint64_t  vote_power = get_vote_power();
-      uint64_t  coin_power = get_coin_power();
-      uint64_t total_power = vote_power + coin_power;
+      int128_t  vote_power = get_vote_power();
+      int128_t  coin_power = get_coin_power();
+      int128_t total_power = vote_power + coin_power;
       if (total_power != 0) {
          int64_t reward_bp = static_cast<int64_t>(static_cast<int128_t>(reward_num) * vote_power / total_power);
          reward_mines(reward_num - reward_bp);
@@ -358,31 +359,42 @@ namespace eosiosystem {
    void system_contract::reward_bps(const int64_t reward_amount) {
       bps_table bps_tbl(_self, _self);
       int64_t staked_all_bps = 0;
+      auto current_block = current_block_num();
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
-         staked_all_bps += it->reward_vote[it->reward_vote.size() - 1].total_voteage;
+         bp_vote_reward bpvote_reward(_self,it->name);
+         const auto& reward_bp = bpvote_reward.get(current_block_num(),"reward info can not find");
+         staked_all_bps += reward_bp.total_voteage;
       }
       if( staked_all_bps <= 0 ) {
          return;
       }
+      
       const auto rewarding_bp_staked_threshold = staked_all_bps / 200;
       auto budget_reward = asset{0,CORE_SYMBOL};
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
-         if( it->reward_vote[it->reward_vote.size() - 1].total_voteage <= rewarding_bp_staked_threshold || it->commission_rate < 1 ||
+         bp_vote_reward bpvote_reward(_self,it->name);
+         const auto& reward_bp = bpvote_reward.get(current_block_num(),"reward info can not find");
+         if( reward_bp.total_voteage <= rewarding_bp_staked_threshold || it->commission_rate < 1 ||
              it->commission_rate > REWARD_RATIO_PRECISION ) {
             continue;
          }
 
-         auto vote_reward = static_cast<int64_t>( reward_amount  * (double(it->reward_vote[it->reward_vote.size() - 1].total_voteage) / double(staked_all_bps)));
+         auto vote_reward = static_cast<int64_t>( reward_amount  * (double(reward_bp.total_voteage) / double(staked_all_bps)));
          if (it->active_type == static_cast<int32_t>(active_type::Punish) || it->active_type == static_cast<int32_t>(active_type::Removed)) {
             budget_reward += asset(vote_reward,CORE_SYMBOL);
             continue;
          }
          
          const auto& bp = bps_tbl.get(it->name, "bpname is not registered");
-         auto ireward_index = bp.reward_vote.size() - 1;
+         //auto ireward_index = bp.reward_vote.size() - 1;
          bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-            b.reward_vote[ireward_index].total_reward += asset(vote_reward * (REWARD_RATIO_PRECISION - b.commission_rate) / REWARD_RATIO_PRECISION);
+            //b.reward_vote[ireward_index].total_reward += asset(vote_reward * (REWARD_RATIO_PRECISION - b.commission_rate) / REWARD_RATIO_PRECISION);
             b.rewards_block += asset(vote_reward * b.commission_rate / REWARD_RATIO_PRECISION);
+         });
+
+         bpvote_reward.modify(reward_bp,_self,[&]( auto& b ) {
+            //b.total_reward += asset(10000);
+            b.total_reward += asset(vote_reward * (REWARD_RATIO_PRECISION - bp.commission_rate) / REWARD_RATIO_PRECISION);
          });
       }
       reward_table reward_inf(_self,_self);
@@ -451,14 +463,21 @@ namespace eosiosystem {
       int128_t total_power = 0;
       rewards coin_reward(N(relay.token),N(relay.token));
       exchange::exchange t(SYS_MATCH);
+      auto current_block = current_block_num();
       for( auto it = coin_reward.cbegin(); it != coin_reward.cend(); ++it ) {
          if (!it->reward_now) continue;
          stats statstable(::config::relay_token_account_name, it->chain);
          auto existing = statstable.find(it->supply.symbol.name());
          eosio_assert(existing != statstable.end(), "token with symbol already exists");
          auto price = t.get_avg_price(current_block_num(),existing->chain,existing->supply.symbol).amount;
-         auto today_index = existing->reward_mine.size() - 1;
-         int128_t power = existing->reward_mine[today_index].total_mineage;
+         reward_mine rewardmine(::config::relay_token_account_name,existing->reward_scope);
+         auto rewardinfo = rewardmine.find(current_block);
+         if (rewardinfo == rewardmine.end()) {
+            print("reward mine is not exist");
+            continue;
+         }
+        
+         int128_t power = rewardinfo->total_mineage;
          power = power * (int128_t)OTHER_COIN_WEIGHT;
          power = power / (int128_t)REWARD_RATIO_PRECISION;
          power = power * (int128_t)price;
@@ -474,8 +493,9 @@ namespace eosiosystem {
       int128_t staked_all_bps = 0;
       auto current_block = current_block_num();
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
-         auto today_index = it->reward_vote.size() - 1;
-         staked_all_bps += it->reward_vote[today_index].total_voteage;
+         bp_vote_reward bpvote_reward(_self,it->name);
+         const auto& reward_bp = bpvote_reward.get(current_block_num(),"reward info can not find");
+         staked_all_bps += reward_bp.total_voteage;
       }
       return static_cast<int128_t>(staked_all_bps)* CORE_SYMBOL_PRECISION;
    }
@@ -837,19 +857,34 @@ namespace eosiosystem {
    void system_contract::settlebpvote() {
       bps_table bps_tbl(_self, _self);
       auto current_block = current_block_num();
-
       for( auto it = bps_tbl.cbegin(); it != bps_tbl.cend(); ++it ) {
-         vote_reward_info temp_reward;
-         temp_reward.reward_block_num = current_block;
-         temp_reward.total_voteage = it->total_voteage + it->total_staked * (current_block - it->voteage_update_height);
-         bps_tbl.modify(*it, 0, [&]( bp_info& b ) {
-            b.reward_vote.push_back(temp_reward);
-            if (BP_REWARD_RECORD_SIZE + 1 < b.reward_vote.size()) {
-               b.reward_vote.erase(std::begin(b.reward_vote));
-               b.reward_vote[0].total_reward = asset(0);
+         bp_vote_reward bpvote_reward(_self,it->name);
+         auto reward_bp = bpvote_reward.find(current_block);
+         if (reward_bp == bpvote_reward.end()) {
+            bpvote_reward.emplace(_self, [&]( vote_reward_info& s ) {
+               s.reward_block_num = current_block;
+               s.total_voteage = it->total_voteage + it->total_staked * (current_block - it->voteage_update_height);
+            });
+
+            if (it->reward_size == BP_REWARD_RECORD_SIZE) {
+               auto bpvote_begin = bpvote_reward.begin();
+               auto bpvote_second = ++bpvote_begin;
+               bpvote_begin = bpvote_reward.begin();
+               bpvote_reward.modify(*bpvote_second,_self,[&]( vote_reward_info& s ) {
+                  s.total_reward = asset(0);
+               });
+               bpvote_reward.erase(bpvote_begin);
             }
+         }
+         else {
+            print("find reward \n");
+         }
+         bps_tbl.modify(*it, 0, [&]( bp_info& b ) {
             b.voteage_update_height = current_block;
             b.total_voteage = 0;
+            if (b.reward_size != BP_REWARD_RECORD_SIZE){
+               b.reward_size += 1;
+            }
          });
       }
    }
@@ -862,21 +897,24 @@ namespace eosiosystem {
       votes_table votes_tbl(_self, voter);
       auto vts = votes_tbl.find(bpname);
       eosio_assert(vts != votes_tbl.end(),"settlevoter wrong");
-      auto imaxsize = bp.reward_vote.size();
+
+      bp_vote_reward bpvote_reward(_self,bpname);
+     // auto reward_bp = bpvote_reward.find(current_block);
+  
       auto last_voteage = vts->voteage;
       auto last_voteage_update_height = vts->voteage_update_height;
       auto total_reward = asset(0);
       bool cross_day = false;
-      for (int i=0;i!=imaxsize; ++i) {
-         if (last_voteage_update_height < bp.reward_vote[i].reward_block_num) {
-            auto day_voteage = last_voteage + vts->vote.amount / CORE_SYMBOL_PRECISION * (bp.reward_vote[i].reward_block_num - last_voteage_update_height);
-            auto reward = bp.reward_vote[i].total_reward * day_voteage / bp.reward_vote[i].total_voteage;
+      for (auto it = bpvote_reward.begin();it != bpvote_reward.end();++it) {
+         if (last_voteage_update_height < it->reward_block_num) {
+            auto day_voteage = last_voteage + vts->vote.amount / CORE_SYMBOL_PRECISION * (it->reward_block_num - last_voteage_update_height);
+            auto reward = it->total_reward * day_voteage / it->total_voteage;
             total_reward += reward;
-            last_voteage_update_height = bp.reward_vote[i].reward_block_num;
+            last_voteage_update_height = it->reward_block_num;
             last_voteage = 0;
-            bps_tbl.modify(bp, 0, [&]( bp_info& b ) {
-               b.reward_vote[i].total_voteage -= day_voteage;
-               b.reward_vote[i].total_reward -= reward;
+            bpvote_reward.modify(*it,0,[&]( vote_reward_info& b ) {
+               b.total_voteage -= day_voteage;
+               b.total_reward -= reward;
             });
             cross_day = true;
          }
