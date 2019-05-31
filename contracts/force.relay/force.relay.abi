@@ -154,10 +154,6 @@
                 {
                     "name": "action_mroot",
                     "type": "checksum256"
-                },
-                {
-                    "name": "mroot",
-                    "type": "checksum256"
                 }
             ]
         },
