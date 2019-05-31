@@ -125,7 +125,10 @@ public:
    bool upd_order( mongocxx::bulk_write& bulk_actions, 
                                         const chain::action& a,
                                         const chain::transaction_trace_ptr& t);
-   bool write_action_data( mongocxx::bulk_write& bulk_action_deals, 
+   bool ins_order( mongocxx::bulk_write& bulk_actions, 
+                                        const chain::action& a,
+                                        const chain::transaction_trace_ptr& t);                              
+   bool ins_deal( mongocxx::bulk_write& bulk_action_deals, 
                                         const chain::action& a,
                                         const chain::transaction_trace_ptr& t );
    bool add_match_action( mongocxx::bulk_write& bulk_actions, 
@@ -855,23 +858,23 @@ mongo_db_plugin_impl::on_cancel(const chain::action& a,
    bool updated = false;
    std::string maker;
    int32_t type;
-   int64_t order_or_pair_id;
+   std::string order_or_pair_id;
 
    try {
       auto v = to_variant_with_abi( base );
       
       string json = fc::json::to_string( v );
-      ilog( " on_cancel JSON: ${j}", ("j", json) );
+      //ilog( " on_cancel JSON: ${j}", ("j", json) );
       try {
          const auto& value = bsoncxx::from_json( json );
          bsoncxx::document::view value_view = value.view();
          bsoncxx::document::element data_ele{value_view["data"]};  
-         ilog( " on_cancel data JSON : ${data}", ("data", bsoncxx::to_json( data_ele.get_document().value ) ) );
+         //ilog( " on_cancel data JSON : ${data}", ("data", bsoncxx::to_json( data_ele.get_document().value ) ) );
          bsoncxx::document::view data_view = data_ele.get_document().value;
          bsoncxx::document::element maker_ele{value_view["data"]["maker"]};
          auto  maker_view = maker_ele.get_utf8().value;
          maker = ::std::string(maker_view.data(), maker_view.size());
-         ilog( " on_cancel deal maker JSON : ${maker}", ( "maker", maker ) );
+         //ilog( " on_cancel deal maker JSON : ${maker}", ( "maker", maker ) );
          bsoncxx::document::element type_ele{value_view["data"]["type"]};
          if (type_ele && type_ele.type() == type::k_int32) {
             ilog( " on_cancel 111111   type JSON: ${data}", ("data", type_ele.get_int32().value ) );
@@ -884,10 +887,16 @@ mongo_db_plugin_impl::on_cancel(const chain::action& a,
          bsoncxx::document::element order_or_pair_id_ele{value_view["data"]["order_or_pair_id"]};
          if (order_or_pair_id_ele && order_or_pair_id_ele.type() == type::k_int32) {
             ilog( " on_cancel 111111   order_or_pair_id JSON: ${data}", ("data", order_or_pair_id_ele.get_int32().value ) );
-            order_or_pair_id = (int64_t)order_or_pair_id_ele.get_int32().value;
+            //order_or_pair_id = (int64_t)order_or_pair_id_ele.get_int32().value;
+            order_or_pair_id = fc::to_string(order_or_pair_id_ele.get_int32().value);
          } else if (order_or_pair_id_ele && order_or_pair_id_ele.type() == type::k_int64) {
             ilog( " on_cancel 111111   order_or_pair_id JSON: ${data}", ("data", order_or_pair_id_ele.get_int64().value ) );
-            order_or_pair_id = order_or_pair_id_ele.get_int64().value;
+            //order_or_pair_id = order_or_pair_id_ele.get_int64().value;
+            order_or_pair_id = fc::to_string(order_or_pair_id_ele.get_int32().value);
+         } else if (order_or_pair_id_ele && order_or_pair_id_ele.type() == type::k_utf8) {
+            auto order_or_pair_id_view = order_or_pair_id_ele.get_utf8().value;
+            order_or_pair_id = ::std::string(order_or_pair_id_view.data(), order_or_pair_id_view.size());
+            //ilog( " ins_deal 111111   order_or_pair_id JSON: ${data}", ("data", order_or_pair_id ) );
          } else {
             ilog( " on_cancel 2222   order_or_pair_id unknown type ${type}", ("type", (uint8_t)order_or_pair_id_ele.type()) );
             return false;
@@ -998,8 +1007,8 @@ mongo_db_plugin_impl::upd_order( mongocxx::bulk_write& bulk_actions,
    auto done_data_doc = bsoncxx::builder::basic::document{};
    const chain::action& base = a; // without inline action traces
    bool updated = false;
-   int64_t buy_order_id;
-   int64_t sell_order_id;
+   std::string buy_order_id;
+   std::string sell_order_id;
    asset quantity;
 
    try {
@@ -1012,15 +1021,21 @@ mongo_db_plugin_impl::upd_order( mongocxx::bulk_write& bulk_actions,
          bsoncxx::document::element data_ele{value_view["data"]};  
          bsoncxx::document::view data_view = data_ele.get_document().value;
          bsoncxx::document::element id_ele{value_view["data"]["id"]};
-         int64_t id;
+         std:string id;
          if (id_ele && id_ele.type() == type::k_int32) {
-            ilog( " write_action_data 111111   data_id JSON: ${data}", ("data", id_ele.get_int32().value ) );
-            id = (int64_t)id_ele.get_int32().value;
+            //ilog( " upd_order 111111   id JSON: ${id}", ("id", id_ele.get_int32().value ) );
+            //id = (int64_t)id_ele.get_int32().value;
+            id = fc::to_string(id_ele.get_int32().value);
          } else if (id_ele && id_ele.type() == type::k_int64) {
-            ilog( " write_action_data 111111   data_id JSON: ${data}", ("data", id_ele.get_int64().value ) );
-            id = id_ele.get_int64().value;
+            //ilog( " upd_order 111111   id JSON: ${id}", ("id", id_ele.get_int64().value ) );
+            //id = id_ele.get_int64().value;
+            id = fc::to_string(id_ele.get_int64().value);
+         } else if (id_ele && id_ele.type() == type::k_utf8) {
+            auto id_view = id_ele.get_utf8().value;
+            id = ::std::string(id_view.data(), id_view.size());
+            //ilog( " upd_order 111111   id JSON: ${id}", ("id", id ) );
          } else {
-            ilog( " write_action_data 2222   data_id unknown type ${type}", ("type", (uint8_t)id_ele.type()) );
+            ilog( " upd_order 2222   id unknown type ${type}", ("type", (uint8_t)id_ele.type()) );
             return false;
          }
          
@@ -1034,16 +1049,22 @@ mongo_db_plugin_impl::upd_order( mongocxx::bulk_write& bulk_actions,
          bsoncxx::document::element matched = data_view["quantity"];
          auto  matchedQty = matched.get_utf8().value;
          auto  qty = ::std::string(matchedQty.data(), matchedQty.size());
-         ilog( " upd_order deal quantity JSON : ${data}", ( "data", qty ) );
+         //ilog( " upd_order deal quantity JSON : ${data}", ( "data", qty ) );
          quantity = asset::from_string(qty);
          
          bsoncxx::document::element buy_id_ele{data_view["buy_order_id"]};
          if (buy_id_ele && buy_id_ele.type() == type::k_int32) {
-            ilog( " upd_order 111111   buy_order_id JSON: ${data}", ("data", buy_id_ele.get_int32().value ) );
-            buy_order_id = (int64_t)buy_id_ele.get_int32().value;
+            //ilog( " upd_order 111111   buy_order_id JSON: ${data}", ("data", buy_id_ele.get_int32().value ) );
+            //buy_order_id = (int64_t)buy_id_ele.get_int32().value;
+            buy_order_id = fc::to_string(buy_id_ele.get_int32().value);
          } else if (buy_id_ele && buy_id_ele.type() == type::k_int64) {
-            ilog( " upd_order 111111   buy_order_id JSON: ${data}", ("data", buy_id_ele.get_int64().value ) );
-            buy_order_id = buy_id_ele.get_int64().value;
+            //ilog( " upd_order 111111   buy_order_id JSON: ${data}", ("data", buy_id_ele.get_int64().value ) );
+            //buy_order_id = buy_id_ele.get_int64().value;
+            buy_order_id = fc::to_string(buy_id_ele.get_int64().value);
+         } else if (buy_id_ele && buy_id_ele.type() == type::k_utf8) {
+            auto buy_id_view = buy_id_ele.get_utf8().value;
+            buy_order_id = ::std::string(buy_id_view.data(), buy_id_view.size());
+            //ilog( " upd_order 111111   id JSON: ${id}", ("id", buy_order_id ) );
          } else {
             ilog( " upd_order 2222   buy_order_id unknown type ${type}", ("type", (uint8_t)buy_id_ele.type()) );
             return false;
@@ -1051,11 +1072,17 @@ mongo_db_plugin_impl::upd_order( mongocxx::bulk_write& bulk_actions,
          
          bsoncxx::document::element sell_id_ele{data_view["sell_order_id"]};
          if (sell_id_ele && sell_id_ele.type() == type::k_int32) {
-            ilog( " upd_order 111111   sell_order_id JSON: ${data}", ("data", sell_id_ele.get_int32().value ) );
-            sell_order_id = (uint64_t)sell_id_ele.get_int32().value;
+            //ilog( " upd_order 111111   sell_order_id JSON: ${data}", ("data", sell_id_ele.get_int32().value ) );
+            //sell_order_id = (uint64_t)sell_id_ele.get_int32().value;
+            sell_order_id = fc::to_string(sell_id_ele.get_int32().value);
          } else if (sell_id_ele && sell_id_ele.type() == type::k_int64) {
             ilog( " upd_order 111111   sell_order_id JSON: ${data}", ("data", sell_id_ele.get_int64().value ) );
-            sell_order_id = sell_id_ele.get_int64().value;
+            //sell_order_id = sell_id_ele.get_int64().value;
+            sell_order_id = fc::to_string(sell_id_ele.get_int64().value);
+         } else if (sell_id_ele && sell_id_ele.type() == type::k_utf8) {
+            auto sell_id_view = sell_id_ele.get_utf8().value;
+            sell_order_id = ::std::string(sell_id_view.data(), sell_id_view.size());
+            //ilog( " ins_deal 111111   id JSON: ${id}", ("id", sell_order_id ) );
          } else {
             ilog( " upd_order 2222   sell_order_id unknown type ${type}", ("type", (uint8_t)sell_id_ele.type()) );
             return false;
@@ -1125,8 +1152,23 @@ mongo_db_plugin_impl::upd_order( mongocxx::bulk_write& bulk_actions,
    return updated;
 }
 
+string extract_asset_num(const asset& a) {
+   string sign = a.get_amount() < 0 ? "-" : "";
+   int64_t abs_amount = std::abs(a.get_amount());
+   string result = fc::to_string( static_cast<int64_t>(abs_amount) / a.precision());
+   if( a.decimals() )
+   {
+      auto fract = static_cast<int64_t>(abs_amount) % a.precision();
+      if (fract > 0) {
+         auto fractions = fc::to_string(a.precision() + fract).erase(0,1);
+         result += "." + fractions.substr(0, fractions.find_last_not_of('0') + 1);
+      }
+   }
+   return sign + result;
+}
+
 bool
-mongo_db_plugin_impl::write_action_data( mongocxx::bulk_write& bulk_actions, 
+mongo_db_plugin_impl::ins_order( mongocxx::bulk_write& bulk_actions, 
                                         const chain::action& a,
                                         const chain::transaction_trace_ptr& t)
 {
@@ -1143,7 +1185,7 @@ mongo_db_plugin_impl::write_action_data( mongocxx::bulk_write& bulk_actions,
       auto v = to_variant_with_abi( base );
       
       string json = fc::json::to_string( v );
-      //ilog( " write_action_data JSON: ${j}", ("j", json) );
+      //ilog( " insert_order JSON: ${j}", ("j", json) );
       try {
          const auto& value = bsoncxx::from_json( json );
          bsoncxx::document::view value_view = value.view();
@@ -1151,15 +1193,21 @@ mongo_db_plugin_impl::write_action_data( mongocxx::bulk_write& bulk_actions,
         
          bsoncxx::document::view data_view = data_ele.get_document().value;
          bsoncxx::document::element id_ele{data_view["id"]};
-         int64_t id;
+         std::string id;
          if (id_ele && id_ele.type() == type::k_int32) {
-            //ilog( " write_action_data 111111   data_id JSON: ${data}", ("data", id_ele.get_int32().value ) );
-            id = (uint64_t)id_ele.get_int32().value;
+            //ilog( " insert_order 111111   data_id JSON: ${data}", ("data", id_ele.get_int32().value ) );
+            //id = (uint64_t)id_ele.get_int32().value;
+            id = fc::to_string(id_ele.get_int32().value);
          } else if (id_ele && id_ele.type() == type::k_int64) {
-            //ilog( " write_action_data 111111   data_id JSON: ${data}", ("data", id_ele.get_int64().value ) );
-            id = id_ele.get_int64().value;
+            //ilog( " insert_order 111111   data_id JSON: ${data}", ("data", id_ele.get_int64().value ) );
+            //id = id_ele.get_int64().value;
+            id = fc::to_string(id_ele.get_int64().value);
+         } else if (id_ele && id_ele.type() == type::k_utf8) {
+            auto id_view = id_ele.get_utf8().value;
+            id = ::std::string(id_view.data(), id_view.size());
+            //ilog( " ins_order 111111   id JSON: ${id}", ("id", id ) );
          } else {
-            ilog( " write_action_data:   data_id unknown type ${type}", ("type", (uint8_t)id_ele.type()) );
+            ilog( " insert_order:   id unknown type ${type}", ("type", (uint8_t)id_ele.type()) );
             return false;
          }
          
@@ -1170,11 +1218,122 @@ mongo_db_plugin_impl::write_action_data( mongocxx::bulk_write& bulk_actions,
             _tab = _orders;
          auto act = _tab.find_one( bsoncxx::builder::basic::make_document( kvp("id", id/*id_ele.get_document().value*/) ));
          if (act) {
-            ilog( " write_action_data:  action ${action} with the same id ${id} has already exists!", ("action", base.name)("id", id) );
+            ilog( " insert_order:  action ${action} with the same id ${id} has already exists!", ("action", base.name)("id", id) );
             return false;
          }
-         //ilog( " write_action_data 22222 JSON: ${data}", ("data", bsoncxx::to_json( data_ele.get_document().value ) ) );
+         //ilog( " insert_order 22222 JSON: ${data}", ("data", bsoncxx::to_json( data_ele.get_document().value ) ) );
          done_data_doc.append( bsoncxx::builder::concatenate_doc{data_ele.get_document().value} );
+         
+         // asset to num, "totalQty", "matchedQty", "matchedQty", "price"
+         auto asset_elem = value_view["data"]["totalQty"];
+         auto asset_view = asset_elem.get_utf8().value;
+         auto ass = asset::from_string(::std::string( asset_view.data(), asset_view.size() ) );
+         done_data_doc.append( kvp( "totalQtyNum", extract_asset_num(ass) ),  kvp( "totalQtySym", ass.symbol_name() ));
+         
+         asset_elem = value_view["data"]["matchedQty"];
+         asset_view = asset_elem.get_utf8().value;
+         ass = asset::from_string(::std::string( asset_view.data(), asset_view.size() ) );
+         done_data_doc.append( kvp( "matchedQtyNum", extract_asset_num(ass) ),  kvp( "matchedQtySym", ass.symbol_name() ));
+            
+         asset_elem = value_view["data"]["price"];
+         asset_view = asset_elem.get_utf8().value;
+         ass = asset::from_string(::std::string( asset_view.data(), asset_view.size() ) );
+         done_data_doc.append( kvp( "priceNum", extract_asset_num(ass) ),  kvp( "priceSym", ass.symbol_name() ));
+         
+      } catch( bsoncxx::exception& e) {
+         elog( "Unable to convert transaction JSON to MongoDB JSON: ${e}", ("e", e.what()) );
+         elog( "  JSON: ${j}", ("j", json) );
+         return false;
+      }
+      done_data_doc.append( kvp( "trxId", t->id.str() ) );
+      mongocxx::model::insert_one insert_op{done_data_doc.view()};
+      bulk_actions.append( insert_op );
+      added = true;
+   } catch( ... ) {
+      handle_mongo_exception( "trans_traces serialization: " + t->id.str(), __LINE__ );
+   }
+ 
+   return added;
+}
+
+bool
+mongo_db_plugin_impl::ins_deal( mongocxx::bulk_write& bulk_actions, 
+                                        const chain::action& a,
+                                        const chain::transaction_trace_ptr& t)
+{
+   using namespace bsoncxx::types;
+   using bsoncxx::type;
+   using bsoncxx::builder::basic::kvp;
+   using bsoncxx::builder::basic::make_document;
+
+   auto done_data_doc = bsoncxx::builder::basic::document{};
+   const chain::action& base = a; // without inline action traces
+   bool added = false;
+
+   try {
+      auto v = to_variant_with_abi( base );
+      
+      string json = fc::json::to_string( v );
+      //ilog( " ins_deal JSON: ${j}", ("j", json) );
+      try {
+         const auto& value = bsoncxx::from_json( json );
+         bsoncxx::document::view value_view = value.view();
+         bsoncxx::document::element data_ele{value_view["data"]};  
+        
+         bsoncxx::document::view data_view = data_ele.get_document().value;
+         bsoncxx::document::element id_ele{data_view["id"]};
+         std::string id;
+         if (id_ele && id_ele.type() == type::k_int32) {
+            //ilog( " ins_deal 111111   id JSON: ${id}", ("id", id_ele.get_int32().value ) );
+            //id = (uint64_t)id_ele.get_int32().value;
+            id = fc::to_string(id_ele.get_int32().value);
+         } else if (id_ele && id_ele.type() == type::k_int64) {
+            //ilog( " ins_deal 111111   id JSON: ${id}", ("id", id_ele.get_int64().value ) );
+            //id = id_ele.get_int64().value;
+            id = fc::to_string(id_ele.get_int64().value);
+         } else if (id_ele && id_ele.type() == type::k_utf8) {
+            auto id_view = id_ele.get_utf8().value;
+            id = ::std::string(id_view.data(), id_view.size());
+            //ilog( " ins_deal 111111   id JSON: ${id}", ("id", id ) );
+         } else {
+            ilog( " ins_deal:   data_id unknown type ${type}", ("type", (uint8_t)id_ele.type()) );
+            return false;
+         }
+         
+         mongocxx::collection _tab;
+         if (base.name == N(done))
+            _tab = _deals;
+         else 
+            _tab = _orders;
+         auto act = _tab.find_one( bsoncxx::builder::basic::make_document( kvp("id", id/*id_ele.get_document().value*/) ));
+         if (act) {
+            ilog( " ins_deal:  action ${action} with the same id ${id} has already exists!", ("action", base.name)("id", id) );
+            return false;
+         }
+         //ilog( " ins_deal 22222 JSON: ${data}", ("data", bsoncxx::to_json( data_ele.get_document().value ) ) );
+         done_data_doc.append( bsoncxx::builder::concatenate_doc{data_ele.get_document().value} );
+         
+         // asset to num, "price", "quantity", "buy_fee", "sell_fee"
+         auto asset_elem = value_view["data"]["price"];
+         auto asset_view = asset_elem.get_utf8().value;
+         auto ass = asset::from_string(::std::string( asset_view.data(), asset_view.size() ) );
+         done_data_doc.append( kvp( "priceNum", extract_asset_num(ass) ),  kvp( "priceSym", ass.symbol_name() ));
+         
+         asset_elem = value_view["data"]["quantity"];
+         asset_view = asset_elem.get_utf8().value;
+         ass = asset::from_string(::std::string( asset_view.data(), asset_view.size() ) );
+         done_data_doc.append( kvp( "quantityNum", extract_asset_num(ass) ),  kvp( "quantitySym", ass.symbol_name() ));
+            
+         asset_elem = value_view["data"]["buy_fee"];
+         asset_view = asset_elem.get_utf8().value;
+         ass = asset::from_string(::std::string( asset_view.data(), asset_view.size() ) );
+         done_data_doc.append( kvp( "buy_feeNum", extract_asset_num(ass) ),  kvp( "buy_feeSym", ass.symbol_name() ));
+         
+         asset_elem = value_view["data"]["sell_fee"];
+         asset_view = asset_elem.get_utf8().value;
+         ass = asset::from_string(::std::string( asset_view.data(), asset_view.size() ) );
+         done_data_doc.append( kvp( "sell_feeNum", extract_asset_num(ass) ),  kvp( "sell_feeSym", ass.symbol_name() ));   
+         
       } catch( bsoncxx::exception& e) {
          elog( "Unable to convert transaction JSON to MongoDB JSON: ${e}", ("e", e.what()) );
          elog( "  JSON: ${j}", ("j", json) );
@@ -1198,9 +1357,11 @@ mongo_db_plugin_impl::add_match_action( mongocxx::bulk_write& bulk_actions, cons
    bool added = false;
    
    for( const auto& iline_atrace : atrace.inline_traces ) {
-      if (iline_atrace.act.name == action) {
+      if (iline_atrace.act.name == N(morder)) {
+         added |= ins_order(bulk_actions, iline_atrace.act, t);
+      } else if (iline_atrace.act.name == action) {
          if (op == 1)
-            added |= write_action_data(bulk_actions, iline_atrace.act, t);
+            added |= ins_deal(bulk_actions, iline_atrace.act, t);
          else
             added |= upd_order(bulk_actions, iline_atrace.act, t);
          
