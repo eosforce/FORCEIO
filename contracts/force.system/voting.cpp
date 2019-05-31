@@ -79,7 +79,7 @@ namespace eosiosystem {
          votes_table votes_tbl_temp(_self, voter);
          auto vts_temp = votes_tbl_temp.find(bpname);
          change -= vts_temp->vote;
-         votes_tbl_temp.modify(vts_temp, 0, [&]( vote_info& v ) {
+         votes_tbl_temp.modify(*vts_temp, 0, [&]( vote_info& v ) {
             v.vote = stake;
             if( change < asset{} ) {
                auto fts = freeze_tbl.find(voter);
@@ -102,7 +102,7 @@ namespace eosiosystem {
       const auto& bp = bps_tbl.get(bpname, "bpname is not registered");
       eosio_assert(bp.isactive() || (!bp.isactive() && change < asset{0}), "bp is not active");
 
-      if( change > asset{} ) {
+      if( change > asset(0) ) {
          auto fts = freeze_tbl.find(voter);
          eosio_assert( fts != freeze_tbl.end() && fts->staked >= change, "voter freeze token < vote token" );
          freeze_tbl.modify( fts, 0, [&]( freeze_info& v ) {

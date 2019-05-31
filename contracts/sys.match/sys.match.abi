@@ -61,6 +61,7 @@
         {"name": "pair_id","type": "uint32"},
         {"name": "maker","type": "account_name"},
         {"name": "receiver","type": "account_name"},
+        {"name": "chain","type": "name"},
         {"name": "base","type": "asset"},
         {"name": "price","type": "asset"},
         {"name": "bid_or_ask","type": "uint32"},

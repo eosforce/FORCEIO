@@ -54,7 +54,7 @@ namespace exchange {
       
       void close2(uint32_t pair_id, account_name exc_acc);
 
-      void match( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, uint32_t bid_or_ask, account_name exc_acc, string referer, uint32_t fee_type );
+      void match( uint32_t pair_id, account_name payer, account_name receiver, name chain, asset quantity, asset price, uint32_t bid_or_ask, account_name exc_acc, string referer, uint32_t fee_type );
       
       void cancel(account_name maker, uint32_t type, uint64_t order_or_pair_id);
       
@@ -99,9 +99,9 @@ namespace exchange {
                               uint32_t feeType,
                               time_point_sec timestamp);
       
-      void match_for_bid( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, account_name exc_acc, string referer, uint32_t fee_type);
+      void match_for_bid( uint32_t pair_id, account_name payer, account_name receiver, name chain, asset quantity, asset price, account_name exc_acc, string referer, uint32_t fee_type);
       
-      void match_for_ask( uint32_t pair_id, account_name payer, account_name receiver, asset base, asset price, account_name exc_acc, string referer, uint32_t fee_type);
+      void match_for_ask( uint32_t pair_id, account_name payer, account_name receiver, name chain, asset base, asset price, account_name exc_acc, string referer, uint32_t fee_type);
       
       void mark(name base_chain, symbol_type base_sym, name quote_chain, symbol_type quote_sym);
       
@@ -169,7 +169,7 @@ namespace exchange {
                       uint32_t type,
                       string memo );
                       
-      void inline_match(account_name from, asset quantity, string memo);
+      void inline_match(account_name from, name chain, asset quantity, string memo);
 
       inline void get_pair(uint32_t pair_id, name &base_chain, symbol_type &base_sym, name &quote_chain, symbol_type &quote_sym) const;
       inline symbol_type get_pair_base( uint32_t pair_id ) const;
