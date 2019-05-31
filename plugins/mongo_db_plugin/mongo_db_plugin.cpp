@@ -21,6 +21,7 @@
 #include <boost/thread/condition_variable.hpp>
 
 #include <queue>
+#include <string>
 
 #include <bsoncxx/builder/basic/kvp.hpp>
 #include <bsoncxx/builder/basic/document.hpp>
@@ -115,6 +116,26 @@ public:
    void insert_default_abi();
    bool b_insert_default_abi = false;
 
+   bool on_cancel(const chain::action& a,
+                                        const chain::transaction_trace_ptr& t);
+   bool on_close2(const chain::action& a,
+                                        const chain::transaction_trace_ptr& t);
+   bool on_close(const chain::action_trace& atrace,
+                                        const chain::transaction_trace_ptr& t);
+   bool upd_order( mongocxx::bulk_write& bulk_actions, 
+                                        const chain::action& a,
+                                        const chain::transaction_trace_ptr& t);
+   bool write_action_data( mongocxx::bulk_write& bulk_action_deals, 
+                                        const chain::action& a,
+                                        const chain::transaction_trace_ptr& t );
+   bool add_match_action( mongocxx::bulk_write& bulk_actions, 
+                                        const chain::action_trace& atrace,
+                                        const chain::transaction_trace_ptr& t, name action,
+                                        int op);                                 
+   bool add_match( const chain::action_trace& atrace,
+                                        const chain::transaction_trace_ptr& t);
+   void add_trade( const chain::transaction_trace_ptr& t );
+
    /// @return true if act should be added to mongodb, false to skip it
    bool filter_include( const account_name& receiver, const action_name& act_name,
                         const vector<chain::permission_level>& authorization ) const;
@@ -154,6 +175,8 @@ public:
    mongocxx::collection _blocks;
    mongocxx::collection _pub_keys;
    mongocxx::collection _account_controls;
+   mongocxx::collection _orders;
+   mongocxx::collection _deals;
 
    size_t max_queue_size = 0;
    int queue_sleep_time = 0;
@@ -207,6 +230,8 @@ public:
    static const std::string accounts_col;
    static const std::string pub_keys_col;
    static const std::string account_controls_col;
+   static const std::string orders_col;
+   static const std::string deals_col;
 };
 
 const action_name mongo_db_plugin_impl::newaccount = chain::newaccount::get_name();
@@ -224,6 +249,8 @@ const std::string mongo_db_plugin_impl::action_traces_col = "action_traces";
 const std::string mongo_db_plugin_impl::accounts_col = "accounts";
 const std::string mongo_db_plugin_impl::pub_keys_col = "pub_keys";
 const std::string mongo_db_plugin_impl::account_controls_col = "account_controls";
+const std::string mongo_db_plugin_impl::orders_col = "orderbook";
+const std::string mongo_db_plugin_impl::deals_col = "deals";
 
 bool mongo_db_plugin_impl::filter_include( const account_name& receiver, const action_name& act_name,
                                            const vector<chain::permission_level>& authorization ) const
@@ -408,7 +435,9 @@ void mongo_db_plugin_impl::consume_blocks() {
       _block_states = mongo_conn[db_name][block_states_col];
       _pub_keys = mongo_conn[db_name][pub_keys_col];
       _account_controls = mongo_conn[db_name][account_controls_col];
-      insert_default_abi();
+      _orders = mongo_conn[db_name][orders_col];
+      _deals = mongo_conn[db_name][deals_col];
+      //insert_default_abi();
       while (true) {
          boost::mutex::scoped_lock lock(mtx);
          while ( transaction_metadata_queue.empty() &&
@@ -647,6 +676,18 @@ optional<abi_serializer> mongo_db_plugin_impl::get_abi_serializer( account_name 
                      }
                   }
                }
+               // mongo does not like empty json keys
+               // make abi_serializer use empty_name instead of "" for the action data
+               for( auto& s : abi.structs ) {
+                  if( s.name.empty() ) {
+                     s.name = "empty_struct_name";
+                  }
+                  for( auto& f : s.fields ) {
+                     if( f.name.empty() ) {
+                        f.name = "empty_field_name";
+                     }
+                  }
+               }
                abis.set_abi( abi, abi_serializer_max_time );
                entry.serializer.emplace( std::move( abis ) );
                abi_cache_index.insert( entry );
@@ -798,7 +839,455 @@ void mongo_db_plugin_impl::_process_accepted_transaction( const chain::transacti
    } catch( ... ) {
       handle_mongo_exception( "trans insert", __LINE__ );
    }
+}
 
+bool
+mongo_db_plugin_impl::on_cancel(const chain::action& a,
+                                        const chain::transaction_trace_ptr& t)
+{
+   using namespace bsoncxx::types;
+   using bsoncxx::type;
+   using bsoncxx::builder::basic::kvp;
+   using bsoncxx::builder::basic::make_document;
+
+   auto done_data_doc = bsoncxx::builder::basic::document{};
+   const chain::action& base = a; // without inline action traces
+   bool updated = false;
+   std::string maker;
+   int32_t type;
+   int64_t order_or_pair_id;
+
+   try {
+      auto v = to_variant_with_abi( base );
+      
+      string json = fc::json::to_string( v );
+      ilog( " on_cancel JSON: ${j}", ("j", json) );
+      try {
+         const auto& value = bsoncxx::from_json( json );
+         bsoncxx::document::view value_view = value.view();
+         bsoncxx::document::element data_ele{value_view["data"]};  
+         ilog( " on_cancel data JSON : ${data}", ("data", bsoncxx::to_json( data_ele.get_document().value ) ) );
+         bsoncxx::document::view data_view = data_ele.get_document().value;
+         bsoncxx::document::element maker_ele{value_view["data"]["maker"]};
+         auto  maker_view = maker_ele.get_utf8().value;
+         maker = ::std::string(maker_view.data(), maker_view.size());
+         ilog( " on_cancel deal maker JSON : ${maker}", ( "maker", maker ) );
+         bsoncxx::document::element type_ele{value_view["data"]["type"]};
+         if (type_ele && type_ele.type() == type::k_int32) {
+            ilog( " on_cancel 111111   type JSON: ${data}", ("data", type_ele.get_int32().value ) );
+            type = (int64_t)type_ele.get_int32().value;
+         } else {
+            ilog( " on_cancel 2222   data_id unknown type ${type}", ("type", (uint8_t)type_ele.type()) );
+            return false;
+         }
+         
+         bsoncxx::document::element order_or_pair_id_ele{value_view["data"]["order_or_pair_id"]};
+         if (order_or_pair_id_ele && order_or_pair_id_ele.type() == type::k_int32) {
+            ilog( " on_cancel 111111   order_or_pair_id JSON: ${data}", ("data", order_or_pair_id_ele.get_int32().value ) );
+            order_or_pair_id = (int64_t)order_or_pair_id_ele.get_int32().value;
+         } else if (order_or_pair_id_ele && order_or_pair_id_ele.type() == type::k_int64) {
+            ilog( " on_cancel 111111   order_or_pair_id JSON: ${data}", ("data", order_or_pair_id_ele.get_int64().value ) );
+            order_or_pair_id = order_or_pair_id_ele.get_int64().value;
+         } else {
+            ilog( " on_cancel 2222   order_or_pair_id unknown type ${type}", ("type", (uint8_t)order_or_pair_id_ele.type()) );
+            return false;
+         }
+      } catch( bsoncxx::exception& ) {
+         elog( " on_cancel error, JSON: ${j}", ("j", json) );
+         return false;
+      }
+      
+      auto filter = make_document(kvp("1", 1));
+      if (type == 0) {
+         filter = make_document(kvp("from", maker), kvp("id", order_or_pair_id));
+      } else if (type == 1) {
+         filter = make_document(kvp("from", maker), kvp("pairId", order_or_pair_id));
+      } else {
+         filter = make_document(kvp("from", maker));
+      }
+      auto updated_doc = make_document(kvp("$set", make_document(kvp("status", 4) )));
+     
+      _orders.update_one( filter.view(), updated_doc.view() );
+      updated = true;
+   } catch( ... ) {
+      handle_mongo_exception( "trans_traces serialization: " + t->id.str(), __LINE__ );
+   }
+   
+   return updated;
+}
+
+bool
+mongo_db_plugin_impl::on_close2(const chain::action& a,
+                                        const chain::transaction_trace_ptr& t)
+{
+   using namespace bsoncxx::types;
+   using bsoncxx::type;
+   using bsoncxx::builder::basic::kvp;
+   using bsoncxx::builder::basic::make_document;
+   using bsoncxx::builder::basic::make_array;
+
+   auto done_data_doc = bsoncxx::builder::basic::document{};
+   const chain::action& base = a; // without inline action traces
+   bool updated = false;
+   std::string exc_acc;
+   int32_t pair_id;
+
+   try {
+      auto v = to_variant_with_abi( base );
+      
+      string json = fc::json::to_string( v );
+      try {
+         const auto& value = bsoncxx::from_json( json );
+         bsoncxx::document::view value_view = value.view();
+         bsoncxx::document::element data_ele{value_view["data"]};  
+         ilog( " on_close2 data JSON : ${data}", ("data", bsoncxx::to_json( data_ele.get_document().value ) ) );
+         bsoncxx::document::view data_view = data_ele.get_document().value;
+         bsoncxx::document::element exc_acc_ele{value_view["data"]["exc_acc"]};
+         auto  exc_acc_view = exc_acc_ele.get_utf8().value;
+         exc_acc = ::std::string(exc_acc_view.data(), exc_acc_view.size());
+         bsoncxx::document::element pair_id_ele{value_view["data"]["pair_id"]};
+         if (pair_id_ele && pair_id_ele.type() == type::k_int32) {
+            pair_id = pair_id_ele.get_int32().value;
+         } else {
+            ilog( " on_close2 2222   pair_id unknown type ${type}", ("type", (uint8_t)pair_id_ele.type()) );
+            return false;
+         }
+      } catch( bsoncxx::exception& ) {
+         elog( " on_close2 error, JSON: ${j}", ("j", json) );
+         return false;
+      }
+      auto filter = make_document(kvp("dexAccount", exc_acc), kvp("pairId", pair_id), kvp("status", make_document(kvp("$in", make_array(1, 2)))));
+      auto updated_doc = make_document(kvp("$set", make_document(kvp("status", 5) )));
+
+      _orders.update_one( filter.view(), updated_doc.view() );
+      updated = true;
+   } catch( ... ) {
+      handle_mongo_exception( "on_close2: trans_traces serialization: " + t->id.str(), __LINE__ );
+   }
+   
+   return updated;
+}
+
+bool
+mongo_db_plugin_impl::on_close(const chain::action_trace& atrace,
+                                        const chain::transaction_trace_ptr& t)
+{
+   bool added = false;
+   
+   for( const auto& iline_atrace : atrace.inline_traces ) {
+      if (iline_atrace.act.name == N(close2)) {
+         on_close2(iline_atrace.act, t);
+         continue;
+      }
+      added |= on_close( iline_atrace, t );
+   }
+  
+   return added;
+}
+
+bool
+mongo_db_plugin_impl::upd_order( mongocxx::bulk_write& bulk_actions, 
+                                        const chain::action& a,
+                                        const chain::transaction_trace_ptr& t)
+{
+   using namespace bsoncxx::types;
+   using bsoncxx::type;
+   using bsoncxx::builder::basic::kvp;
+   using bsoncxx::builder::basic::make_document;
+
+   auto done_data_doc = bsoncxx::builder::basic::document{};
+   const chain::action& base = a; // without inline action traces
+   bool updated = false;
+   int64_t buy_order_id;
+   int64_t sell_order_id;
+   asset quantity;
+
+   try {
+      auto v = to_variant_with_abi( base );
+      
+      string json = fc::json::to_string( v );
+      try {
+         const auto& value = bsoncxx::from_json( json );
+         bsoncxx::document::view value_view = value.view();
+         bsoncxx::document::element data_ele{value_view["data"]};  
+         bsoncxx::document::view data_view = data_ele.get_document().value;
+         bsoncxx::document::element id_ele{value_view["data"]["id"]};
+         int64_t id;
+         if (id_ele && id_ele.type() == type::k_int32) {
+            ilog( " write_action_data 111111   data_id JSON: ${data}", ("data", id_ele.get_int32().value ) );
+            id = (int64_t)id_ele.get_int32().value;
+         } else if (id_ele && id_ele.type() == type::k_int64) {
+            ilog( " write_action_data 111111   data_id JSON: ${data}", ("data", id_ele.get_int64().value ) );
+            id = id_ele.get_int64().value;
+         } else {
+            ilog( " write_action_data 2222   data_id unknown type ${type}", ("type", (uint8_t)id_ele.type()) );
+            return false;
+         }
+         
+         mongocxx::collection _tab;
+         auto _deal = _deals.find_one( bsoncxx::builder::basic::make_document( kvp("id", id/*id_ele.get_document().value*/) ));
+         if (_deal) {
+            ilog( " upd_order:  action ${action}, deal id ${id} has already been processed!", ("action", base.name)("id", id) );
+            return false;
+         }
+            
+         bsoncxx::document::element matched = data_view["quantity"];
+         auto  matchedQty = matched.get_utf8().value;
+         auto  qty = ::std::string(matchedQty.data(), matchedQty.size());
+         ilog( " upd_order deal quantity JSON : ${data}", ( "data", qty ) );
+         quantity = asset::from_string(qty);
+         
+         bsoncxx::document::element buy_id_ele{data_view["buy_order_id"]};
+         if (buy_id_ele && buy_id_ele.type() == type::k_int32) {
+            ilog( " upd_order 111111   buy_order_id JSON: ${data}", ("data", buy_id_ele.get_int32().value ) );
+            buy_order_id = (int64_t)buy_id_ele.get_int32().value;
+         } else if (buy_id_ele && buy_id_ele.type() == type::k_int64) {
+            ilog( " upd_order 111111   buy_order_id JSON: ${data}", ("data", buy_id_ele.get_int64().value ) );
+            buy_order_id = buy_id_ele.get_int64().value;
+         } else {
+            ilog( " upd_order 2222   buy_order_id unknown type ${type}", ("type", (uint8_t)buy_id_ele.type()) );
+            return false;
+         }
+         
+         bsoncxx::document::element sell_id_ele{data_view["sell_order_id"]};
+         if (sell_id_ele && sell_id_ele.type() == type::k_int32) {
+            ilog( " upd_order 111111   sell_order_id JSON: ${data}", ("data", sell_id_ele.get_int32().value ) );
+            sell_order_id = (uint64_t)sell_id_ele.get_int32().value;
+         } else if (sell_id_ele && sell_id_ele.type() == type::k_int64) {
+            ilog( " upd_order 111111   sell_order_id JSON: ${data}", ("data", sell_id_ele.get_int64().value ) );
+            sell_order_id = sell_id_ele.get_int64().value;
+         } else {
+            ilog( " upd_order 2222   sell_order_id unknown type ${type}", ("type", (uint8_t)sell_id_ele.type()) );
+            return false;
+         }
+         
+         EOS_ASSERT( buy_order_id != sell_order_id, chain::mongo_db_insert_fail, 
+               "buy_order_id ${buy_order_id} can not be same with sell_order_id ${sell_order_id}", ("buy_order_id", buy_order_id)("sell_order_id", sell_order_id) );
+      } catch( bsoncxx::exception& ) {
+         elog( " upd_order error, JSON: ${j}", ("j", json) );
+         return false;
+      }
+      // buy order
+      auto order = _orders.find_one( bsoncxx::builder::basic::make_document( kvp("id", buy_order_id) ));
+      if (!order) {
+         ilog( " upd_order:  can not find the buy order in orderbook, action ${action}, id ${id}", ("action", base.name)("id", buy_order_id) );
+         return false;
+      }
+      auto order_view = order->view();
+      bsoncxx::document::element total_qty_elem = order_view["totalQty"];
+      auto total_qty_view = total_qty_elem.get_utf8().value;
+      auto total_qty = asset::from_string(::std::string( total_qty_view.data(), total_qty_view.size() ) );
+      bsoncxx::document::element order_qty_elem = order_view["matchedQty"];
+      auto order_qty_view = order_qty_elem.get_utf8().value;
+      auto  order_qty = asset::from_string(::std::string( order_qty_view.data(), order_qty_view.size() ) );
+      auto filter = make_document(kvp("id", buy_order_id));
+      order_qty += quantity;
+      //ilog( " upd_order buy order deal quantity -------- JSON : ${data},  order_qty ${order_qty}", ( "data", quantity )("order_qty", order_qty) );
+      auto updated_doc = make_document(kvp("1", 1));
+      if (order_qty == total_qty) {
+         updated_doc = make_document(kvp("$set", make_document( kvp("matchedQty", order_qty.to_string()), kvp("status", 3) )));
+      } else {
+         updated_doc = make_document(kvp("$set", make_document( kvp("matchedQty", order_qty.to_string()), kvp("status", 2) )));
+      }
+      _orders.update_one(filter.view(), updated_doc.view());
+      //mongocxx::model::update_one update_op{filter.view(), updated_doc.view()};
+      //bulk_actions.append( update_op );
+      //updated = true;
+      
+      // sell order
+      order = _orders.find_one( bsoncxx::builder::basic::make_document( kvp("id", sell_order_id) ));
+      if (!order) {
+         ilog( " upd_order:  can not find the sell order in orderbook, action ${action}, id ${id}", ("action", base.name)("id", sell_order_id) );
+         return false;
+      }
+      order_view = order->view();
+      total_qty_elem = order_view["totalQty"];
+      total_qty_view = total_qty_elem.get_utf8().value;
+      total_qty = asset::from_string(::std::string( total_qty_view.data(), total_qty_view.size() ) );
+      order_qty_elem = order_view["matchedQty"];
+      order_qty_view = order_qty_elem.get_utf8().value;
+      order_qty = asset::from_string(::std::string( order_qty_view.data(), order_qty_view.size() ) );
+      filter = make_document(kvp("id", sell_order_id));
+      order_qty += quantity;
+      ilog( " upd_order sell order deal quantity -------- JSON : ${data},  order_qty ${order_qty}", ( "data", quantity )("order_qty", order_qty) );
+      if (order_qty == total_qty) {
+         updated_doc = make_document(kvp("$set", make_document( kvp("matchedQty", order_qty.to_string()), kvp("status", 3) )));
+      } else {
+         updated_doc = make_document(kvp("$set", make_document(kvp("matchedQty", order_qty.to_string()), kvp("status", 2) )));
+      }
+      _orders.update_one(filter.view(), updated_doc.view());
+      //update_op = mongocxx::model::update_one{filter.view(), updated_doc.view()};
+      //bulk_actions.append( update_op );
+   } catch( ... ) {
+      handle_mongo_exception( "trans_traces serialization: " + t->id.str(), __LINE__ );
+   }
+   
+   return updated;
+}
+
+bool
+mongo_db_plugin_impl::write_action_data( mongocxx::bulk_write& bulk_actions, 
+                                        const chain::action& a,
+                                        const chain::transaction_trace_ptr& t)
+{
+   using namespace bsoncxx::types;
+   using bsoncxx::type;
+   using bsoncxx::builder::basic::kvp;
+   using bsoncxx::builder::basic::make_document;
+
+   auto done_data_doc = bsoncxx::builder::basic::document{};
+   const chain::action& base = a; // without inline action traces
+   bool added = false;
+
+   try {
+      auto v = to_variant_with_abi( base );
+      
+      string json = fc::json::to_string( v );
+      //ilog( " write_action_data JSON: ${j}", ("j", json) );
+      try {
+         const auto& value = bsoncxx::from_json( json );
+         bsoncxx::document::view value_view = value.view();
+         bsoncxx::document::element data_ele{value_view["data"]};  
+        
+         bsoncxx::document::view data_view = data_ele.get_document().value;
+         bsoncxx::document::element id_ele{data_view["id"]};
+         int64_t id;
+         if (id_ele && id_ele.type() == type::k_int32) {
+            //ilog( " write_action_data 111111   data_id JSON: ${data}", ("data", id_ele.get_int32().value ) );
+            id = (uint64_t)id_ele.get_int32().value;
+         } else if (id_ele && id_ele.type() == type::k_int64) {
+            //ilog( " write_action_data 111111   data_id JSON: ${data}", ("data", id_ele.get_int64().value ) );
+            id = id_ele.get_int64().value;
+         } else {
+            ilog( " write_action_data:   data_id unknown type ${type}", ("type", (uint8_t)id_ele.type()) );
+            return false;
+         }
+         
+         mongocxx::collection _tab;
+         if (base.name == N(done))
+            _tab = _deals;
+         else 
+            _tab = _orders;
+         auto act = _tab.find_one( bsoncxx::builder::basic::make_document( kvp("id", id/*id_ele.get_document().value*/) ));
+         if (act) {
+            ilog( " write_action_data:  action ${action} with the same id ${id} has already exists!", ("action", base.name)("id", id) );
+            return false;
+         }
+         //ilog( " write_action_data 22222 JSON: ${data}", ("data", bsoncxx::to_json( data_ele.get_document().value ) ) );
+         done_data_doc.append( bsoncxx::builder::concatenate_doc{data_ele.get_document().value} );
+      } catch( bsoncxx::exception& e) {
+         elog( "Unable to convert transaction JSON to MongoDB JSON: ${e}", ("e", e.what()) );
+         elog( "  JSON: ${j}", ("j", json) );
+         return false;
+      }
+      done_data_doc.append( kvp( "trxId", t->id.str() ) );
+      mongocxx::model::insert_one insert_op{done_data_doc.view()};
+      bulk_actions.append( insert_op );
+      added = true;
+   } catch( ... ) {
+      handle_mongo_exception( "trans_traces serialization: " + t->id.str(), __LINE__ );
+   }
+ 
+   return added;
+}
+
+bool
+mongo_db_plugin_impl::add_match_action( mongocxx::bulk_write& bulk_actions, const chain::action_trace& atrace,
+                                        const chain::transaction_trace_ptr& t, name action, int op)
+{
+   bool added = false;
+   
+   for( const auto& iline_atrace : atrace.inline_traces ) {
+      if (iline_atrace.act.name == action) {
+         if (op == 1)
+            added |= write_action_data(bulk_actions, iline_atrace.act, t);
+         else
+            added |= upd_order(bulk_actions, iline_atrace.act, t);
+         
+         continue;
+      }
+      added |= add_match_action( bulk_actions, iline_atrace, t, action, op );
+   }
+  
+   return added;
+}
+
+bool
+mongo_db_plugin_impl::add_match( const chain::action_trace& atrace,
+                                        const chain::transaction_trace_ptr& t)
+{
+   using namespace bsoncxx::types;
+   using bsoncxx::builder::basic::kvp;
+
+   bool added = false;
+
+   mongocxx::options::bulk_write bulk_opts;
+   bulk_opts.ordered(false);
+   mongocxx::bulk_write bulk_action_orders = _orders.create_bulk_write(bulk_opts);
+   mongocxx::bulk_write bulk_action_deals = _deals.create_bulk_write(bulk_opts);
+   bool write_data = false;
+   
+   write_data |= add_match_action( bulk_action_orders, atrace, t, N(morder), 1 );
+   if (write_data) {
+      // insert deals
+      try {
+         if( !bulk_action_orders.execute() ) {
+            EOS_ASSERT( false, chain::mongo_db_insert_fail,
+                        "Bulk action traces insert failed for transaction trace: ${id}", ("id", t->id) );
+         }
+      } catch( ... ) {
+         handle_mongo_exception( "action orders insert", __LINE__ );
+      }
+   }
+   
+   write_data = false;
+   write_data |= add_match_action( bulk_action_orders, atrace, t, N(done), 2 );
+   if (write_data) {
+      // insert deals
+      try {
+         if( !bulk_action_orders.execute() ) {
+            EOS_ASSERT( false, chain::mongo_db_insert_fail,
+                        "Bulk action traces insert failed for transaction trace: ${id}", ("id", t->id) );
+         }
+      } catch( ... ) {
+         handle_mongo_exception( "action orders update", __LINE__ );
+      }
+   }
+
+   write_data = false;
+   write_data |= add_match_action( bulk_action_deals, atrace, t, N(done), 1 );
+   if (write_data) {
+      // insert deals
+      try {
+         if( !bulk_action_deals.execute() ) {
+            EOS_ASSERT( false, chain::mongo_db_insert_fail,
+                        "Bulk action traces insert failed for transaction trace: ${id}", ("id", t->id) );
+         }
+      } catch( ... ) {
+         handle_mongo_exception( "action deals insert", __LINE__ );
+      }
+   }
+
+   return added;
+}
+
+void
+mongo_db_plugin_impl::add_trade( const chain::transaction_trace_ptr& t )
+{
+   for( const auto& atrace : t->action_traces ) {
+      try {
+         if (atrace.act.account == N(sys.match) && atrace.act.name == N(cancel))
+            on_cancel(atrace.act, t);
+         else if (atrace.act.account == N(sys.match) && atrace.act.name == N(close2))
+            on_close2(atrace.act, t);
+         else if (atrace.act.account == N(sys.match) && atrace.act.name == N(close))
+            on_close(atrace, t);
+         else if ( (atrace.act.account == N(relay.token) || atrace.act.account == N(force.token)) && atrace.act.name == N(trade))
+            add_match( atrace, t );
+      } catch(...) {
+         handle_mongo_exception("add_trade", __LINE__);
+      }
+   }
 }
 
 bool
@@ -928,6 +1417,7 @@ void mongo_db_plugin_impl::_process_applied_transaction( const chain::transactio
       }
    }
 
+   add_trade(t);
 }
 
 void mongo_db_plugin_impl::_process_accepted_block( const chain::block_state_ptr& bs ) {
@@ -1367,6 +1857,8 @@ void mongo_db_plugin_impl::wipe_database() {
    auto accounts = mongo_conn[db_name][accounts_col];
    auto pub_keys = mongo_conn[db_name][pub_keys_col];
    auto account_controls = mongo_conn[db_name][account_controls_col];
+   auto orders = mongo_conn[db_name][orders_col];
+   auto deals = mongo_conn[db_name][deals_col];
 
    block_states.drop();
    blocks.drop();
@@ -1376,6 +1868,8 @@ void mongo_db_plugin_impl::wipe_database() {
    accounts.drop();
    pub_keys.drop();
    account_controls.drop();
+   orders.drop();
+   deals.drop();
    ilog("done wipe_database");
 }
 
@@ -1535,6 +2029,18 @@ void mongo_db_plugin_impl::init() {
             account_controls.create_index(
                   bsoncxx::from_json( R"xxx({ "controlled_account" : 1, "controlled_permission" : 1 })xxx" ));
             account_controls.create_index( bsoncxx::from_json( R"xxx({ "controlling_account" : 1 })xxx" ));
+               
+            // orderbook indexes
+            auto orders = mongo_conn[db_name][orders_col];
+            orders.create_index( bsoncxx::from_json( R"xxx({ "id" : 1 })xxx" ));
+            orders.create_index(
+                  bsoncxx::from_json( R"xxx({ "from" : 1, "id" : 1 })xxx" ));
+            orders.create_index(
+                  bsoncxx::from_json( R"xxx({ "from" : 1, "pairId" : 1 })xxx" ));
+            
+            // deals indexes
+            auto deals = mongo_conn[db_name][deals_col];
+            deals.create_index( bsoncxx::from_json( R"xxx({ "id" : 1 })xxx" ));
 
          } catch (...) {
             handle_mongo_exception( "create indexes", __LINE__ );
