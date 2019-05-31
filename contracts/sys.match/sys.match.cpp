@@ -203,7 +203,7 @@ namespace exchange {
       // for mongodb plugin parse
       action(
             permission_level{ exc_acc, N(active) },
-            N(sys.match), N(close2),
+            config::match_account_name, N(close2),
             std::make_tuple(pair_id, exc_acc)
       ).send();
    }
@@ -373,7 +373,7 @@ namespace exchange {
       
       action(
             permission_level{ taker_exc_acc, N(active) },
-            N(sys.match), N(morder),
+            config::match_account_name, N(morder),
             std::make_tuple(order_id, payer, escrow, chain, quantity, 1, receiver, 
                price, pair_id, direction, taker_exc_acc, referer, feeType, asset(0, quantity.symbol), 
                timestamp, 1)
