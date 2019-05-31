@@ -287,13 +287,13 @@ namespace exchange {
          }
          
          get_pair(lower->pair_id, base_chain, base_sym, quote_chain, quote_sym);
-         if ( base_sym.name() == quantity.symbol.name() || quote_sym.name() == quantity.symbol.name() ) {
+         if ( ( base_chain == name{} && base_sym.name() == quantity.symbol.name() ) || ( quote_chain == name{} && quote_sym.name() == quantity.symbol.name() ) ) {
             eosio_assert(false, "have pending orders, can not withdraw!");
          }
       }
       quantity = to_asset(relay_token_acc, name{}, quantity.symbol, quantity);
       
-      inline_transfer( escrow, to, eosio::name{.value=0}, quantity, "" );
+      inline_transfer( escrow, to, name{}, quantity, "" );
       
       sub_balance( to, quantity );
    }
@@ -1446,8 +1446,10 @@ namespace exchange {
                  std::make_tuple(smm.pair_id, from, smm.receiver, chain, quantity, smm.price, smm.bid_or_ask, smm.exc_acc, smm.referer, smm.fee_type)
          ).send();
       } else if (smm.transfer_type == 2) { // points
+         eosio_assert(chain == name{}, "must be issued by system token contract!");
          add_balance( from, to_asset(relay_token_acc, name{}, quantity.symbol, quantity) , from );
       } else {
+         eosio_assert(chain == name{} && symbol_type{CORE_SYMBOL}.name() == quantity.symbol.name(), "freezed asset is not system core coin!");
          freeze4(from, smm.action, smm.pair_id, to_asset(relay_token_acc, name{}, quantity.symbol, quantity));
       }
    }
