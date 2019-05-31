@@ -138,19 +138,19 @@ def stepMakeGenesis():
 
 def createMap(chain, pubKeys):
     cleos(('set account permission %s active ' + 
-          '\'{"threshold": 1,"keys": [{"key": "%s","weight": 1}],"accounts": [{"permission":{"actor":"relay.token","permission":"force.code"},"weight":1}]}\'') % 
-          (chain, pubKeys['eosforce']))
-    pushAction("force.relay", "newchannel", chain, 
+          '\'{"threshold": 1,"keys": [{"key": "%s","weight": 1}],"accounts": [{"permission":{"actor":"%s","permission":"%s"},"weight":1}]}\'') % 
+          (chain, pubKeys['eosforce'], relay_token_name, code_account_name))
+    pushAction(relay_account_name, "newchannel", chain, 
         '{"chain":"%s","checker":"biosbpa","id":"","mroot":""}' % (chain))
 
 def createMapTokenHandler(chain, typ_name, side_contract, token_account):
-    pushAction( "force.relay",
+    pushAction( relay_account_name,
                 "newmap",
                 chain,
-                '{"chain":"%s","type":"%s","id":"","act_account":"%s","act_name":"transfer","account":"relay.token","relayacc":"%s","data":""}' % (chain, typ_name, token_account, side_contract))
+                '{"chain":"%s","type":"%s","id":"","act_account":"%s","act_name":"transfer","account":"%s","relayacc":"%s","data":""}' % (chain, typ_name, token_account, relay_token_name, side_contract))
 
 def createMapToken(chain, side_acc, asset):
-    pushAction('relay.token', 'create', chain,
+    pushAction(relay_token_name, 'create', chain,
         '{"issuer":"%s","chain":"%s","side_account":"%s","side_action":"%s","maximum_supply":"%s"}' % (chain, chain, side_acc, 'transfer', asset))
 
 def stepSetFuncs():
@@ -164,9 +164,9 @@ def stepSetFuncs():
     for a in datas.initAccounts:
         pubKeys[a['name']] = str(a['key'])
 
-    setContract('relay.token')
-    setContract('sys.bridge')
-    setContract('sys.match')
+    setContractByPath(relay_token_name, 'relay.token')
+    setContractByPath(bridge_account_name, 'sys.bridge')
+    setContractByPath(match_account_name, 'sys.match')
 
     getRAM('eosforce', 10000 * 10000)
     getRAM('testa', 10000 * 10000)
@@ -178,10 +178,10 @@ def stepSetFuncs():
     getRAM('testg', 10000 * 10000)
 
     createMap("forceio", pubKeys)
-    createMapTokenHandler('forceio','force.token','rs','force.token')
-    createMapToken('forceio','force.token', "10000000.0000 EOS")
-    createMapToken('forceio','force.token', "10000000.0000 SYS")
-    createMapToken('forceio','force.token', "10000000.0000 SSS")
+    createMapTokenHandler('forceio',token_account_name,'rs',token_account_name)
+    createMapToken('forceio',token_account_name, "10000000.0000 EOS")
+    createMapToken('forceio',token_account_name, "10000000.0000 SYS")
+    createMapToken('forceio',token_account_name, "10000000.0000 SSS")
 
     createMap("eosforce", pubKeys)
     createMapTokenHandler('eosforce','eosforce.t','rs','eosio.token')

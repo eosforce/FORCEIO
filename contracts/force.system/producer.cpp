@@ -4,8 +4,6 @@
 #include <cmath>
 
 namespace eosiosystem {
-    const account_name SYS_MATCH = N(sys.match);
-    
     void system_contract::onblock( const block_timestamp, const account_name bpname, const uint16_t, const block_id_type,
                                   const checksum256, const checksum256, const uint32_t schedule_version ) {
       bps_table bps_tbl(_self, _self);
@@ -250,7 +248,7 @@ namespace eosiosystem {
    void system_contract::reward_mines(const int64_t reward_amount) {
       eosio::action(
          vector<eosio::permission_level>{{_self,N(active)}},
-         N(relay.token),
+         config::relay_token_account_name,
          N(rewardmine),
          std::make_tuple(
             asset(reward_amount)
@@ -455,8 +453,8 @@ namespace eosiosystem {
    int128_t system_contract::get_coin_power() {
 
       int128_t total_power = 0;
-      rewards coin_reward(N(relay.token),N(relay.token));
-      exchange::exchange t(SYS_MATCH);
+      rewards coin_reward(config::relay_token_account_name, config::relay_token_account_name);
+      exchange::exchange t(config::match_account_name);
       auto current_block = current_block_num();
       for( auto it = coin_reward.cbegin(); it != coin_reward.cend(); ++it ) {
          if (!it->reward_now) continue;

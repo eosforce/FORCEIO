@@ -90,7 +90,7 @@ void token::castcoin( account_name from,
                       account_name to,
                       asset        quantity)
 {
-   eosio_assert( from == ::config::reward_account_name, "only the account force.reward can cast coin to others" );
+   eosio_assert( from == ::config::reward_account_name, "only the account reward can cast coin to others" );
    require_auth( from );
 
    eosio_assert( is_account( to ), "to account does not exist");
@@ -170,8 +170,6 @@ void token::closecast(account_name to,int32_t finish_block) {
 }
 
 void token::fee( account_name payer, asset quantity ){
-   const auto fee_account = N(force.fee);
-
    require_auth( payer );
 
    auto sym = quantity.symbol.name();
@@ -183,7 +181,7 @@ void token::fee( account_name payer, asset quantity ){
    eosio_assert( quantity.symbol == st.supply.symbol, "symbol precision mismatch" );
 
    sub_balance( payer, quantity );
-   add_balance( fee_account, quantity, payer );
+   add_balance( config::fee_account_name, quantity, payer );
 }
 
 void token::sub_balance( account_name owner, asset value ) {
@@ -222,37 +220,37 @@ void token::trade(account_name from,
                   asset quantity,
                   func_type type,
                   string memo ) {
-   if (type == func_type::bridge_addmortgage && to == SYS_BRIDGE) {
+   if (type == func_type::bridge_addmortgage && to == config::bridge_account_name) {
       transfer(from, to,  quantity, memo);
       
       sys_bridge_addmort bri_add;
       bri_add.parse(memo);
       
       eosio::action(
-         vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
-         SYS_BRIDGE,
+         vector<eosio::permission_level>{{ config::bridge_account_name, N(active) }},
+         config::bridge_account_name,
          N(addmortgage),
          std::make_tuple(
                bri_add.trade_name.value,bri_add.trade_maker,from,N(self),quantity,bri_add.type
          )
       ).send();
    }
-   else if (type == func_type::bridge_exchange && to == SYS_BRIDGE) {
+   else if (type == func_type::bridge_exchange && to == config::bridge_account_name) {
       transfer(from, to, quantity, memo);
 
       sys_bridge_exchange bri_exchange;
       bri_exchange.parse(memo);
 
       eosio::action(
-         vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
-         SYS_BRIDGE,
+         vector<eosio::permission_level>{{ config::bridge_account_name, N(active) }},
+         config::bridge_account_name,
          N(exchange),
          std::make_tuple(
             bri_exchange.trade_name.value,bri_exchange.trade_maker,from,bri_exchange.recv,N(self),quantity,bri_exchange.type
          )
       ).send();
    }
-   else if(type == func_type::match && to == N(sys.match)) {
+   else if(type == func_type::match && to == config::match_account_name) {
       SEND_INLINE_ACTION(*this, transfer, { from, N(active) }, { from, to, quantity, memo });
    }
    else {

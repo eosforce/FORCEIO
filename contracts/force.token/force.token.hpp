@@ -39,7 +39,6 @@ namespace eosio {
       trade_type_count
    };
 
-   const account_name SYS_BRIDGE = N(sys.bridge);
    #ifdef BEFORE_ONLINE_TEST   
    static constexpr uint32_t PRE_CAST_NUM = 28800;
    static constexpr uint32_t STABLE_CAST_NUM = 7200;

@@ -135,13 +135,13 @@ def stepMakeGenesis():
     run('mv ./sigkey.json ' + datas.config_dir + '/keys/')
 
 def createMap(chain, token_account):
-    pushAction("force.relay", "newchannel", "eosforce", 
+    pushAction(relay_account_name, "newchannel", "eosforce", 
         '{"chain":"%s","checker":"biosbpa","id":"","mroot":""}' % (chain))
-    pushAction("force.relay", "newmap", "eosforce", 
+    pushAction(relay_account_name, "newmap", "eosforce", 
         '{"chain":"%s","type":"token","id":"","act_account":"%s","act_name":"transfer","account":"relay.token","data":""}' % (chain, token_account))
 
 def createMapToken(chain, issuer, asset):
-    pushAction('force.token', 'create', issuer,
+    pushAction(token_account_name, 'create', issuer,
         '{"issuer":"%s","chain":"%s","maximum_supply":"%s"}' % (issuer,chain,asset))
 
 

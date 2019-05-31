@@ -33,7 +33,9 @@
 #include <mongocxx/pool.hpp>
 #include <mongocxx/exception/operation_exception.hpp>
 #include <mongocxx/exception/logic_error.hpp>
+
 #include <eosio/chain/genesis_state.hpp>
+#include <eosio/chain/config.hpp>
 
 namespace fc { class variant; }
 
@@ -1276,13 +1278,13 @@ mongo_db_plugin_impl::add_trade( const chain::transaction_trace_ptr& t )
 {
    for( const auto& atrace : t->action_traces ) {
       try {
-         if (atrace.act.account == N(sys.match) && atrace.act.name == N(cancel))
+         if (atrace.act.account == chain::config::match_account_name && atrace.act.name == N(cancel))
             on_cancel(atrace.act, t);
-         else if (atrace.act.account == N(sys.match) && atrace.act.name == N(close2))
+         else if (atrace.act.account == chain::config::match_account_name && atrace.act.name == N(close2))
             on_close2(atrace.act, t);
-         else if (atrace.act.account == N(sys.match) && atrace.act.name == N(close))
+         else if (atrace.act.account == chain::config::match_account_name && atrace.act.name == N(close))
             on_close(atrace, t);
-         else if ( (atrace.act.account == N(relay.token) || atrace.act.account == N(force.token)) && atrace.act.name == N(trade))
+         else if ( (atrace.act.account == chain::config::relay_token_account_name || atrace.act.account == chain::config::token_account_name) && atrace.act.name == N(trade))
             add_match( atrace, t );
       } catch(...) {
          handle_mongo_exception("add_trade", __LINE__);

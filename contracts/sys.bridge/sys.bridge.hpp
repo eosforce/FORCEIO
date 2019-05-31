@@ -18,7 +18,7 @@ namespace eosio {
    using std::string;
 
    const int64_t PROPORTION_CARD = 10000; 
-   const account_name TOKEN = N(relay.token); 
+   const account_name TOKEN = config::relay_token_account_name; 
 
    enum  class fee_type:int64_t {
       fixed=1,                //fixed

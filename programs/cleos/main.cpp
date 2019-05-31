@@ -1210,7 +1210,7 @@ struct bridge_addmarket_subcommand {
    uint64_t market_weight;
 
    bridge_addmarket_subcommand(CLI::App* actionRoot) {
-      auto bridge_addmarket = actionRoot->add_subcommand("addmarket", localized("add a trade market on sys.bridge"));
+      auto bridge_addmarket = actionRoot->add_subcommand("addmarket", localized("add a trade market on bridge"));
       bridge_addmarket->add_option("trade", tradename, localized("The name of the trade market"))->required();
       bridge_addmarket->add_option("trade_maker", trade_maker, localized("The account(s) who make the market"))->required();
       bridge_addmarket->add_option("type", type, localized("The type of the market 1 for fixed ratio"))->required();
@@ -1244,7 +1244,7 @@ struct bridge_settranscon_subcommand {
    string contract_name;
 
    bridge_settranscon_subcommand(CLI::App* actionRoot) {
-      auto bridge_settranscon = actionRoot->add_subcommand("settranscon", localized("add a trade market on sys.bridge"));
+      auto bridge_settranscon = actionRoot->add_subcommand("settranscon", localized("add a trade market on bridge"));
       bridge_settranscon->add_option("chain_name", chain_name, localized("The chain name of the coin"))->required();
       bridge_settranscon->add_option("quantity", quantity, localized("The coin"))->required();
       bridge_settranscon->add_option("contract_name", contract_name, localized("The contract name to transfer the coin"))->required();
@@ -1287,7 +1287,7 @@ struct bridge_addmortgage_subcommand {
          {
             auto args = fc::mutable_variant_object()
                         ("from",recharge_account)
-                        ("to","sys.bridge")
+                        ("to", config::bridge_account_name)
                         ("quantity",recharge_amount)
                         ("type",2)
                         ("memo",memo);
@@ -1296,12 +1296,12 @@ struct bridge_addmortgage_subcommand {
          else
          {
             auto args = fc::mutable_variant_object()
-                        ("from",recharge_account)
-                        ("to","sys.bridge")
-                        ("chain",coin_chain)
-                        ("quantity",recharge_amount)
-                        ("type",2)
-                        ("memo",memo);
+                        ("from", recharge_account)
+                        ("to", config::bridge_account_name)
+                        ("chain", coin_chain)
+                        ("quantity", recharge_amount)
+                        ("type", 2)
+                        ("memo", memo);
             send_actions({create_action({permission_level{recharge_account,config::active_name}}, config::relay_token_account_name, N(trade), args)});
          }
       });
@@ -1335,7 +1335,7 @@ struct bridge_exchange_subcommand {
          {
             auto args = fc::mutable_variant_object()
                         ("from",recharge_account)
-                        ("to","sys.bridge")
+                        ("to",config::bridge_account_name)
                         ("quantity",recharge_amount)
                         ("type",3)
                         ("memo",memo);
@@ -1345,7 +1345,7 @@ struct bridge_exchange_subcommand {
          {
             auto args = fc::mutable_variant_object()
                         ("from",recharge_account)
-                        ("to","sys.bridge")
+                        ("to",config::bridge_account_name)
                         ("chain",coin_chain)
                         ("quantity",recharge_amount)
                         ("type",3)
@@ -1607,7 +1607,7 @@ struct match_regex_subcommand {
       match_regex->set_callback([this] {
          auto args = fc::mutable_variant_object()
                      ("exc_acc", exc_acc);
-         send_actions({create_action({permission_level{exc_acc, config::active_name}}, N(sys.match), N(regex), args)});
+         send_actions({create_action({permission_level{exc_acc, config::active_name}}, config::match_account_name, N(regex), args)});
       });
    }
 };
@@ -1643,7 +1643,7 @@ struct match_createpair_subcommand {
                      ("quote_chain", quote_chain)
                      ("quote_sym", quote_sym)
                      ("exc_acc", exc_acc);
-         send_actions({create_action({permission_level{exc_acc, config::active_name}}, N(sys.match), N(create), args)});
+         send_actions({create_action({permission_level{exc_acc, config::active_name}}, config::match_account_name, N(create), args)});
       });
    }
 };
@@ -1706,7 +1706,7 @@ struct match_cancel_subcommand {
                      ("maker", maker)
                      ("type", type)
                      ("order_or_pair_id", order_or_pair_id);
-         send_actions({create_action({permission_level{maker, config::active_name}}, N(sys.match), N(cancel), args)});
+         send_actions({create_action({permission_level{maker, config::active_name}}, config::match_account_name, N(cancel), args)});
       });
    }
 };
@@ -1732,7 +1732,7 @@ struct match_mark_subcommand {
                      ("base_sym", base_sym)
                      ("quote_chain", quote_chain)
                      ("quote_sym", quote_sym);
-         send_actions({create_action(get_account_permissions(tx_permission, {N(sys.match), config::active_name}), N(sys.match), N(mark), args)});
+         send_actions({create_action(get_account_permissions(tx_permission, {config::match_account_name, config::active_name}), config::match_account_name, N(mark), args)});
       });
    }
 };
@@ -1764,7 +1764,7 @@ struct match_claim_subcommand {
                      ("quote_sym", quote_sym)
                      ("exc_acc", exc_acc)
                      ("fee_acc", fee_acc);
-         send_actions({create_action({permission_level{exc_acc, config::active_name}}, N(sys.match), N(claim), args)});
+         send_actions({create_action({permission_level{exc_acc, config::active_name}}, config::match_account_name, N(claim), args)});
       });
    }
 };
@@ -1781,7 +1781,7 @@ struct match_freeze_subcommand {
       match_freeze->set_callback([this] {
          auto args = fc::mutable_variant_object()
                      ("id", id);
-         send_actions({create_action(get_account_permissions(tx_permission), N(sys.match), N(freeze), args)});
+         send_actions({create_action(get_account_permissions(tx_permission), config::match_account_name, N(freeze), args)});
       });
    }
 };
@@ -1798,7 +1798,7 @@ struct match_unfreeze_subcommand {
       match_unfreeze->set_callback([this] {
          auto args = fc::mutable_variant_object()
                      ("id", id);
-         send_actions({create_action(get_account_permissions(tx_permission), N(sys.match), N(unfreeze), args)});
+         send_actions({create_action(get_account_permissions(tx_permission), config::match_account_name, N(unfreeze), args)});
       });
    }
 };
@@ -1830,7 +1830,7 @@ struct match_setfee_subcommand {
                      ("rate", rate)
                      ("chain", chain)
                      ("asset", asset);
-         send_actions({create_action(get_account_permissions(tx_permission), N(sys.match), N(setfee), args)});
+         send_actions({create_action(get_account_permissions(tx_permission), config::match_account_name, N(setfee), args)});
       });
    }
 };

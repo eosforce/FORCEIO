@@ -490,7 +490,7 @@ void bus_plugin_impl::insert_default_abi() {
       // const string json_str = fc::json::to_string( abi_def );
       purge_abi_cache(); // make room if necessary
       abi_cache entry;
-      entry.account = N(force.token);
+      entry.account = config::token_account_name;
       entry.last_accessed = fc::time_point::now();
       abi_serializer abis;
       abis.set_abi(abi_def, abi_serializer_max_time);

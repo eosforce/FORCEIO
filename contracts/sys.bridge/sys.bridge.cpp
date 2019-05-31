@@ -378,7 +378,7 @@ namespace eosio {
       transcon transfer_contract(_self, _self);
       auto idx = transfer_contract.get_index<N(bychain)>();
       const auto& contract = idx.get(get_contract_idx(chain, quantity), "contract object not found");
-      if (contract.contract_name == N(relay.token)) {
+      if (contract.contract_name == config::relay_token_account_name) {
          INLINE_ACTION_SENDER(relay::token, transfer)( 
             contract.contract_name, 
             {_self, N(active)},
@@ -388,7 +388,7 @@ namespace eosio {
             quantity, 
             memo } );
       }
-      else if(contract.contract_name == N(force.token)) {
+      else if(contract.contract_name == config::token_account_name) {
          INLINE_ACTION_SENDER(eosio::token, transfer)( 
             contract.contract_name, 
             {_self, N(active)},
