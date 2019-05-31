@@ -512,6 +512,7 @@ namespace exchange {
    void exchange::match_for_bid( uint32_t pair_id,
                                  account_name payer,
                                  account_name receiver,
+                                 name chain, 
                                  asset quantity,
                                  asset price,
                                  account_name exc_acc,
@@ -529,7 +530,7 @@ namespace exchange {
 
       auto itr1 = trading_pairs_table.find(pair_id);
       eosio_assert(itr1 != trading_pairs_table.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");
-      eosio_assert(quantity.symbol.name() == itr1->quote_sym.name(), "deposited currency is not consistent with the quote currency!");
+      eosio_assert(chain == itr1->quote_chain && quantity.symbol.name() == itr1->quote_sym.name(), "deposited currency is not consistent with the quote currency!");
       eosio_assert(price.symbol.name() == itr1->quote_sym.name(), "price currency is not consistent with the quote currency!");
   
       add_balance( payer, to_asset(relay_token_acc, itr1->quote_chain, itr1->quote_sym, quantity) , exc_acc );
@@ -700,7 +701,7 @@ namespace exchange {
       }
    }
 
-   void exchange::match_for_ask( uint32_t pair_id, account_name payer, account_name receiver, asset base, asset price, account_name exc_acc, string referer, uint32_t fee_type) {
+   void exchange::match_for_ask( uint32_t pair_id, account_name payer, account_name receiver, name chain, asset base, asset price, account_name exc_acc, string referer, uint32_t fee_type) {
       trading_pairs  trading_pairs_table(_self,_self);
       orderbook      orders(_self,_self);
       asset          quant_after_fee;
@@ -711,7 +712,7 @@ namespace exchange {
 
       auto itr1 = trading_pairs_table.find(pair_id);
       eosio_assert(itr1 != trading_pairs_table.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");
-      eosio_assert(base.symbol.name() == itr1->base_sym.name(), "deposited currency is not consistent with the base currency!");
+      eosio_assert(chain == itr1->base_chain && base.symbol.name() == itr1->base_sym.name(), "deposited currency is not consistent with the base currency!");
       eosio_assert(price.symbol.name() == itr1->quote_sym.name(), "price currency is not consistent with the quote currency");
 
       add_balance( payer, to_asset(relay_token_acc, itr1->base_chain, itr1->base_sym, base) , exc_acc );
@@ -877,7 +878,7 @@ namespace exchange {
     *  bid_or_ask:         1: buy, 0: sell
     *  fee_account:		fee account,payer==fee_account means no fee
     * */
-   void exchange::match( uint32_t pair_id, account_name payer, account_name receiver, asset quantity, asset price, uint32_t bid_or_ask, account_name exc_acc, string referer, uint32_t fee_type) {
+   void exchange::match( uint32_t pair_id, account_name payer, account_name receiver, name chain, asset quantity, asset price, uint32_t bid_or_ask, account_name exc_acc, string referer, uint32_t fee_type) {
       require_auth( _self );
       
       eosio_assert(is_exc_frozen(exc_acc) == false, "exchange account has not been registered or be frozen!");
@@ -891,9 +892,9 @@ namespace exchange {
       //print("\n----------exchange::match: pair_id=", pair_id, ", payer=", name{.value=payer},", receiver=", name{.value=receiver}, ", quantity=", quantity, ", bid_or_ask=", bid_or_ask, ", exc_acc=", name{.value=exc_acc}, ", referer=", referer, ", fee_type=", fee_type, "\n");
 
       if (bid_or_ask) {
-         match_for_bid(pair_id, payer, receiver, quantity, price, exc_acc, referer, fee_type);
+         match_for_bid(pair_id, payer, receiver, chain, quantity, price, exc_acc, referer, fee_type);
       } else {
-         match_for_ask(pair_id, payer, receiver, quantity, price, exc_acc, referer, fee_type);
+         match_for_ask(pair_id, payer, receiver, chain, quantity, price, exc_acc, referer, fee_type);
       }
 
       return;
@@ -1433,7 +1434,7 @@ namespace exchange {
          eosio_assert(false,"memo is invalid");
    }
    
-   void exchange::inline_match(account_name from, asset quantity, string memo) {
+   void exchange::inline_match(account_name from, name chain, asset quantity, string memo) {
       sys_match_match smm;
       smm.parse(memo);
 
@@ -1442,7 +1443,7 @@ namespace exchange {
          eosio::action(
                  {permission_level{ smm.exc_acc, N(active) }, permission_level{ N(sys.match), N(active) }},
                  N(sys.match), N(match),
-                 std::make_tuple(smm.pair_id, from, smm.receiver, quantity, smm.price, smm.bid_or_ask, smm.exc_acc, smm.referer, smm.fee_type)
+                 std::make_tuple(smm.pair_id, from, smm.receiver, chain, quantity, smm.price, smm.bid_or_ask, smm.exc_acc, smm.referer, smm.fee_type)
          ).send();
       } else if (smm.transfer_type == 2) { // points
          add_balance( from, to_asset(relay_token_acc, name{}, quantity.symbol, quantity) , from );
@@ -1457,7 +1458,7 @@ namespace exchange {
                       string memo ) {
       if (to != _self) return;
                            
-      inline_match(from, quantity, memo);
+      inline_match(from, name{}, quantity, memo);
 
       return;
    }
@@ -1469,7 +1470,7 @@ namespace exchange {
                       string memo ) {
       if (to != _self) return;
          
-      inline_match(from, quantity, memo);
+      inline_match(from, chain, quantity, memo);
       
       return;
    }
