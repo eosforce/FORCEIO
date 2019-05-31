@@ -14,7 +14,7 @@ namespace relay {
 
 // just a test version by contract
 void token::on( name chain, const checksum256 block_id, const force::relay::action& act ) {
-   require_auth(N(force.relay)); // TODO use config
+   require_auth(config::relay_account_name); // TODO use config
 
    // TODO this ACTION should no err
 
@@ -258,37 +258,37 @@ void token::trade( account_name from,
                   trade_type type,
                   string memo ) {
    //eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
-   if (type == trade_type::bridge_addmortgage && to == SYS_BRIDGE) {
+   if (type == trade_type::bridge_addmortgage && to == config::bridge_account_name) {
       transfer(from, to, chain, quantity, memo);
       
       sys_bridge_addmort bri_add;
       bri_add.parse(memo);
       
       eosio::action(
-         vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
-         SYS_BRIDGE,
+         vector<eosio::permission_level>{{ config::bridge_account_name, N(active) }},
+         config::bridge_account_name,
          N(addmortgage),
          std::make_tuple(
                bri_add.trade_name.value,bri_add.trade_maker,from,chain,quantity,bri_add.type
          )
       ).send();
    }
-   else if (type == trade_type::bridge_exchange && to == SYS_BRIDGE) {
+   else if (type == trade_type::bridge_exchange && to == config::bridge_account_name) {
       transfer(from, to, chain, quantity, memo);
 
       sys_bridge_exchange bri_exchange;
       bri_exchange.parse(memo);
 
       eosio::action(
-         vector<eosio::permission_level>{{SYS_BRIDGE,N(active)}},
-         SYS_BRIDGE,
+         vector<eosio::permission_level>{{ config::bridge_account_name,N(active) }},
+         config::bridge_account_name,
          N(exchange),
          std::make_tuple(
                bri_exchange.trade_name.value,bri_exchange.trade_maker,from,bri_exchange.recv,chain,quantity,bri_exchange.type
          )
       ).send();
    }
-   else if(type == trade_type::match && to == N(sys.match)) {
+   else if(type == trade_type::match && to == config::match_account_name) {
       SEND_INLINE_ACTION(*this, transfer, { from, N(active) }, { from, to, chain, quantity, memo });
    }
    else {
@@ -348,7 +348,7 @@ void token::addreward(name chain,asset supply,int32_t reward_now) {
 void token::rewardmine(asset quantity) {
    require_auth(::config::system_account_name);
    rewards rewardtable(_self, _self);
-   exchange::exchange t(SYS_MATCH);
+   exchange::exchange t(config::match_account_name);
    uint128_t total_power = 0;
    auto current_block = current_block_num();
    for( auto it = rewardtable.cbegin(); it != rewardtable.cend(); ++it ) {
@@ -459,9 +459,9 @@ void token::claim(name chain,asset quantity,account_name receiver) {
 
    eosio_assert(total_reward > asset(100000),"claim amount must > 10");
    eosio::action(
-           permission_level{ ::config::reward_account_name, N(active) },
-           N(force.token), N(castcoin),
-           std::make_tuple(::config::reward_account_name, receiver,total_reward)
+           permission_level{ config::reward_account_name, N(active) },
+           config::token_account_name, N(castcoin),
+           std::make_tuple(config::reward_account_name, receiver,total_reward)
    ).send();
 }
 

@@ -49,7 +49,6 @@ public:
       uint16_t                confirmed = 1;
       checksum256             transaction_mroot;
       checksum256             action_mroot;
-      checksum256             mroot;
 
       bool is_nil() const {
          return this->producer == name{0};
@@ -63,14 +62,12 @@ public:
          return id == m.id
              && num == m.num
              && transaction_mroot == m.transaction_mroot
-             && action_mroot == m.action_mroot
-             && mroot == m.mroot;
+             && action_mroot == m.action_mroot;
       }
 
       EOSLIB_SERIALIZE( block_type,
             (producer)(num)(id)(previous)(confirmed)
-            (transaction_mroot)(action_mroot)(mroot)
-             )
+            (transaction_mroot)(action_mroot) )
    };
 
    struct unconfirm_block {

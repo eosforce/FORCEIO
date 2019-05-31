@@ -39,7 +39,6 @@ message RelayBlock {
   int32 confirmed = 4;
   bytes transaction_mroot = 5;
   bytes action_mroot = 6;
-  bytes mroot = 7;
 }
 
 message RelayAction {

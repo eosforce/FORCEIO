@@ -60,6 +60,10 @@ void relay::commit( const name chain, const account_name transfer, const relay::
       });
    }
 
+   transfers.modify(it, transfer, [&]( auto& r ) {
+      r.last = block;
+   });
+   
    const auto currrelaystat = relaystats.find(chain);
    for(int i = 0; i < 8 && i < currrelaystat->unconfirms.size(); i++) {
       const auto& unconfirm = currrelaystat->unconfirms[i];

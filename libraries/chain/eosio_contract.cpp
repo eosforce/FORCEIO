@@ -99,6 +99,8 @@ void apply_system_native_newaccount(apply_context& context) {
        && (create.creator != config::chain_config_name) ) {
       EOS_ASSERT( name_str.find( "force." ) != 0, action_validate_exception,
                   "only privileged accounts can have names that start with 'force.'" );
+      EOS_ASSERT( name_str.find( "codex." ) != 0, action_validate_exception,
+                  "only privileged accounts can have names that start with 'codex.'" );
    }
 
    auto existing_account = db.find<account_object, by_name>(create.name);
@@ -273,6 +275,8 @@ void apply_system_native_updateauth(apply_context& context) {
                "Permission names that start with 'eosio.' are reserved" );
    EOS_ASSERT( update.permission.to_string().find( "force." ) != 0, action_validate_exception,
                "Permission names that start with 'force.' are reserved" );
+   EOS_ASSERT( update.permission.to_string().find( "codex." ) != 0, action_validate_exception,
+               "Permission names that start with 'codex.' are reserved" );
    EOS_ASSERT(update.permission != update.parent, action_validate_exception, "Cannot set an authority as its own parent");
    db.get<account_object, by_name>(update.account);
    EOS_ASSERT(validate(update.auth), action_validate_exception,

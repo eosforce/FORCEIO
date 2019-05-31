@@ -7,7 +7,7 @@
 namespace exchange {
    using namespace eosio;
    const int64_t max_fee_rate = 10000;
-   const account_name escrow = N(sys.match);
+   const account_name escrow = config::match_account_name;
 
    uint128_t compute_pair_index(symbol_type base, symbol_type quote)
    {
@@ -203,7 +203,7 @@ namespace exchange {
       // for mongodb plugin parse
       action(
             permission_level{ exc_acc, N(active) },
-            N(sys.match), N(close2),
+            config::match_account_name, N(close2),
             std::make_tuple(pair_id, exc_acc)
       ).send();
    }
@@ -373,7 +373,7 @@ namespace exchange {
       
       action(
             permission_level{ taker_exc_acc, N(active) },
-            N(sys.match), N(morder),
+            config::match_account_name, N(morder),
             std::make_tuple(order_id, payer, escrow, chain, quantity, 1, receiver, 
                price, pair_id, direction, taker_exc_acc, referer, feeType, asset(0, quantity.symbol), 
                timestamp, 1)
@@ -908,7 +908,7 @@ namespace exchange {
       auto id = available_primary_key(name{.value=N(done)});
       action(
             permission_level{ taker_exc_acc, N(active) },
-            N(sys.match), N(done),
+            config::match_account_name, N(done),
             std::make_tuple(id, taker_exc_acc, maker_exc_acc, quote_chain, price, base_chain, quantity, pair_id, 
                      buy_order_id, buy_fee, sell_order_id, sell_fee,
                      bid_or_ask, timestamp)
@@ -917,7 +917,7 @@ namespace exchange {
       
       trx.actions.emplace_back(action(
             permission_level{ exc_acc, N(active) },
-            N(sys.match), N(done),
+            config::match_account_name, N(done),
             std::make_tuple(exc_acc, quote_chain, price, base_chain, quantity, bid_or_ask, timestamp)
       ));
       trx.send(current_time(), exc_acc);*/
@@ -1441,8 +1441,9 @@ namespace exchange {
       // trade
       if (smm.transfer_type == 1) {
          eosio::action(
-                 {permission_level{ smm.exc_acc, N(active) }, permission_level{ N(sys.match), N(active) }},
-                 N(sys.match), N(match),
+                 {permission_level{ smm.exc_acc, N(active) }, 
+                 permission_level{ config::match_account_name, N(active) }},
+                 config::match_account_name, N(match),
                  std::make_tuple(smm.pair_id, from, smm.receiver, chain, quantity, smm.price, smm.bid_or_ask, smm.exc_acc, smm.referer, smm.fee_type)
          ).send();
       } else if (smm.transfer_type == 2) { // points
@@ -1488,11 +1489,10 @@ extern "C" { \
          eosio_assert(code == ::config::system_account_name, "onerror action's are only valid from the \"eosio\" system account"); \
       } else if (action == N(transfer)) { \
          TYPE thiscontract( self ); \
-         eosio_assert(code == ::config::token_account_name || code == N(relay.token), "must call force.token and relay.token transfer"); \
+         eosio_assert(code == ::config::token_account_name || code == config::relay_token_account_name, "must call token or relay.token transfer"); \
          if (code == ::config::token_account_name) { \
             eosio::execute_action( &thiscontract, &exchange::exchange::force_token_transfer ); \
-         } else if (code == N(relay.token)) { \
-            /*print("\n 33333333 apply: receiver=", eosio::name{.value=receiver}, ", code=", eosio::name{.value=code}, ", action=", eosio::name{.value=action}, "\n");*/ \
+         } else if (code == config::relay_token_account_name) { \
             eosio::execute_action( &thiscontract, &exchange::exchange::relay_token_transfer ); \
          } \
          return; \
