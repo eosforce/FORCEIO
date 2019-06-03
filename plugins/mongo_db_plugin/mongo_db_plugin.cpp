@@ -876,7 +876,7 @@ mongo_db_plugin_impl::on_cancel(const chain::action& a,
          bsoncxx::document::element maker_ele{value_view["data"]["maker"]};
          auto  maker_view = maker_ele.get_utf8().value;
          maker = ::std::string(maker_view.data(), maker_view.size());
-         //ilog( " on_cancel deal maker JSON : ${maker}", ( "maker", maker ) );
+         ilog( " on_cancel deal maker JSON : ${maker}", ( "maker", maker ) );
          bsoncxx::document::element type_ele{value_view["data"]["type"]};
          if (type_ele && type_ele.type() == type::k_int32) {
             ilog( " on_cancel 111111   type JSON: ${data}", ("data", type_ele.get_int32().value ) );
@@ -886,21 +886,13 @@ mongo_db_plugin_impl::on_cancel(const chain::action& a,
             return false;
          }
          
-         bsoncxx::document::element order_or_pair_id_ele{value_view["data"]["order_or_pair_id"]};
-         if (order_or_pair_id_ele && order_or_pair_id_ele.type() == type::k_int32) {
-            ilog( " on_cancel 111111   order_or_pair_id JSON: ${data}", ("data", order_or_pair_id_ele.get_int32().value ) );
-            //order_or_pair_id = (int64_t)order_or_pair_id_ele.get_int32().value;
-            order_or_pair_id = fc::to_string(order_or_pair_id_ele.get_int32().value);
-         } else if (order_or_pair_id_ele && order_or_pair_id_ele.type() == type::k_int64) {
-            ilog( " on_cancel 111111   order_or_pair_id JSON: ${data}", ("data", order_or_pair_id_ele.get_int64().value ) );
-            //order_or_pair_id = order_or_pair_id_ele.get_int64().value;
-            order_or_pair_id = fc::to_string(order_or_pair_id_ele.get_int32().value);
-         } else if (order_or_pair_id_ele && order_or_pair_id_ele.type() == type::k_utf8) {
+         bsoncxx::document::element order_or_pair_id_ele{value_view["data"]["order_or_pair_id_str"]};
+         if (order_or_pair_id_ele && order_or_pair_id_ele.type() == type::k_utf8) {
             auto order_or_pair_id_view = order_or_pair_id_ele.get_utf8().value;
             order_or_pair_id = ::std::string(order_or_pair_id_view.data(), order_or_pair_id_view.size());
-            //ilog( " ins_deal 111111   order_or_pair_id JSON: ${data}", ("data", order_or_pair_id ) );
+            ilog( " on_cancel order_or_pair_id: ${order_or_pair_id}", ("order_or_pair_id", order_or_pair_id ) );
          } else {
-            ilog( " on_cancel 2222   order_or_pair_id unknown type ${type}", ("type", (uint8_t)order_or_pair_id_ele.type()) );
+            ilog( " on_cancel order_or_pair_id unknown type ${type}", ("type", (uint8_t)order_or_pair_id_ele.type()) );
             return false;
          }
       } catch( bsoncxx::exception& ) {
@@ -912,13 +904,15 @@ mongo_db_plugin_impl::on_cancel(const chain::action& a,
       if (type == 0) {
          filter = make_document(kvp("from", maker), kvp("id", order_or_pair_id));
       } else if (type == 1) {
-         filter = make_document(kvp("from", maker), kvp("pairId", order_or_pair_id));
+         auto pair_id = atoi(order_or_pair_id.c_str());
+         ilog( " on_cancel pair_id ${pair_id}", ("pair_id", pair_id) );
+         filter = make_document(kvp("from", maker), kvp("pairId", pair_id));
       } else {
          filter = make_document(kvp("from", maker));
       }
       auto updated_doc = make_document(kvp("$set", make_document(kvp("status", 4) )));
      
-      _orders.update_one( filter.view(), updated_doc.view() );
+      _orders.update_many( filter.view(), updated_doc.view() );
       updated = true;
    } catch( ... ) {
       handle_mongo_exception( "trans_traces serialization: " + t->id.str(), __LINE__ );
@@ -970,7 +964,7 @@ mongo_db_plugin_impl::on_close2(const chain::action& a,
       auto filter = make_document(kvp("dexAccount", exc_acc), kvp("pairId", pair_id), kvp("status", make_document(kvp("$in", make_array(1, 2)))));
       auto updated_doc = make_document(kvp("$set", make_document(kvp("status", 5) )));
 
-      _orders.update_one( filter.view(), updated_doc.view() );
+      _orders.update_many( filter.view(), updated_doc.view() );
       updated = true;
    } catch( ... ) {
       handle_mongo_exception( "on_close2: trans_traces serialization: " + t->id.str(), __LINE__ );
