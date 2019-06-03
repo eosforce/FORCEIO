@@ -1705,7 +1705,7 @@ struct match_cancel_subcommand {
          auto args = fc::mutable_variant_object()
                      ("maker", maker)
                      ("type", type)
-                     ("order_or_pair_id", order_or_pair_id);
+                     ("order_or_pair_id_str", order_or_pair_id);
          send_actions({create_action({permission_level{maker, config::active_name}}, config::match_account_name, N(cancel), args)});
       });
    }
