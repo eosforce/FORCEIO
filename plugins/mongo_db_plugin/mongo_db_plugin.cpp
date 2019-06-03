@@ -996,6 +996,21 @@ mongo_db_plugin_impl::on_close(const chain::action_trace& atrace,
    return added;
 }
 
+string extract_asset_num(const asset& a) {
+   string sign = a.get_amount() < 0 ? "-" : "";
+   int64_t abs_amount = std::abs(a.get_amount());
+   string result = fc::to_string( static_cast<int64_t>(abs_amount) / a.precision());
+   if( a.decimals() )
+   {
+      auto fract = static_cast<int64_t>(abs_amount) % a.precision();
+      if (fract > 0) {
+         auto fractions = fc::to_string(a.precision() + fract).erase(0,1);
+         result += "." + fractions.substr(0, fractions.find_last_not_of('0') + 1);
+      }
+   }
+   return sign + result;
+}
+
 bool
 mongo_db_plugin_impl::upd_order( mongocxx::bulk_write& bulk_actions, 
                                         const chain::action& a,
@@ -1024,15 +1039,7 @@ mongo_db_plugin_impl::upd_order( mongocxx::bulk_write& bulk_actions,
          bsoncxx::document::view data_view = data_ele.get_document().value;
          bsoncxx::document::element id_ele{value_view["data"]["id"]};
          std:string id;
-         if (id_ele && id_ele.type() == type::k_int32) {
-            //ilog( " upd_order 111111   id JSON: ${id}", ("id", id_ele.get_int32().value ) );
-            //id = (int64_t)id_ele.get_int32().value;
-            id = fc::to_string(id_ele.get_int32().value);
-         } else if (id_ele && id_ele.type() == type::k_int64) {
-            //ilog( " upd_order 111111   id JSON: ${id}", ("id", id_ele.get_int64().value ) );
-            //id = id_ele.get_int64().value;
-            id = fc::to_string(id_ele.get_int64().value);
-         } else if (id_ele && id_ele.type() == type::k_utf8) {
+         if (id_ele && id_ele.type() == type::k_utf8) {
             auto id_view = id_ele.get_utf8().value;
             id = ::std::string(id_view.data(), id_view.size());
             //ilog( " upd_order 111111   id JSON: ${id}", ("id", id ) );
@@ -1109,14 +1116,16 @@ mongo_db_plugin_impl::upd_order( mongocxx::bulk_write& bulk_actions,
       bsoncxx::document::element order_qty_elem = order_view["matchedQty"];
       auto order_qty_view = order_qty_elem.get_utf8().value;
       auto  order_qty = asset::from_string(::std::string( order_qty_view.data(), order_qty_view.size() ) );
+      
       auto filter = make_document(kvp("id", buy_order_id));
       order_qty += quantity;
+      
       //ilog( " upd_order buy order deal quantity -------- JSON : ${data},  order_qty ${order_qty}", ( "data", quantity )("order_qty", order_qty) );
       auto updated_doc = make_document(kvp("1", 1));
       if (order_qty == total_qty) {
-         updated_doc = make_document(kvp("$set", make_document( kvp("matchedQty", order_qty.to_string()), kvp("status", 3) )));
+         updated_doc = make_document(kvp("$set", make_document( kvp("matchedQty", order_qty.to_string()), kvp("matchedQtyNum", extract_asset_num(order_qty)), kvp("status", 3) )));
       } else {
-         updated_doc = make_document(kvp("$set", make_document( kvp("matchedQty", order_qty.to_string()), kvp("status", 2) )));
+         updated_doc = make_document(kvp("$set", make_document( kvp("matchedQty", order_qty.to_string()), kvp("matchedQtyNum", extract_asset_num(order_qty)), kvp("status", 2) )));
       }
       _orders.update_one(filter.view(), updated_doc.view());
       //mongocxx::model::update_one update_op{filter.view(), updated_doc.view()};
@@ -1140,9 +1149,9 @@ mongo_db_plugin_impl::upd_order( mongocxx::bulk_write& bulk_actions,
       order_qty += quantity;
       ilog( " upd_order sell order deal quantity -------- JSON : ${data},  order_qty ${order_qty}", ( "data", quantity )("order_qty", order_qty) );
       if (order_qty == total_qty) {
-         updated_doc = make_document(kvp("$set", make_document( kvp("matchedQty", order_qty.to_string()), kvp("status", 3) )));
+         updated_doc = make_document(kvp("$set", make_document( kvp("matchedQty", order_qty.to_string()), kvp("matchedQtyNum", extract_asset_num(order_qty)), kvp("status", 3) )));
       } else {
-         updated_doc = make_document(kvp("$set", make_document(kvp("matchedQty", order_qty.to_string()), kvp("status", 2) )));
+         updated_doc = make_document(kvp("$set", make_document(kvp("matchedQty", order_qty.to_string()), kvp("matchedQtyNum", extract_asset_num(order_qty)), kvp("status", 2) )));
       }
       _orders.update_one(filter.view(), updated_doc.view());
       //update_op = mongocxx::model::update_one{filter.view(), updated_doc.view()};
@@ -1152,21 +1161,6 @@ mongo_db_plugin_impl::upd_order( mongocxx::bulk_write& bulk_actions,
    }
    
    return updated;
-}
-
-string extract_asset_num(const asset& a) {
-   string sign = a.get_amount() < 0 ? "-" : "";
-   int64_t abs_amount = std::abs(a.get_amount());
-   string result = fc::to_string( static_cast<int64_t>(abs_amount) / a.precision());
-   if( a.decimals() )
-   {
-      auto fract = static_cast<int64_t>(abs_amount) % a.precision();
-      if (fract > 0) {
-         auto fractions = fc::to_string(a.precision() + fract).erase(0,1);
-         result += "." + fractions.substr(0, fractions.find_last_not_of('0') + 1);
-      }
-   }
-   return sign + result;
 }
 
 bool
@@ -1196,15 +1190,7 @@ mongo_db_plugin_impl::ins_order( mongocxx::bulk_write& bulk_actions,
          bsoncxx::document::view data_view = data_ele.get_document().value;
          bsoncxx::document::element id_ele{data_view["id"]};
          std::string id;
-         if (id_ele && id_ele.type() == type::k_int32) {
-            //ilog( " insert_order 111111   data_id JSON: ${data}", ("data", id_ele.get_int32().value ) );
-            //id = (uint64_t)id_ele.get_int32().value;
-            id = fc::to_string(id_ele.get_int32().value);
-         } else if (id_ele && id_ele.type() == type::k_int64) {
-            //ilog( " insert_order 111111   data_id JSON: ${data}", ("data", id_ele.get_int64().value ) );
-            //id = id_ele.get_int64().value;
-            id = fc::to_string(id_ele.get_int64().value);
-         } else if (id_ele && id_ele.type() == type::k_utf8) {
+         if (id_ele && id_ele.type() == type::k_utf8) {
             auto id_view = id_ele.get_utf8().value;
             id = ::std::string(id_view.data(), id_view.size());
             //ilog( " ins_order 111111   id JSON: ${id}", ("id", id ) );
@@ -1213,12 +1199,7 @@ mongo_db_plugin_impl::ins_order( mongocxx::bulk_write& bulk_actions,
             return false;
          }
          
-         mongocxx::collection _tab;
-         if (base.name == N(done))
-            _tab = _deals;
-         else 
-            _tab = _orders;
-         auto act = _tab.find_one( bsoncxx::builder::basic::make_document( kvp("id", id/*id_ele.get_document().value*/) ));
+         auto act = _orders.find_one( bsoncxx::builder::basic::make_document( kvp("id", id/*id_ele.get_document().value*/) ));
          if (act) {
             ilog( " insert_order:  action ${action} with the same id ${id} has already exists!", ("action", base.name)("id", id) );
             return false;
@@ -1236,14 +1217,14 @@ mongo_db_plugin_impl::ins_order( mongocxx::bulk_write& bulk_actions,
          asset_view = asset_elem.get_utf8().value;
          ass = asset::from_string(::std::string( asset_view.data(), asset_view.size() ) );
          done_data_doc.append( kvp( "matchedQtyNum", extract_asset_num(ass) ),  kvp( "matchedQtySym", ass.symbol_name() ));
-            
+
          asset_elem = value_view["data"]["price"];
          asset_view = asset_elem.get_utf8().value;
          ass = asset::from_string(::std::string( asset_view.data(), asset_view.size() ) );
          done_data_doc.append( kvp( "priceNum", extract_asset_num(ass) ),  kvp( "priceSym", ass.symbol_name() ));
          
       } catch( bsoncxx::exception& e) {
-         elog( "Unable to convert transaction JSON to MongoDB JSON: ${e}", ("e", e.what()) );
+         elog( "insert_order: Unable to convert transaction JSON to MongoDB JSON: ${e}", ("e", e.what()) );
          elog( "  JSON: ${j}", ("j", json) );
          return false;
       }
@@ -1302,12 +1283,7 @@ mongo_db_plugin_impl::ins_deal( mongocxx::bulk_write& bulk_actions,
             return false;
          }
          
-         mongocxx::collection _tab;
-         if (base.name == N(done))
-            _tab = _deals;
-         else 
-            _tab = _orders;
-         auto act = _tab.find_one( bsoncxx::builder::basic::make_document( kvp("id", id/*id_ele.get_document().value*/) ));
+         auto act = _deals.find_one( bsoncxx::builder::basic::make_document( kvp("id", id/*id_ele.get_document().value*/) ));
          if (act) {
             ilog( " ins_deal:  action ${action} with the same id ${id} has already exists!", ("action", base.name)("id", id) );
             return false;
@@ -1361,14 +1337,15 @@ mongo_db_plugin_impl::add_match_action( mongocxx::bulk_write& bulk_actions, cons
    for( const auto& iline_atrace : atrace.inline_traces ) {
       if (iline_atrace.act.name == N(morder)) {
          added |= ins_order(bulk_actions, iline_atrace.act, t);
+         continue;
       } else if (iline_atrace.act.name == action) {
          if (op == 1)
             added |= ins_deal(bulk_actions, iline_atrace.act, t);
          else
             added |= upd_order(bulk_actions, iline_atrace.act, t);
-         
          continue;
       }
+      
       added |= add_match_action( bulk_actions, iline_atrace, t, action, op );
    }
   

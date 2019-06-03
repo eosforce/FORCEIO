@@ -75,13 +75,13 @@
        "fields": [
         {"name": "maker","type": "account_name"},
         {"name": "type","type": "uint32"},
-        {"name": "order_or_pair_id","type": "uint64"}
+        {"name": "order_or_pair_id_str","type": "string"}
        ]
      },{
        "name": "done",
        "base": "",
        "fields": [
-        {"name": "id","type": "uint64"},
+        {"name": "id","type": "string"},
         {"name": "taker_exc_acc","type": "account_name"},
         {"name": "maker_exc_acc","type": "account_name"},
         {"name": "quote_chain","type": "name"},
@@ -89,9 +89,9 @@
         {"name": "base_chain","type": "name"},
         {"name": "quantity","type": "asset"},
         {"name": "pair_id","type": "uint32"},
-        {"name": "buy_order_id","type": "uint64"},
+        {"name": "buy_order_id","type": "string"},
         {"name": "buy_fee","type": "asset"},
-        {"name": "sell_order_id","type": "uint64"},
+        {"name": "sell_order_id","type": "string"},
         {"name": "sell_fee","type": "asset"},
         {"name": "bid_or_ask","type": "uint32"},
         {"name": "timestamp","type": "time_point_sec"}
@@ -252,7 +252,7 @@
        "name": "morder",
        "base": "",
        "fields": [
-        {"name": "id","type": "uint64"},
+        {"name": "id","type": "string"},
         {"name": "from","type": "account_name"},
         {"name": "to","type": "account_name"},
         {"name": "chain","type": "name"},

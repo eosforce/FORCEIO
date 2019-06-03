@@ -56,10 +56,10 @@ namespace exchange {
 
       void match( uint32_t pair_id, account_name payer, account_name receiver, name chain, asset quantity, asset price, uint32_t bid_or_ask, account_name exc_acc, string referer, uint32_t fee_type );
       
-      void cancel(account_name maker, uint32_t type, uint64_t order_or_pair_id);
+      void cancel(account_name maker, uint32_t type, string order_or_pair_id_str);
       
-      void done(uint64_t id, account_name taker_exc_acc, account_name maker_exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t pair_id, 
-         uint64_t buy_order_id, asset buy_fee, uint64_t sell_order_id, asset sell_fee, uint32_t bid_or_ask, time_point_sec timestamp);
+      void done(string id, account_name taker_exc_acc, account_name maker_exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t pair_id, 
+         string buy_order_id, asset buy_fee, string sell_order_id, asset sell_fee, uint32_t bid_or_ask, time_point_sec timestamp);
       
       void done_helper(account_name taker_exc_acc, account_name maker_exc_acc, name quote_chain, asset price, 
                               name base_chain, asset quantity, uint32_t pair_id, 
@@ -67,7 +67,7 @@ namespace exchange {
                               uint32_t bid_or_ask, time_point_sec timestamp);
       
       void morder(
-                              uint64_t id,
+                              string id,
                               account_name payer, 
                               account_name to, 
                               name chain,

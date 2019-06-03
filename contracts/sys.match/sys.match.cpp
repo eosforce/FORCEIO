@@ -330,7 +330,7 @@ namespace exchange {
    }
    
    void exchange::morder(
-                              uint64_t id,
+                              string id,
                               account_name payer, 
                               account_name to, 
                               name chain,
@@ -374,7 +374,7 @@ namespace exchange {
       action(
             permission_level{ taker_exc_acc, N(active) },
             config::match_account_name, N(morder),
-            std::make_tuple(order_id, payer, escrow, chain, quantity, 1, receiver, 
+            std::make_tuple(std::to_string(order_id), payer, escrow, chain, quantity, 1, receiver, 
                price, pair_id, direction, taker_exc_acc, referer, feeType, asset(0, quantity.symbol), 
                timestamp, 1)
       ).send();
@@ -909,8 +909,8 @@ namespace exchange {
       action(
             permission_level{ taker_exc_acc, N(active) },
             config::match_account_name, N(done),
-            std::make_tuple(id, taker_exc_acc, maker_exc_acc, quote_chain, price, base_chain, quantity, pair_id, 
-                     buy_order_id, buy_fee, sell_order_id, sell_fee,
+            std::make_tuple(std::to_string(id), taker_exc_acc, maker_exc_acc, quote_chain, price, base_chain, quantity, pair_id, 
+                     std::to_string(buy_order_id), buy_fee, std::to_string(sell_order_id), sell_fee,
                      bid_or_ask, timestamp)
       ).send();
       /*transaction trx;
@@ -924,8 +924,8 @@ namespace exchange {
    }
    
    // now do nothing, only for action capture
-   void exchange::done(uint64_t id, account_name taker_exc_acc, account_name maker_exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t pair_id, 
-         uint64_t buy_order_id, asset buy_fee, uint64_t sell_order_id, asset sell_fee, uint32_t bid_or_ask, time_point_sec timestamp) {
+   void exchange::done(string id, account_name taker_exc_acc, account_name maker_exc_acc, name quote_chain, asset price, name base_chain, asset quantity, uint32_t pair_id, 
+         string buy_order_id, asset buy_fee, string sell_order_id, asset sell_fee, uint32_t bid_or_ask, time_point_sec timestamp) {
       require_auth(taker_exc_acc);
       
       asset quant_after_fee;
@@ -942,11 +942,13 @@ namespace exchange {
    /*
    type: 0 - cancel designated order, 1 - cancel designated pairs' order, 2 - cancel all orders
    */
-   void exchange::cancel(account_name maker, uint32_t type, uint64_t order_or_pair_id) {
+   void exchange::cancel(account_name maker, uint32_t type, string order_or_pair_id_str) {
       eosio_assert(type == 0 || type == 1 || type == 2, "invalid cancel type");
       trading_pairs   trading_pairs_table(_self,_self);
       orderbook       orders(_self,_self);
       asset           quant_after_fee;
+      
+      auto order_or_pair_id = atoll(order_or_pair_id_str.c_str());
       
       require_auth( maker );
       
