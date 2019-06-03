@@ -481,7 +481,7 @@ void token::settle_user(account_name owner, name chain, asset value) {
    auto total_reward = asset(0);
    bool cross_day = false;
    for(auto it = reward_inf.begin();it != reward_inf.end();++it) {
-      if (last_update_height < it->reward_block_num) {
+      if (last_update_height < it->reward_block_num && it->total_mineage > 0) {
          auto mineage = last_mineage + from.balance.amount * (it->reward_block_num - last_update_height);
          auto reward = it->reward_pool * mineage / it->total_mineage;
 
