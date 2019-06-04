@@ -313,7 +313,11 @@ namespace exchange {
       }
    }
 
-   asset exchange::charge_fee( uint32_t pair_id, account_name payer, asset quantity, account_name exc_acc, uint32_t fee_type ) {
+   asset exchange::charge_fee( uint32_t pair_id,
+                               const account_name& payer,
+                               const asset& quantity, 
+                               const account_name& exc_acc, 
+                               uint32_t fee_type ) {
       trading_pairs trading_pairs_table(_self, _self);
       auto itr1 = trading_pairs_table.find(pair_id);
       eosio_assert(itr1 != trading_pairs_table.end() && itr1->frozen == 0, "trading pair does not exist or be frozen");
@@ -1086,7 +1090,7 @@ namespace exchange {
       });
    }
 
-   asset exchange::calcfee( asset quant, uint64_t fee_rate ) {
+   asset exchange::calcfee( const asset& quant, const uint64_t fee_rate ) const {
       asset fee = quant * fee_rate / max_fee_rate;
       if( fee_rate > 0 && fee.amount < 1 ) {
          fee.amount = 1;
