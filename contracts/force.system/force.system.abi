@@ -32,13 +32,6 @@
          {"name":"voter",      "type":"account_name"}
       ]
     },{
-      "name": "claim",
-      "base": "",
-      "fields": [
-        {"name":"voter",      "type":"account_name"},
-        {"name":"bpname",     "type":"account_name"}
-      ]
-    },{
       "name": "freeze",
       "base": "",
       "fields": [
@@ -361,7 +354,6 @@
          "fields": [
             {"name":"id", "type":"uint64" },
             {"name":"reward_block_out",      "type":"asset"},
-            {"name":"reward_develop",        "type":"asset"},
             {"name":"reward_budget",             "type":"asset"},
             {"name":"total_block_out_age",   "type":"int64"},
             {"name":"cycle_reward",          "type":"int64"},
@@ -506,10 +498,6 @@
     },{
       "name": "voteproducer",
       "type": "voteproducer",
-      "ricardian_contract": ""
-    },{
-      "name": "claim",
-      "type": "claim",
       "ricardian_contract": ""
     },{
       "name": "setemergency",

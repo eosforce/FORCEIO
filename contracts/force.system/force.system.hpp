@@ -250,7 +250,6 @@ namespace eosiosystem {
       struct reward_info {
          uint64_t     id;
          asset reward_block_out = asset(0);
-         asset reward_develop = asset(0);
          asset reward_budget = asset(0);
          int64_t total_block_out_age = 0;
          int64_t cycle_reward = 0;
@@ -261,7 +260,7 @@ namespace eosiosystem {
          vector<int32_t> reward_block_num;
 
          uint64_t primary_key() const { return id; }
-         EOSLIB_SERIALIZE(reward_info, ( id )(reward_block_out)(reward_develop)(reward_budget)(total_block_out_age)(cycle_reward)(gradient)
+         EOSLIB_SERIALIZE(reward_info, ( id )(reward_block_out)(reward_budget)(total_block_out_age)(cycle_reward)(gradient)
          (total_reward_time)(last_reward_block_num)(last_producer_name)(reward_block_num))
       };
 
@@ -367,7 +366,6 @@ namespace eosiosystem {
       void reward_bps(const int64_t reward_amount);
       void reward_block(const uint32_t schedule_version,const int64_t reward_amount,bool force_change);
       void reward_mines(const int64_t reward_amount);
-    //  void reward_develop(const int64_t reward_amount);
 
       bool is_super_bp( account_name block_producers[], account_name name );
 

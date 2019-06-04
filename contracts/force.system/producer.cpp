@@ -75,7 +75,6 @@ namespace eosiosystem {
             }
          });
          
-       //  reward_develop(block_rewards * REWARD_DEVELOP / REWARD_RATIO_PRECISION);
          reward_block(reward_block_version,block_rewards * REWARD_BP / REWARD_RATIO_PRECISION,force_change);
 
          if (reward_update) {
@@ -256,19 +255,6 @@ namespace eosiosystem {
       ).send();
    }
 
-   // void system_contract::reward_develop(const int64_t reward_amount) {
-   //    reward_table reward_inf(_self,_self);
-   //    auto reward = reward_inf.find(REWARD_ID);
-   //    if(reward == reward_inf.end()) {
-   //       init_reward_info();
-   //       reward = reward_inf.find(REWARD_ID);
-   //    }
-
-   //    reward_inf.modify(reward, 0, [&]( reward_info& s ) {
-   //       s.reward_develop += asset(reward_amount);    
-   //    });
-   // }
-
    // TODO it need change if no bonus to accounts
 
    void system_contract::reward_block(const uint32_t schedule_version,const int64_t reward_amount,bool force_change) {
@@ -407,7 +393,6 @@ namespace eosiosystem {
          reward_inf.emplace(_self, [&]( reward_info& s ) {
             s.id = REWARD_ID;
             s.reward_block_out = asset(0);
-            s.reward_develop = asset(0);
             s.total_block_out_age = 0;
             s.reward_budget = asset(0);
             s.cycle_reward = PRE_BLOCK_REWARDS;
@@ -528,24 +513,6 @@ namespace eosiosystem {
          { ::config::reward_account_name, N(active) },
          { ::config::reward_account_name, receiver, quantity, "claim bp mortgage" });
    }
-
-   // void system_contract::claimdevelop(const account_name develop) {
-   //    require_auth(develop);
-   //    eosio_assert (develop == N(fosdevelop),"invaild develop account");
-   //    reward_table reward_inf(_self,_self);
-   //    auto reward = reward_inf.find(REWARD_ID);
-   //    eosio_assert(reward != reward_inf.end(),"reward info do not find");
-
-   //    auto reward_develop = reward->reward_develop;
-   //    reward_inf.modify(reward, 0, [&]( reward_info& s ) {
-   //       s.reward_develop = asset(0);
-   //    });
-   //    eosio_assert(reward_develop > asset(100000),"claim amount must > 10");
-   //    INLINE_ACTION_SENDER(eosio::token, castcoin)(
-   //       config::token_account_name,
-   //       { ::config::reward_account_name, N(active) },
-   //       { ::config::reward_account_name, develop, reward_develop });
-   // }
 
    void system_contract::claimbp(const account_name bpname,const account_name receiver) {
       require_auth(bpname);
