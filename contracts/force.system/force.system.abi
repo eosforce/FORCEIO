@@ -402,12 +402,6 @@
             {"name":"receiver",              "type":"account_name"}
          ]
        },{
-         "name": "claimdevelop",
-         "base": "",
-         "fields": [
-            {"name":"develop",                "type":"account_name"}
-         ]
-       },{
          "name": "creation_bp",
          "base": "",
          "fields": [
@@ -592,10 +586,6 @@
       },{
          "name": "claimvote",
          "type": "claimvote",
-         "ricardian_contract": ""
-      },{
-         "name": "claimdevelop",
-         "type": "claimdevelop",
          "ricardian_contract": ""
       },{
          "name": "fee",

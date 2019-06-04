@@ -22,7 +22,7 @@ namespace eosiosystem {
    using std::vector;
 
    #define CORE_SYMBOL_PRECISION 10000
-   static constexpr uint32_t FROZEN_DELAY = CONTRACT_FROZEN_DELAY; // 3 * 24 * 60 * 20; //3*24*60*20*3s;
+   
    static constexpr int NUM_OF_TOP_BPS = CONTRACT_NUM_OF_TOP_BPS;//23;
 #ifdef BEFORE_ONLINE_TEST 
    static constexpr uint32_t CYCLE_PREHOUR = 10;
@@ -31,6 +31,7 @@ namespace eosiosystem {
    static constexpr uint32_t STABLE_DAY = 10;//2;//60;
    static constexpr uint64_t PRE_BLOCK_REWARDS = 58.6*CORE_SYMBOL_PRECISION;
    static constexpr uint64_t STABLE_BLOCK_REWARDS = 126*CORE_SYMBOL_PRECISION;
+   static constexpr uint32_t FROZEN_DELAY = 3*24*20*60; 
 #else
    static constexpr uint32_t CYCLE_PREHOUR = 12;
    static constexpr uint32_t CYCLE_PREBP_BLOCK = 15;
@@ -39,6 +40,7 @@ namespace eosiosystem {
    static constexpr uint32_t STABLE_DAY = 60;//2;//60;
    static constexpr uint64_t STABLE_BLOCK_REWARDS = 630*CORE_SYMBOL_PRECISION;
    static constexpr uint64_t PRE_BLOCK_REWARDS = 143*CORE_SYMBOL_PRECISION;
+   static constexpr uint32_t FROZEN_DELAY = CONTRACT_FROZEN_DELAY; // 3 * 24 * 60 * 20; //3*24*60*20*3s;
 #endif
    //static constexpr uint32_t STABLE_BLOCK_HEIGHT = UPDATE_CYCLE * CYCLE_PREDAY * STABLE_DAY;
    static constexpr uint32_t PRE_GRADIENT = 10250;
@@ -51,10 +53,10 @@ namespace eosiosystem {
    static constexpr uint64_t MORTGAGE = 8228;
 
    #define REWARD_RATIO_PRECISION 10000
-   static constexpr uint32_t REWARD_DEVELOP = 900;
+  // static constexpr uint32_t REWARD_DEVELOP = 900;
    static constexpr uint32_t REWARD_BP = 300;
    static constexpr uint32_t REWARD_FUND = 100;
-   static constexpr uint32_t REWARD_MINE = REWARD_RATIO_PRECISION - REWARD_DEVELOP - REWARD_BP;
+   static constexpr uint32_t REWARD_MINE = REWARD_RATIO_PRECISION - REWARD_BP;
 
    static constexpr uint64_t OTHER_COIN_WEIGHT = 500;
 
@@ -365,7 +367,7 @@ namespace eosiosystem {
       void reward_bps(const int64_t reward_amount);
       void reward_block(const uint32_t schedule_version,const int64_t reward_amount,bool force_change);
       void reward_mines(const int64_t reward_amount);
-      void reward_develop(const int64_t reward_amount);
+    //  void reward_develop(const int64_t reward_amount);
 
       bool is_super_bp( account_name block_producers[], account_name name );
 
@@ -455,7 +457,7 @@ namespace eosiosystem {
       // @abi action
       void claimbp(const account_name bpname,const account_name receiver);
       // @abi action
-      void claimdevelop(const account_name develop);
+      //void claimdevelop(const account_name develop);
 #if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
       // @abi action
       void delegatebw( account_name from, account_name receiver,

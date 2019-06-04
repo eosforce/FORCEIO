@@ -36,11 +36,11 @@ EOSIO_ABI( eosiosystem::system_contract,
       (updatebp)
       (freeze)(unfreeze)
       (vote)(vote4ram)(voteproducer)(fee)
-      //(claim)
+      //(claim)(claimdevelop)
       (onblock)
       (setparams)(removebp)
       (newaccount)(updateauth)(deleteauth)(linkauth)(unlinkauth)(canceldelay)
-      (onerror)(addmortgage)(claimmortgage)(claimbp)(claimvote)(claimdevelop)
+      (onerror)(addmortgage)(claimmortgage)(claimbp)(claimvote)
       (setconfig)(setcode)(setfee)(setabi)
 #if CONTRACT_RESOURCE_MODEL == RESOURCE_MODEL_DELEGATE
       (delegatebw)(undelegatebw)(refund)
